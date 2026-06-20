@@ -17,7 +17,7 @@ let isLoggingActive = false;
 let isAutostartActive = false;
 let isShaderGuardActive = false;
 let optimizedPIDs = new Set();
-let currentStatusText = '🎮 Status: Keine Spiele aktiv';
+let currentStatusText = '🎮 Status: No active games';
 let isSudoPromptOpen = false;
 let hasRootRights = false;
 let lastPromptTime = 0; 
@@ -73,8 +73,7 @@ function manageRamGuardState(isGameRunning) {
 
     if (isGameRunning) {
         if (!ramGuardIntervalId) {
-            writeToRotatedLog("🎮 Spiel aktiv: Aggressiver RAM-Guard (No Sudo) gestartet.");
-
+            writeToRotatedLog("🎮 Game Active: Aggressive RAM-Guard (No Sudo) initiated.");
             ramGuardIntervalId = setInterval(() => {
                 const now = Date.now();
                 if (now - lastPurgeTime < PURGE_COOLDOWN) return;
@@ -90,19 +89,19 @@ function manageRamGuardState(isGameRunning) {
                         const specPages = specPagesMatch ? parseInt(specPagesMatch[1], 10) : 0;
                         const availableRamMB = Math.round(((freePages + specPages) * 16384) / 1024 / 1024);
                         if (availableRamMB < 1500) {
-                            writeToRotatedLog(`🚨 WARNUNG: RAM kritisch (${availableRamMB} MB frei). Erzwinge maximale Freigabe!`);
+                            writeToRotatedLog(`🚨 WARNING: Memory Critical (${availableRamMB} MB free). Enforcing maximum release!`);
                             lastPurgeTime = Date.now();
                             const memorySpikeTrigger = new Array(5000000).fill(0);
                             exec('syslog -c aslmanager -d', (purgeError) => {
                                 if (!purgeError) {
-                                    writeToRotatedLog("🧹 Inaktiver RAM und System-Caches erfolgreich evakuiert.");
+                                    writeToRotatedLog("🧹 Inactive RAM and system caches successfully evacuated.");
                                 }
                             });
 
                             exec('killall -9 MTLCompilerService', (killErr) => {
                                 if (!killErr) {
-                                    writeToRotatedLog(`🛡️ ERFOLG: MTLCompilerService wegen RAM-Knappheit gekillt!`);
-                                    sendNotification(`🛡️ RAM-Knappheit verhindert! Inaktive Speicherseiten evakuiert.`);
+                                    writeToRotatedLog("🛡️ SUCCESS: MTLCompilerService terminated due to memory pressure!");
+                                    sendNotification("🛡️ Memory depletion prevented! Inactive memory pages evacuated.");
                                 }
                             });
 
@@ -118,7 +117,7 @@ function manageRamGuardState(isGameRunning) {
         if (ramGuardIntervalId) {
             clearInterval(ramGuardIntervalId);
             ramGuardIntervalId = null;
-            writeToRotatedLog("🛑 Spiel beendet: RAM-Guard gestoppt.");
+            writeToRotatedLog("🛑 Game terminated: RAM-Guard stopped.");
         }
     }
 }
@@ -145,7 +144,7 @@ function checkAndBoostGames() {
             .map(line => line.trim().toLowerCase())
             .filter(line => line.length > 0);
     } catch (e) {
-        writeToRotatedLog("⚠️ Fehler beim Lesen der blacklist.txt");
+        writeToRotatedLog("⚠️ Error reading blacklist.txt");
     }
 
     const searchCommand = "ps -Ax -o pid,comm | grep -Ei 'wine|wineloader|steamapps|crossover' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
@@ -153,10 +152,10 @@ function checkAndBoostGames() {
     exec(searchCommand, (error, stdout) => {
         if (error || !stdout.trim()) {
             if (optimizedPIDs.size > 0) {
-                writeToRotatedLog("⏳ Keine aktiven Spiele mehr gefunden. Warte...");
+                writeToRotatedLog("⏳ No active games found. Waiting...");
                 optimizedPIDs.clear();
                 manageRamGuardState(false);
-                currentStatusText = '🎮 Status: Keine Spiele aktiv';
+                currentStatusText = '🎮 Status: No active games';
                 updateMenu();
             }
             return;
@@ -214,7 +213,7 @@ function checkAndBoostGames() {
                 
                 if (isSudoPromptOpen) {
                     exec(`renice -1 -p ${pid}`, () => {});
-                    writeToRotatedLog(`⚡️ MID (Sicherheit): Parallel-Prozess ${appName} lautlos auf MID gesetzt.`);
+                    writeToRotatedLog(`⚡️ MID (Safety): Parallel process ${appName} silently set to MID.`);
                     currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
                     updateMenu();
                     return;
@@ -223,32 +222,30 @@ function checkAndBoostGames() {
                 if (!hasRootRights) {
                     if (now - lastPromptTime < PROMPT_COOLDOWN) {
                         exec(`renice -1 -p ${pid}`, () => {});
-                        writeToRotatedLog(`⚡️ MID: CPU-Priorität für ${appName} (PID: ${pid}) gesetzt (Cooldown aktiv).`);
+                        writeToRotatedLog(`⚡️ MID: CPU priority set for ${appName} (PID: ${pid}) (Cooldown active).`);
                         currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
                         updateMenu();
                         return;
                     }
 
                     isSudoPromptOpen = true; 
-                    writeToRotatedLog(`🔒 Starte Autorisierung für MAX-Boost auf ${appName}...`);
-                    
+                    writeToRotatedLog(`🔒 Initiating authorization for MAX-Boost on ${appName}...`);                    
                     sudo.exec(`renice -5 -p ${pid}`, { name: 'Mac Gaming Booster' }, (err) => {
                         isSudoPromptOpen = false;
                         if (err) {
-                            writeToRotatedLog(`⚠️ MAX-Rechte abgelehnt. 1-Min-Sperre aktiv. Nutze MID-Modus für ${appName}.`);
+                            writeToRotatedLog(`⚠️ MAX privileges denied. 1-min cooldown active. Using MID mode for ${appName}.`);
                             lastPromptTime = Date.now(); 
                             hasRootRights = false;
                             exec(`renice -1 -p ${pid}`, () => {});
                             currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
                             updateMenu();
                         } else {
-                            writeToRotatedLog(`⚡️ MAX: CPU-Priorität für ${appName} (PID: ${pid}) gesetzt.`);
+                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${appName} (PID: ${pid}).`);
                             hasRootRights = true; 
                             lastPromptTime = 0; 
                             currentStatusText = `🟢 MAX-Boost: 📦 ${appName} (PID: ${pid})`;
                             updateMenu();
-                            
-                            sendNotification(`Performance-Boost (MAX) für "${appName}" aktiviert!`);
+                            sendNotification(`Performance boost (MAX) activated for "${appName}"!`);
                         }
                     });
                 } else if (hasRootRights) {
@@ -256,7 +253,7 @@ function checkAndBoostGames() {
                         if (err) {
                             if (isSudoPromptOpen) {
                                 exec(`renice -1 -p ${pid}`, () => {});
-                                writeToRotatedLog(`⚡️ MID (Sicherheit): Ticket abgelaufen. Parallel-Prozess auf MID gesetzt.`);
+                                writeToRotatedLog(`⚡️ MID (Safety): Ticket expired. Parallel process set to MID.`);
                                 currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
                                 updateMenu();
                                 return;
@@ -268,32 +265,30 @@ function checkAndBoostGames() {
                             sudo.exec(`renice -5 -p ${pid}`, { name: 'Mac Gaming Booster' }, (sudoErr) => {
                                 isSudoPromptOpen = false;
                                 if (sudoErr) {
-                                    writeToRotatedLog(`⚠️ Ticket abgelaufen & Neuanforderung abgelehnt. Nutze MID-Modus für ${appName}.`);
+                                    writeToRotatedLog(`⚠️ Ticket expired & re-authorization denied. Using MID mode for ${appName}.`);
                                     lastPromptTime = Date.now(); 
                                     exec(`renice -1 -p ${pid}`, () => {});
                                     currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
                                     updateMenu();
                                 } else {
-                                    writeToRotatedLog(`⚡️ MAX: CPU-Priorität für ${appName} (PID: ${pid}) nach Erneuerung gesetzt.`);
+                                    writeToRotatedLog(`⚡️ MAX: CPU priority set for ${appName} (PID: ${pid}) after renewal.`);
                                     hasRootRights = true;
                                     lastPromptTime = 0;
                                     currentStatusText = `🟢 MAX-Boost: 📦 ${appName} (PID: ${pid})`;
                                     updateMenu();
-                                    
-                                    sendNotification(`Performance-Boost (MAX) für "${appName}" aktiviert!`);
+                                    sendNotification(`Performance boost (MAX) activated for "${appName}"!`);
                                 }
                             });
                         } else {
-                            writeToRotatedLog(`⚡️ MAX: CPU-Priorität für ${appName} (PID: ${pid}) gesetzt.`);
+                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${appName} (PID: ${pid}).`);
                             currentStatusText = `🟢 MAX-Boost: 📦 ${appName} (PID: ${pid})`;
                             updateMenu();
-                            
-                            sendNotification(`Performance-Boost (MAX) für "${appName}" aktiviert!`);
+                            sendNotification(`Performance boost (MAX) activated for "${appName}"!`);
                         }
                     });
                 } else {
                     exec(`renice -1 -p ${pid}`, () => {});
-                    writeToRotatedLog(`⚡️ MID: CPU-Priorität für ${appName} (PID: ${pid}) gesetzt.`);
+                    writeToRotatedLog(`⚡️ MID: CPU priority set for ${appName} (PID: ${pid}).`);
                     currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
                     updateMenu();
                 }
@@ -303,17 +298,16 @@ function checkAndBoostGames() {
         for (let pid of optimizedPIDs) {
             if (!currentPIDs.has(pid)) {
                 optimizedPIDs.delete(pid);
-                writeToRotatedLog(`⏳ Spiel mit PID ${pid} wurde beendet. Aus Speicher entfernt.`);
-
+                writeToRotatedLog(`⏳ Game with PID ${pid} terminated. Evacuated from memory.`);
                 if (hasRootRights) {
                     exec('sudo purge', () => {
-                        writeToRotatedLog("🧹 RAM Purge: Inaktiver Festplatten-Cache erfolgreich bereinigt.");
+                        writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
                     });
                 }
 
                 if (optimizedPIDs.size === 0) {
                     manageRamGuardState(false);
-                    currentStatusText = '🎮 Status: Keine Spiele aktiv';
+                    currentStatusText = '🎮 Status: No active games';
                     updateMenu();
                 }
             }
@@ -325,7 +319,7 @@ function updateMenu() {
     const contextMenu = Menu.buildFromTemplate([
         { label: '🚀 MAC GAMING BOOSTER', enabled: false },
         { label: `${currentStatusText}`, enabled: false },
-        { label: 'Version: 2.3.0 (Smart Native Memory)', enabled: false },
+        { label: 'Version: 2.3.1 (Smart Native Memory)', enabled: false },
         { label: 'Developer: Mario (flashi)', enabled: false },
         { type: 'separator' },
         {
@@ -340,14 +334,13 @@ function updateMenu() {
             }
         },
         {
-            label: '🛡️ Enable 007 Shader Guard (Anti-Panic)',
+            label: '🛡️ Enable Adaptive Shader Guard (Anti-Panic)',
             type: 'checkbox',
             checked: isShaderGuardActive,
             click: (menuItem) => {
                 isShaderGuardActive = menuItem.checked;
                 saveSettings();
-                writeToRotatedLog(`🛡️ Shader Guard vom Benutzer ${isShaderGuardActive ? 'AKTIVIERT' : 'DEAKTIVIERT'}.`);
-
+                writeToRotatedLog(`🛡️ Shader Guard ${isShaderGuardActive ? 'ENABLED' : 'DISABLED'} by user.`);
                 if (optimizedPIDs.size > 0) {
                     manageRamGuardState(true);
                 } else {
@@ -437,7 +430,7 @@ app.whenReady().then(() => {
 
     if (isLoggingActive) {
         fs.writeFileSync(LOG_FILE, '', 'utf8');
-        writeToRotatedLog("🚀 App gestartet - Persistent Logging AKTIV.");
+        writeToRotatedLog("🚀 App initiated - Persistent logging ACTIVE.");
     }
 
     updateMenu();
