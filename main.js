@@ -1,12 +1,23 @@
-const { app, Tray, Menu, shell, Notification, globalShortcut } = require('electron');
+const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen } = require('electron');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const sudo = require('sudo-prompt');
+const os = require('os');
 
 let tray = null;
 let intervalId = null;
 let ramGuardIntervalId = null;
+let overlayWindow = null;
+let overlayInterval = null;
+let currentFreeRamMB = 4096;
+let overlayX = null;
+let overlayY = null;
+
+const rawBytes = os.totalmem();
+const rawGB = rawBytes / 1024 / 1024 / 1024;
+const macStandardSizes = [8, 16, 18, 24, 32, 36, 48, 64, 96, 128, 192, 256];
+const TOTAL_RAM_GB = macStandardSizes.find(size => size >= rawGB) || Math.round(rawGB);
 
 const CONFIG_FILE = path.join(app.getPath('userData'), 'booster_config.json');
 const LOG_FILE = path.join(app.getPath('userData'), 'gaming_boost.log');
@@ -32,13 +43,15 @@ function loadSettings() {
             if (config.isLoggingActive !== undefined) isLoggingActive = config.isLoggingActive;
             if (config.isAutostartActive !== undefined) isAutostartActive = config.isAutostartActive;
             if (config.isShaderGuardActive !== undefined) isShaderGuardActive = config.isShaderGuardActive;
+            if (config.overlayX !== undefined) overlayX = config.overlayX;
+            if (config.overlayY !== undefined) overlayY = config.overlayY;
         }
     } catch (e) {}
 }
 
 function saveSettings() {
     try {
-        const config = { isBoostActive, isLoggingActive, isAutostartActive, isShaderGuardActive };
+        const config = { isBoostActive, isLoggingActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY };
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
     } catch (e) {}
 }
@@ -57,6 +70,76 @@ function sendNotification(bodyText) {
             silent: true
         }).show();
     }
+}
+
+function toggleRamOverlay() {
+    if (overlayWindow) {
+        clearInterval(overlayInterval);
+        overlayWindow.close();
+        overlayWindow = null;
+        return;
+    }
+
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width } = primaryDisplay.workAreaSize;
+    const xPos = (overlayX !== null) ? overlayX : (width - 260);
+    const yPos = (overlayY !== null) ? overlayY : 40;
+
+    overlayWindow = new BrowserWindow({
+        width: 240,
+        height: 75,
+        x: xPos,
+        y: yPos,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        hasShadow: false,
+        resizable: false,
+        show: false,             
+        focusable: false,        
+        setVisibleOnAllWorkspaces: true,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+    
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+
+    const htmlContent = `
+        <body style="font-family:-apple-system,sans-serif; color:white; background:rgba(20,20,20,0.85); margin:0; padding:10px; border-radius:8px; font-size:12px; border: 1px solid rgba(255,255,255,0.1); overflow:hidden; user-select:none;">
+            <div style="font-weight:bold; margin-bottom:4px; display:flex; justify-content:space-between;">
+                <span>RAM Live-Monitor</span>
+                <span id="ram-status" style="color:#00ff00;">● Live</span>
+            </div>
+            <div id="ram-used">Used: -- GB / -- GB</div>
+            <div id="ram-free" style="font-weight:bold; color:#00ffaa; margin-top:2px;">Free: -- MB</div>
+        </body>
+    `;
+
+    overlayWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+
+    overlayWindow.once('ready-to-show', () => {
+        if (overlayWindow) {
+            overlayWindow.showInactive(); 
+        }
+    });
+
+    overlayInterval = setInterval(() => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            const total = TOTAL_RAM_GB; 
+            const freeMB = currentFreeRamMB;
+            const usedGB = ((total * 1024 - freeMB) / 1024).toFixed(2);
+
+            overlayWindow.webContents.executeJavaScript(`
+                if (document.getElementById('ram-used')) {
+                    document.getElementById('ram-used').innerHTML = 'Used: ${usedGB} GB / ${total} GB';
+                    document.getElementById('ram-free').innerHTML = 'Free: ${freeMB} MB';
+                    document.getElementById('ram-status').style.color = ${freeMB} < 1500 ? '#ff3333' : '#00ff00';
+                }
+            `).catch(err => console.error("Overlay JS-Inject Fehler:", err));
+        }
+    }, 1000);
 }
 
 let lastPurgeTime = 0; 
@@ -88,6 +171,8 @@ function manageRamGuardState(isGameRunning) {
                         const freePages = parseInt(freePagesMatch[1], 10);
                         const specPages = specPagesMatch ? parseInt(specPagesMatch[1], 10) : 0;
                         const availableRamMB = Math.round(((freePages + specPages) * 16384) / 1024 / 1024);
+                        currentFreeRamMB = availableRamMB;
+
                         if (availableRamMB < 1500) {
                             writeToRotatedLog(`🚨 WARNING: Memory Critical (${availableRamMB} MB free). Enforcing maximum release!`);
                             lastPurgeTime = Date.now();
@@ -122,8 +207,22 @@ function manageRamGuardState(isGameRunning) {
     }
 }
 
+setInterval(() => {
+    if (!ramGuardIntervalId) {
+        exec('vm_stat', (error, stdout) => {
+            if (error || !stdout) return;
+            const freePagesMatch = stdout.match(/Pages free:\s+(\d+)/);
+            const specPagesMatch = stdout.match(/Pages speculative:\s+(\d+)/);
+            if (freePagesMatch) {
+                const freePages = parseInt(freePagesMatch[1], 10);
+                const specPages = specPagesMatch ? parseInt(specPagesMatch[1], 10) : 0;
+                currentFreeRamMB = Math.round(((freePages + specPages) * 16384) / 1024 / 1024);
+            }
+        });
+    }
+}, 2000);
+
 function checkAndBoostGames() {
-    // 📂 Standard-Blacklist erstellen, falls sie noch nicht existiert
     if (!fs.existsSync(BLACKLIST_FILE)) {
         const defaultBlacklist = [
             'steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe',
@@ -319,8 +418,14 @@ function updateMenu() {
     const contextMenu = Menu.buildFromTemplate([
         { label: '🚀 MAC GAMING BOOSTER', enabled: false },
         { label: `${currentStatusText}`, enabled: false },
-        { label: 'Version: 2.3.1 (Smart Native Memory)', enabled: false },
+        { label: 'Version: 2.3.2 (Smart Native Memory)', enabled: false },
         { label: 'Developer: Mario (flashi)', enabled: false },
+        { type: 'separator' },
+        {
+            label: '📊 RAM Overlay ein/aus',
+            accelerator: 'CmdOrCtrl+Alt+R',
+            click: () => { toggleRamOverlay(); }
+        },
         { type: 'separator' },
         {
             label: '🚀 Enable FPS Boost',
@@ -346,7 +451,6 @@ function updateMenu() {
                 } else {
                     manageRamGuardState(false);
                 }
-                
                 updateMenu();
             }
         },
@@ -421,9 +525,50 @@ app.whenReady().then(() => {
         tray.setToolTip('Mac Gaming Booster');
     }
 
+        globalShortcut.register('CommandOrControl+Alt+R', () => {
+        toggleRamOverlay();
+    });
+    
+    globalShortcut.register('Option+Left', () => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            const [x, y] = overlayWindow.getPosition();
+            overlayWindow.setPosition(x - 20, y);
+            overlayX = x - 20; overlayY = y;
+            saveSettings();
+        }
+    });
+
+    globalShortcut.register('Option+Right', () => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            const [x, y] = overlayWindow.getPosition();
+            overlayWindow.setPosition(x + 20, y);
+            overlayX = x + 20; overlayY = y;
+            saveSettings();
+        }
+    });
+
+    globalShortcut.register('Option+Up', () => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            const [x, y] = overlayWindow.getPosition();
+            overlayWindow.setPosition(x, y - 20);
+            overlayX = x; overlayY = y - 20;
+            saveSettings();
+        }
+    });
+
+    globalShortcut.register('Option+Down', () => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            const [x, y] = overlayWindow.getPosition();
+            overlayWindow.setPosition(x, y + 20);
+            overlayX = x; overlayY = y + 20;
+            saveSettings();
+        }
+    });
+
     globalShortcut.register('Option+Command+K', () => {
         if (intervalId) clearInterval(intervalId);
         if (ramGuardIntervalId) clearInterval(ramGuardIntervalId);
+        if (overlayInterval) clearInterval(overlayInterval);
         app.quit();
         process.exit(0); 
     });
@@ -441,6 +586,7 @@ app.on('will-quit', () => {
     globalShortcut.unregisterAll();
     if (intervalId) clearInterval(intervalId);
     if (ramGuardIntervalId) clearInterval(ramGuardIntervalId);
+    if (overlayInterval) clearInterval(overlayInterval);
 });
 
 app.on('window-all-closed', (e) => { e.preventDefault(); });

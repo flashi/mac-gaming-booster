@@ -1,10 +1,10 @@
 #!/bin/bash
 echo "================================================="
-echo "   🚀 Starte automatischen Release-Prozess v2.3.1 "
+echo "   🚀 Starte automatischen Release-Prozess v2.3.2 "
 echo "================================================="
 
-# 1. GitHub Link sichern
-git remote set-url origin https://github.com/flashi/mac-gaming-booster.git
+# 1. GitHub Link sichern (Hier steht deine öffentliche Adresse!)
+git remote set-url origin "https://github.com/flashi/mac-gaming-booster.git"
 
 # 2. Prüfen ob .gitignore existiert, sonst sauber erstellen
 if [ ! -f .gitignore ]; then
@@ -19,9 +19,11 @@ fi
 # 3. Reinen Quellcode zu GitHub hochladen
 echo "📤 Übertrage reinen Code zu GitHub..."
 git add .
-git commit -m "Patch v2.3.1: Full English localization and renamed shader guard to Adaptive Core"
+# Patch v2.3.2: Alle Neuerungen inklusive des Tomb-Raider-Fokus-Fixes im Commit festgehalten
+git commit -m "Patch v2.3.2: Full integration of Live RAM HUD with Option+Arrows movement, persistent position saving, universal memory autodetection, and fullscreen focus fix"
 git push origin main
 
 echo "================================================="
-echo " 🎉 FERTIG! Version 2.3.1-Code ist live.         "
+echo " 🎉 FERTIG! Version 2.3.2-Code ist live.         "
 echo "================================================="
+
