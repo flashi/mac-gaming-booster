@@ -1,6 +1,6 @@
 # 🚀 Mac Gaming Booster (Apple Silicon Optimized)
 
-**Version:** 2.3.2 (Live HUD & Adaptive Core Update)  
+**Version:** 2.4.0 (Smart Process Analytics & Core-Wrapper Update)  
 **Developer:** Mario (flashi)  
 **Platform:** macOS (Architecture: arm64 / Apple Silicon M-Chips)  
 **Target OS:** macOS 15 (Sequoia) & macOS 16 (Tahoe) Verified  
@@ -26,8 +26,13 @@ The app optimizes CPU core allocation, system threading, and Apple Silicon Unifi
 
 ---
 
-## 🛠️ Features (v2.3.2)
+## 🛠️ Features (v2.4.0)
 
+- **🔍 Smart Process Analytics & Auto-Naming (NEW):** Manual translation arrays are obsolete. The booster features a multi-tier recognition cascade that automatically analyzes directory structures and binary properties to identify and label active games with 100% cosmetic accuracy.
+- **🗂️ Universal External SSD Support (NEW):** The path-parsing engine dynamically scales across all storage boundaries. Whether your Steam Library or CrossOver Bottles are located on the internal Macintosh HD or an external high-speed NVMe SSD, the app instantly extracts correct game identities.
+- **🎛️ Windows EXE Metadata Investigator (NEW):** When encountering short or cryptic process handles (e.g., `u4.exe`), the booster executes a sub-millisecond binary analysis utilizing native macOS `strings` and `grep` pipelines. It pulls the original `ProductName` directly from the Windows binary version block—completely offline.
+- **🪝 CrossOver Wrapper-Hook (NEW):** Engineered a bulletproof fail-safe mechanism for sandboxed PlayStation ports and complex DX12 titles (e.g., *The Last of Us Part I*). If macOS security policies completely isolate a game's underlying handler (`crs-handler.exe`), the booster locks onto the visible `winewrapper.exe`, cross-references the internal Bottle signature, and forces the full **MAX-Boost** right into the game's execution path.
+- **🧼 Silent System-Wrapper Filtering (NEW):** While CrossOver background wrappers (`winewrapper`, `winedevice`, `d3dmetal`) are still actively caught and optimized to peak efficiency in the background, a new cosmetic mask completely filters them from your logs, desktop overlay, and notifications. Your HUD displays **only the actual game** you are currently playing.
 - **📊 Live RAM HUD (In-Game Overlay):** Added a sleek, frameless, semi-transparent heads-up display that projects your real-time memory usage (`Used GB / Total GB` and `Free MB`) directly onto your screen. It features a color-adaptive status indicator that switches to **Red (Live)** during critical memory pressure.
 - **🛡️ Exclusive Fullscreen Persistence:** Engineered using the native macOS `screen-saver` layer combined with fully passive initialization (`show: false`, `focusable: false`, `showInactive()`). The HUD forces its way on top of demanding 3D full-screen windows **without stealing the OS window-focus or accidentally minimizing sensitive game wrappers** (CrossOver/Wine/Steam) during activation.
 - **🍏 Universal Hardware Autodetection:** Hardcoded memory values are completely eliminated. The app dynamically hooks into the native Node.js `os.totalmem()` API to read your Mac’s physical layout out-of-the-box, seamlessly computing telemetry whether your machine runs on 8 GB, 16 GB, 36 GB, or 128 GB of Unified Memory.
@@ -35,7 +40,7 @@ The app optimizes CPU core allocation, system threading, and Apple Silicon Unifi
 - **💾 Persistent Position Saving:** Every pixel adjustment made via the arrow keys instantly commits the active X and Y coordinates to your local `booster_config.json`. The customized HUD layout remains permanently locked across application restarts.
 - **Smart Process Scan:** Uses a lightning-fast `ps -Ax` engine. Detects active games in milliseconds—long before the game screen even turns black.
 - **🛡️ Adaptive Core (System-Wide Memory Pressure Watchdog):** Formally known as *Shader Guard*. Actively counters massive memory leaks during DirectX 12 shader pre-loading (e.g., in *007 First Light* or *Uncharted*). It monitors the entire system's available memory pages using native macOS `vm_stat` hooks.
-- **🍏 Native Apple Silicon 16 KB Page Support:** Specifically calibrated for M-Chips (M1/M2/M3/M4). Legacy utilities compute values based on Intel's 4,096-byte layout, which corrupts metrics on Apple Silicon. v2.3.2 natively handles the modern **16,384-byte (16 KB)** hardware page sizing and dynamically adds `Pages speculative` to the equation for 100% precise memory tracking.
+- **🍏 Native Apple Silicon 16 KB Page Support:** Specifically calibrated for M-Chips (M1/M2/M3/M4). Legacy utilities compute values based on Intel's 4,096-byte layout, which corrupts metrics on Apple Silicon. v2.4.0 natively handles the modern **16,384-byte (16 KB)** hardware page sizing and dynamically adds `Pages speculative` to the equation for 100% precise memory tracking.
 - **🧹 "No Sudo" Live In-Game Evacuation:** When available memory falls below **1,500 MB**, the booster instantly triggers an automated cache-evacuation (`syslog -c aslmanager -d`) combined with a micro-memory spike simulation. This forces macOS to dump inactive system caches and stale graphics buffers immediately inside user-space **without causing single frame-drops** during active gameplay.
 - **⏱️ 30-Second Smart Cooldown Protection:** Built for heavy stress situations. Once a massive memory pressure cleanup is performed, a strict 30-second sleep timer (`PURGE_COOLDOWN`) locks the routine. This prevents infinite background loops, completely shields your SSD from excessive logging stress, and preserves maximum CPU cycles for your frames.
 - **💥 Emergency Metal Compiler Termination:** If available memory stays critically low due to relentless shader compiling, the booster forcefully terminates the bloated `MTLCompilerService` (`killall -9`). macOS automatically spins up a clean compiler instance in milliseconds, completely preventing heavy OS-level locks and Watchdog Kernel Panics while gameplay stays perfectly stable.
@@ -66,10 +71,11 @@ The application is fully native and no longer requires manual root Terminal exec
 - **Live Status String:** Displays current engine activity and real-time execution level (MAX/MID/None) right at the top layer.
 - **📊 RAM Overlay ein/aus:** Toggles the Live HUD Overlay visibility (`CmdOrCtrl + Alt + R`).
 - **🚀 Enable FPS Boost:** Toggle the engine on or off instantly. Disabling safely drops all active game structures back to standard priority 0 in real-time.
-- **🛡️ Enable Adaptive Core (Anti-Panic):** Toggles the adaptive system-wide memory monitor. Live-syncs instantly during running gameplay. Recommended to enable before launching heavy memory-leaking titles.
-- **📝 Enable Logging:** Toggles writing diagnostic tables to `gaming_boost.log`. Can be kept entirely off since the tray menu provides live data.
+- **🛡️ Enable Adaptive Core (Anti-Panic):** Toggles the adaptive system-wide memory monitor. Live-syncs instantly during running gameplay. Recommended to enable before launching heavy DX12 or Unreal Engine 5 titles.
+- **🧹 Clear Log File:** Instantly clears and rotates the local troubleshooting log file to preserve SSD space.
 - **⚙️ Start at Login (Autostart):** Registers the app securely inside the native macOS login item subsystem for automated silent startup.
 - **📝 Edit Blacklist (Ignore File):** Opens the live `blacklist.txt` inside the default text editor. Save changes to ignore unwanted processes on the fly.
+- **❌ Quit Application:** Safely releases all priority chains, drops active windows, and shuts down the booster engine immediately.
 
 ---
 

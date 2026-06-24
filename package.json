@@ -1,6 +1,6 @@
 {
   "name": "fps-boost",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "description": "Menüleisten-Booster für CrossOver und Steam",
   "main": "main.js",
 "scripts": {

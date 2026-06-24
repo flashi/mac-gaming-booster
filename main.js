@@ -222,6 +222,82 @@ setInterval(() => {
     }
 }, 2000);
 
+// 🛠️ HILFSFUNKTION: Ermittelt den echten Namen des Spiels aus dem Pfad (auch auf externen SSDs)
+function getCleanGameName(fullPath, appName) {
+    const normalizedPath = fullPath.replace(/\\/g, '/');
+    let baseName = appName.replace(/\.exe/i, '').trim().toLowerCase();
+    
+    // --- 1. STEAM-ORDNER ERKENNUNG ---
+    if (normalizedPath.toLowerCase().includes('steamapps')) {
+        try {
+            const commonIndex = normalizedPath.toLowerCase().indexOf('/common/');
+            if (commonIndex !== -1) {
+                const afterCommon = normalizedPath.substring(commonIndex + 8);
+                const folderName = afterCommon.split('/');
+                if (folderName && folderName[0]) {
+                    return folderName[0].replace(/_/g, ' ').replace(/\.exe/i, '').trim();
+                }
+            }
+        } catch (e) {}
+    }
+
+    // --- 2. CROSSOVER / WINE BOTTLE ERKENNUNG ---
+    if (normalizedPath.toLowerCase().includes('/bottles/')) {
+        try {
+            const parts = normalizedPath.split('/');
+            const bottlesIndex = parts.findIndex(p => p.toLowerCase() === 'bottles');
+            if (bottlesIndex !== -1 && parts.length > bottlesIndex + 1) {
+                return parts[bottlesIndex + 1].replace(/_/g, ' ').trim();
+            }
+        } catch (e) {}
+    }
+
+    // --- 3. NATIVE MAC APPS (Info.plist) ---
+    if (normalizedPath.toLowerCase().includes('.app/')) {
+        try {
+            const appIndex = normalizedPath.toLowerCase().indexOf('.app/');
+            const appBasePath = normalizedPath.substring(0, appIndex + 5);
+            const plistPath = path.join(appBasePath, 'Contents', 'Info.plist');
+            
+            if (fs.existsSync(plistPath)) {
+                const plistContent = fs.readFileSync(plistPath, 'utf8');
+                const match = plistContent.match(/<key>CFBundleDisplayName<\/key>\s*<string>([^<]+)<\/string>/) 
+                           || plistContent.match(/<key>CFBundleName<\/key>\s*<string>([^<]+)<\/string>/);
+                if (match && match[1]) {
+                    return match[1].trim();
+                }
+            }
+        } catch (e) {}
+    }
+
+    // --- 🔍 4. VOLLAUTOMATISCHER DATEI-METADATEN-DETEKTIV ---
+    if (baseName.length <= 12 && fs.existsSync(normalizedPath)) {
+        try {
+            const execSync = require('child_process').execSync;
+            const cmd = `strings "${normalizedPath}" | grep -A 1 -i "ProductName" | head -n 2`;
+            const output = execSync(cmd, { encoding: 'utf8', timeout: 400 });
+            
+            if (output) {
+                const cleanMetadataName = output.replace(/ProductName/i, '')
+                                                .replace(/[^a-zA-Z0-9\s.:'\-]/g, '')
+                                                .trim();
+                
+                if (cleanMetadataName.length > 2 && !cleanMetadataName.toLowerCase().includes('stringfile')) {
+                    return cleanMetadataName;
+                }
+            }
+        } catch (e) {}
+    }
+
+    // --- FALLBACK: Reinen .exe-Namen säubern, falls absolut nichts greift ---
+    let cleanName = appName.replace(/\.exe/i, '')
+                           .replace(/[_\-]/g, ' ')
+                           .replace(/shipping/i, '')
+                           .trim();
+                           
+    return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+}
+
 function checkAndBoostGames() {
     if (!fs.existsSync(BLACKLIST_FILE)) {
         const defaultBlacklist = [
@@ -246,7 +322,9 @@ function checkAndBoostGames() {
         writeToRotatedLog("⚠️ Error reading blacklist.txt");
     }
 
-    const searchCommand = "ps -Ax -o pid,comm | grep -Ei 'wine|wineloader|steamapps|crossover' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
+    // 🔥 DIE FINALE RETTUNG: Wir fügen crs-handler.exe und den Wildcard-Punkt .\\crs-handler.exe direkt in den Suchbefehl ein!
+    // Dadurch kann macOS den Prozess unmöglich übersehen, egal wie kryptisch die Sonderzeichen davor sind.
+    const searchCommand = "ps -Ax -o pid,comm | grep -Ei 'wine|wineloader|steamapps|crossover|crs-handler|crs-handler.exe|wineloader64' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
 
     exec(searchCommand, (error, stdout) => {
         if (error || !stdout.trim()) {
@@ -263,9 +341,12 @@ function checkAndBoostGames() {
         const lines = stdout.trim().split('\n');
         const currentPIDs = new Set();
 
+        // Sortierung erweitert, damit crs-handler immer auf Platz 1 wandert
         lines.sort((a, b) => {
-            const aShipping = a.toLowerCase().includes('shipping');
-            const bShipping = b.toLowerCase().includes('shipping');
+            const aLow = a.toLowerCase();
+            const bLow = b.toLowerCase();
+            const aShipping = aLow.includes('shipping') || aLow.includes('crs-handler');
+            const bShipping = bLow.includes('shipping') || bLow.includes('crs-handler');
             if (aShipping && !bShipping) return -1;
             if (!aShipping && bShipping) return 1;
             return 0;
@@ -275,17 +356,32 @@ function checkAndBoostGames() {
             const parts = line.trim().split(/\s+/);
             if (parts.length < 2) return;
 
+            // Deine originale, fehlerfreie PID-Zuweisung per Index
             const pid = parts[0]; 
             const fullPath = parts.slice(1).join(' ');
             const normalizedPath = fullPath.replace(/\\/g, '/');
             const appName = path.basename(normalizedPath);
+            
+            // 🔥 DER UNIVERSAL-HOOK: Wenn crs-handler unsichtbar bleibt, schnappen wir uns den winewrapper der Flasche!
+            let displayGameName = appName;
+            const isTlouPath = normalizedPath.toLowerCase().includes('last of us') || normalizedPath.toLowerCase().includes('tlou');
+            
+            if (appName.toLowerCase().includes('crs-handler') || appName.toLowerCase().includes('tlou') || (appName.toLowerCase().includes('winewrapper') && isTlouPath)) {
+                displayGameName = "The Last of Us Part I";
+            } else {
+                displayGameName = getCleanGameName(normalizedPath, appName);
+            }
+
             const lowName = appName.toLowerCase();
             const cleanName = lowName.replace(/[()]/g, '');
             const is007 = normalizedPath.toLowerCase().includes('007') || pid === '1919';
+            
+            // Schützt das Spiel und den winewrapper von TLOU vor deinem Zahlen- und Blacklist-Filter
+            const isTlou = displayGameName.includes("The Last of Us") || lowName.includes("crs-handler");
             const isBlacklisted = userBlacklist.some(ignoredName => cleanName === ignoredName);
 
             if (!appName || 
-                (isBlacklisted && !is007) ||
+                (isBlacklisted && !is007 && !isTlou) ||
                 cleanName.includes('helper') || 
                 cleanName.includes('overlay') || 
                 cleanName.includes('webhelper') || 
@@ -296,7 +392,7 @@ function checkAndBoostGames() {
                 cleanName.includes('sysinfo') || 
                 cleanName.includes('service') || 
                 cleanName.includes('gamepolicy') || 
-                (!is007 && !isNaN(cleanName.charAt(0)))
+                (!is007 && !isTlou && !isNaN(cleanName.charAt(0))) // Filter bleibt für Müll aktiv, lässt TLOU aber durch
             ) return;
 
             currentPIDs.add(pid);
@@ -304,7 +400,9 @@ function checkAndBoostGames() {
             if (optimizedPIDs.has(pid)) return;
 
             optimizedPIDs.add(pid);
-            writeToRotatedLog(`🎯 Spiel erkannt: 📦 ${appName} (PID: ${pid})`);
+            
+            // Schreibt jetzt den perfekten Namen ins Log
+            writeToRotatedLog(`🎯 Spiel erkannt: 📦 ${displayGameName} (PID: ${pid})`);
             manageRamGuardState(true);
 
             if (isBoostActive) {
@@ -312,8 +410,8 @@ function checkAndBoostGames() {
                 
                 if (isSudoPromptOpen) {
                     exec(`renice -1 -p ${pid}`, () => {});
-                    writeToRotatedLog(`⚡️ MID (Safety): Parallel process ${appName} silently set to MID.`);
-                    currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
+                    writeToRotatedLog(`⚡️ MID (Safety): Parallel process ${displayGameName} silently set to MID.`);
+                    currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                     updateMenu();
                     return;
                 }
@@ -321,39 +419,40 @@ function checkAndBoostGames() {
                 if (!hasRootRights) {
                     if (now - lastPromptTime < PROMPT_COOLDOWN) {
                         exec(`renice -1 -p ${pid}`, () => {});
-                        writeToRotatedLog(`⚡️ MID: CPU priority set for ${appName} (PID: ${pid}) (Cooldown active).`);
-                        currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
+                        writeToRotatedLog(`⚡️ MID: CPU priority set for ${displayGameName} (PID: ${pid}) (Cooldown active).`);
+                        currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                         updateMenu();
                         return;
                     }
 
                     isSudoPromptOpen = true; 
-                    writeToRotatedLog(`🔒 Initiating authorization for MAX-Boost on ${appName}...`);                    
+                    writeToRotatedLog(`🔒 Initiating authorization for MAX-Boost on ${displayGameName}...`);                    
                     sudo.exec(`renice -5 -p ${pid}`, { name: 'Mac Gaming Booster' }, (err) => {
                         isSudoPromptOpen = false;
                         if (err) {
-                            writeToRotatedLog(`⚠️ MAX privileges denied. 1-min cooldown active. Using MID mode for ${appName}.`);
+                            writeToRotatedLog(`⚠️ MAX privileges denied. 1-min cooldown active. Using MID mode for ${displayGameName}.`);
                             lastPromptTime = Date.now(); 
                             hasRootRights = false;
                             exec(`renice -1 -p ${pid}`, () => {});
-                            currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
+                            currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                             updateMenu();
                         } else {
-                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${appName} (PID: ${pid}).`);
+                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${displayGameName} (PID: ${pid}).`);
                             hasRootRights = true; 
                             lastPromptTime = 0; 
-                            currentStatusText = `🟢 MAX-Boost: 📦 ${appName} (PID: ${pid})`;
+                            currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                             updateMenu();
-                            sendNotification(`Performance boost (MAX) activated for "${appName}"!`);
+                            sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
                         }
                     });
+
                 } else if (hasRootRights) {
                     exec(`sudo renice -5 -p ${pid}`, (err) => {
                         if (err) {
                             if (isSudoPromptOpen) {
                                 exec(`renice -1 -p ${pid}`, () => {});
                                 writeToRotatedLog(`⚡️ MID (Safety): Ticket expired. Parallel process set to MID.`);
-                                currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
+                                currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                                 updateMenu();
                                 return;
                             }
@@ -364,32 +463,34 @@ function checkAndBoostGames() {
                             sudo.exec(`renice -5 -p ${pid}`, { name: 'Mac Gaming Booster' }, (sudoErr) => {
                                 isSudoPromptOpen = false;
                                 if (sudoErr) {
-                                    writeToRotatedLog(`⚠️ Ticket expired & re-authorization denied. Using MID mode for ${appName}.`);
+                                    writeToRotatedLog(`⚠️ Ticket expired & re-authorization denied. Using MID mode for ${displayGameName}.`);
                                     lastPromptTime = Date.now(); 
                                     exec(`renice -1 -p ${pid}`, () => {});
-                                    currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
+                                    currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                                     updateMenu();
                                 } else {
-                                    writeToRotatedLog(`⚡️ MAX: CPU priority set for ${appName} (PID: ${pid}) after renewal.`);
+                                    writeToRotatedLog(`⚡️ MAX: CPU priority set for ${displayGameName} (PID: ${pid}) after renewal.`);
                                     hasRootRights = true;
                                     lastPromptTime = 0;
-                                    currentStatusText = `🟢 MAX-Boost: 📦 ${appName} (PID: ${pid})`;
+                                    currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                                     updateMenu();
-                                    sendNotification(`Performance boost (MAX) activated for "${appName}"!`);
+                                    sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
                                 }
                             });
                         } else {
-                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${appName} (PID: ${pid}).`);
-                            currentStatusText = `🟢 MAX-Boost: 📦 ${appName} (PID: ${pid})`;
+                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${displayGameName} (PID: ${pid}).`);
+                            currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName} (PID: ${pid})`;
                             updateMenu();
-                            sendNotification(`Performance boost (MAX) activated for "${appName}"!`);
+                            sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
                         }
                     });
                 } else {
                     exec(`renice -1 -p ${pid}`, () => {});
-                    writeToRotatedLog(`⚡️ MID: CPU priority set for ${appName} (PID: ${pid}).`);
-                    currentStatusText = `🟡 MID-Boost: 📦 ${appName} (PID: ${pid})`;
-                    updateMenu();
+                    if (!isSystemWrapper) {
+                        writeToRotatedLog(`⚡️ MID: CPU priority set for ${displayGameName} (PID: ${pid}).`);
+                        currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
+                        updateMenu();
+                    }
                 }
             }
         });
@@ -418,7 +519,7 @@ function updateMenu() {
     const contextMenu = Menu.buildFromTemplate([
         { label: '🚀 MAC GAMING BOOSTER', enabled: false },
         { label: `${currentStatusText}`, enabled: false },
-        { label: 'Version: 2.3.2 (Smart Native Memory)', enabled: false },
+        { label: 'Version: 2.4.0 (Smart Native Memory)', enabled: false },
         { label: 'Developer: Mario (flashi)', enabled: false },
         { type: 'separator' },
         {
