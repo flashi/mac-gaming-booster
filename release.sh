@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "================================================="
-echo "   🚀 Starte automatischen Release-Prozess v2.4.0 "
+echo "   🚀 Starte automatischen Release-Prozess v2.6.0 "
 echo "================================================="
 
 # 1. GitHub Link sichern (Hier steht deine öffentliche Adresse!)
@@ -20,10 +20,10 @@ fi
 echo "📤 Übertrage reinen Code zu GitHub..."
 git add .
 # Patch v2.3.2: Alle Neuerungen inklusive des Tomb-Raider-Fokus-Fixes im Commit festgehalten
-git commit -m "Release v2.4.0: Integration of Smart Process Analytics, offline EXE metadata investigator, CrossOver winewrapper hook, and silent system filtering"
+git commit -m "Release v2.6.0: Integration of Core Settings GUI, Dynamic RAM Sliders, Live Blacklist Management, and Configurable Daemon Lifecycles"
 git push origin main
 
 echo "================================================="
-echo " 🎉 FERTIG! Version 2.4.0-Code ist live.         "
+echo " 🎉 FERTIG! Version 2.6.0-Code ist live.         "
 echo "================================================="
 

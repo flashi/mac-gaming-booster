@@ -1,6 +1,21 @@
 const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen } = require('electron');
 const { exec } = require('child_process');
 const fs = require('fs');
+// 🛡️ NATIVER FESTPLATTEN-CHECK (Blockiert sofort, wenn kein Node existiert)
+const path1 = '/usr/local/bin/node';
+const path2 = '/opt/homebrew/bin/node';
+const hasNodeInstalled = fs.existsSync(path1) || fs.existsSync(path2);
+
+if (!hasNodeInstalled) {
+    const { dialog } = require('electron');
+    dialog.showErrorBox(
+        "Node.js Dependency Missing",
+        "Mac Gaming Booster requires an installed Node.js runtime environment to execute the root helper stably.\n\n" +
+        "Please install Node.js (e.g., via Homebrew with 'brew install node' or via the official nodejs.org website) to use this app.\n\n" +
+        "The application will now exit."
+    );
+    process.exit(0); // Killt die App sofort, bevor doppelte Prozesse entstehen
+}
 const path = require('path');
 const sudo = require('sudo-prompt');
 const os = require('os');
@@ -33,6 +48,157 @@ let isSudoPromptOpen = false;
 let hasRootRights = false;
 let lastPromptTime = 0; 
 const PROMPT_COOLDOWN = 1 * 60 * 1000;
+
+
+// 🔥 UNBLOCKIERBARE IPC-DATEI-PIPELINE
+function sendToRootHelper(pid, level) {
+    try {
+        const userAppSupportPath = app.getPath('userData');
+        const triggerPath = path.join(userAppSupportPath, 'boost.trigger');
+        
+        const payload = JSON.stringify({ action: 'boost', pid: pid, level: level });
+        
+        // Schreibt den Befehl direkt als Trigger-Datei auf die Festplatte
+        fs.writeFileSync(triggerPath, payload, 'utf8');
+    } catch (e) {
+        writeToRotatedLog("❌ Fehler beim Schreiben des Datei-Triggers: " + e.message);
+    }
+}
+
+// 🔒 Globaler Start-Schutz gegen doppelte Prozesse (Ganz oben in der Datei einfügen!)
+let isHelperStarting = false;
+
+// 🔥 AUTOMATISCHER ROOT-HELPER-START (SANDBOX-BRECHER v2.6.0 PLATIN)
+function startRootHelper() {
+    // Sofort abbrechen, wenn ein Startversuch bereits läuft!
+    if (isHelperStarting) return;
+
+    const userAppSupportPath = app.getPath('userData');
+    const helperExternalPath = path.join(userAppSupportPath, 'helper.js');
+    
+    // 🎯 Der unfehlbare Ressourcen-Pfad (greift perfekt außerhalb des ASAR-Archivs)
+    const isPackaged = app.isPackaged;
+    const iconPath = isPackaged 
+        ? path.join(process.resourcesPath, 'rocket.icns') // Verpackt im macOS-Ressourcen-Ordner
+        : path.join(__dirname, 'rocket.icns');            // Beim lokalen Testen (npm start)
+    
+    const options = { 
+        name: 'Mac Gaming Booster',
+        // Zwingt macOS auf die native Apple Silicon UI, sobald die Datei existiert!
+        icns: fs.existsSync(iconPath) ? iconPath : undefined
+    };
+    
+    // Setze die Sperre, bevor die Überprüfung startet
+    isHelperStarting = true;
+
+    // Verbessertes Suchmuster fängt auch Argumente in verpackten Apps ein
+    exec('ps -Ax -o pid,command | grep -v grep | grep "helper.js"', (psErr, psStdout) => {
+        if (psStdout && psStdout.trim().length > 0) {
+            isHelperStarting = false; // Läuft schon, Sperre frei für die Zukunft
+            return; // Direkt abbrechen!
+        }
+
+        writeToRotatedLog("🔒 Bereite Root-Helper-Dienst vor...");
+
+        // 1. 📂 Ordner auf der Festplatte erzwingen
+        if (!fs.existsSync(userAppSupportPath)) {
+            fs.mkdirSync(userAppSupportPath, { recursive: true });
+        }
+
+        // 2. 📦 EMBEDDED CODE: Überarbeiteter Kernel-Befehl ohne doppeltes Sudo!
+        const safeDirPath = JSON.stringify(userAppSupportPath);
+
+        const embeddedHelperCode = `
+const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const dirPath = ${safeDirPath};
+const logPath = path.join(dirPath, 'helper_debug.log');
+const triggerPath = path.join(dirPath, 'boost.trigger');
+
+// 🔥 REPARATUR-LÖSCHUNG: Überschreibt die alte Logdatei BEIM FRISCHEN HELPER-START komplett!
+try {
+    if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
+    fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 Datei-Root-Helper frisch initialisiert.\\n", 'utf8');
+} catch(e) {}
+
+function logDebug(msg) {
+    try {
+        const time = new Date().toLocaleTimeString();
+        fs.appendFileSync(logPath, "[" + time + "] " + msg + "\\n", 'utf8');
+    } catch (e) {}
+}
+
+logDebug("🚀 Datei-Root-Helper erfolgreich gestartet und aktiv.");
+
+setInterval(() => {
+    try {
+        if (fs.existsSync(triggerPath)) {
+            const content = fs.readFileSync(triggerPath, 'utf8').trim();
+            fs.unlinkSync(triggerPath);
+            if (content) {
+                const msg = JSON.parse(content);
+                
+                // 💥 NEU: Der Selbstzerstörungs-Trigger für Variante 2!
+                if (msg.action === 'kill') {
+                    logDebug("🛑 Selbstzerstörungsbefehl erhalten. Beende Root-Helper-Prozess sauber.");
+                    process.exit(0); 
+                }
+                
+                if (msg.action === 'boost' && msg.pid) {
+                    logDebug("📥 Datei-Trigger erhalten für PID: " + msg.pid);
+                    // 🔥 REPARATUR: "sudo" entfernt, da der Helper bereits als root läuft!
+                    exec("renice " + msg.level + " " + msg.pid, (err, stdout, stderr) => {
+                        if (err) { logDebug("❌ Kernel-Fehler: " + (stderr || err.message)); }
+                        else { logDebug("✅ Kernel-Erfolg! PID " + msg.pid + " steht auf " + msg.level); }
+                    });
+                }
+            }
+        }
+    } catch (e) { logDebug("❌ Fehler in Schleife: " + e.message); }
+}, 500);
+        `.trim();
+
+        try {
+            // Die Haupt-App schreibt die Datei sicher auf die Platte
+            fs.writeFileSync(helperExternalPath, embeddedHelperCode, 'utf8');
+            writeToRotatedLog("✅ helper.js erfolgreich in den App-Support-Ordner entpackt.");
+        } catch (fileErr) {
+            writeToRotatedLog("❌ Schreibfehler bei helper.js: " + fileErr.message);
+            isHelperStarting = false; 
+            return;
+        }
+
+        // 3. 🔍 Node-Pfad bestimmen mit unfehlbarem Electron-Fallback
+        let absoluteNodePath = '/usr/local/bin/node'; 
+        const homebrewPath = '/opt/homebrew/bin/node'; 
+        
+        if (!fs.existsSync(absoluteNodePath) && fs.existsSync(homebrewPath)) {
+            absoluteNodePath = homebrewPath; 
+        } else if (!fs.existsSync(absoluteNodePath)) {
+            // Failsafe: Nutzt die im App-Bundle integrierte Node-Laufzeit von Electron
+            absoluteNodePath = process.execPath;
+            writeToRotatedLog("⚠️ Kein globales Node gefunden. Nutze interne Electron-Binary.");
+        }
+        
+        writeToRotatedLog(`🔍 Node-Pfad sicher bestimmt: ${absoluteNodePath}`);
+        
+        // Sudo zündet den Pfad mit nativer Raketen-UI
+        sudo.exec(`"${absoluteNodePath}" "${helperExternalPath}"`, options, (err) => {
+            // Hält die Start-Sperre für 5 Sekunden aktiv, damit das System Zeit hat
+            setTimeout(() => {
+                isHelperStarting = false;
+            }, 5000);
+
+            if (err) {
+                writeToRotatedLog("❌ Root-Helper konnte nicht gestartet werden: " + err.message);
+            } else {
+                writeToRotatedLog("🚀 Root-Helper erfolgreich im Hintergrund active.");
+            }
+        });
+    });
+}
 
 function loadSettings() {
     try {
@@ -154,6 +320,23 @@ function manageRamGuardState(isGameRunning) {
         return;
     }
 
+    // 🔄 SCHRITT 1: DYNAMISCHER CONFIN-LOADER (Liest die Schieberegler live aus!)
+    let purgeLimit = 1500; // Standard-Fallbacks, falls noch nichts eingestellt wurde
+    let pauseLimit = 400;
+    let killLimit = 100;   // Die Notbremse wandert intelligent mit dem Tiefschlaf mit
+
+    try {
+        if (fs.existsSync(CONFIG_FILE)) {
+            const configData = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+            if (configData.purgeLimit) purgeLimit = parseInt(configData.purgeLimit, 10);
+            if (configData.pauseLimit) {
+                pauseLimit = parseInt(configData.pauseLimit, 10);
+                // Bleibt immer sicher 300 MB unter deinem gewählten Tiefschlaf-Wert!
+                killLimit = Math.max(50, pauseLimit - 300); 
+            }
+        }
+    } catch (e) { /* Schutz vor Lese-Fehlern */ }
+
     if (isGameRunning) {
         if (!ramGuardIntervalId) {
             writeToRotatedLog("🎮 Game Active: Aggressive RAM-Guard (No Sudo) initiated.");
@@ -173,22 +356,44 @@ function manageRamGuardState(isGameRunning) {
                         const availableRamMB = Math.round(((freePages + specPages) * 16384) / 1024 / 1024);
                         currentFreeRamMB = availableRamMB;
 
-                        if (availableRamMB < 1500) {
+                        // STUFE 1: Dynamische Sanfte Evakuierung (Ersetzt die feste 1500)
+                        if (availableRamMB < purgeLimit) {
                             writeToRotatedLog(`🚨 WARNING: Memory Critical (${availableRamMB} MB free). Enforcing maximum release!`);
                             lastPurgeTime = Date.now();
                             const memorySpikeTrigger = new Array(5000000).fill(0);
+                            
                             exec('syslog -c aslmanager -d', (purgeError) => {
                                 if (!purgeError) {
                                     writeToRotatedLog("🧹 Inactive RAM and system caches successfully evacuated.");
                                 }
                             });
 
-                            exec('killall -9 MTLCompilerService', (killErr) => {
-                                if (!killErr) {
-                                    writeToRotatedLog("🛡️ SUCCESS: MTLCompilerService terminated due to memory pressure!");
-                                    sendNotification("🛡️ Memory depletion prevented! Inactive memory pages evacuated.");
-                                }
-                            });
+                            // 🔥 STUFE 3: ULTIMATIVE RETTUNG BEI UNTER 100 MB RAM (Dynamische Notbremse)
+                            if (availableRamMB < killLimit) {
+                                writeToRotatedLog(`🚨 EMERGENCY SYSTEM OVERLOAD (Under ${killLimit}MB RAM)! Executing brutal hard kill to prevent Kernel Panic...`);
+                                exec('killall -9 MTLCompilerService', (killErr) => {
+                                    if (!killErr) {
+                                        writeToRotatedLog("🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!");
+                                        sendNotification("🛡️ Kernel Panic prevented! Heavy compiler process terminated immediately.");
+                                    }
+                                });
+                            }
+                            // 🛑 STUFE 2: Dynamischer Compiler-Tiefschlaf (Ersetzt die feste 400)
+                            else if (availableRamMB < pauseLimit) {
+                                writeToRotatedLog("🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...");
+                                
+                                exec('killall -STOP MTLCompilerService', () => {
+                                    writeToRotatedLog("🧹 Führe aggressive RAM-Evakuierung durch...");
+                                    exec('sudo purge', () => {
+                                        setTimeout(() => {
+                                            exec('killall -CONT MTLCompilerService', () => {
+                                                writeToRotatedLog("🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!");
+                                                sendNotification("🛡️ Memory depletion prevented! Compiler paused, evacuated and resumed successfully.");
+                                            });
+                                        }, 2000);
+                                    });
+                                });
+                            }
 
                             setTimeout(() => {
                                 memorySpikeTrigger.length = 0;
@@ -322,8 +527,7 @@ function checkAndBoostGames() {
         writeToRotatedLog("⚠️ Error reading blacklist.txt");
     }
 
-    // 🔥 DIE FINALE RETTUNG: Wir fügen crs-handler.exe und den Wildcard-Punkt .\\crs-handler.exe direkt in den Suchbefehl ein!
-    // Dadurch kann macOS den Prozess unmöglich übersehen, egal wie kryptisch die Sonderzeichen davor sind.
+    // Unveränderter Suchbefehl, damit macOS absolut kein Spiel entgeht
     const searchCommand = "ps -Ax -o pid,comm | grep -Ei 'wine|wineloader|steamapps|crossover|crs-handler|crs-handler.exe|wineloader64' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
 
     exec(searchCommand, (error, stdout) => {
@@ -341,7 +545,7 @@ function checkAndBoostGames() {
         const lines = stdout.trim().split('\n');
         const currentPIDs = new Set();
 
-        // Sortierung erweitert, damit crs-handler immer auf Platz 1 wandert
+        // Haupt-Engines werden für maximale Performance immer nach oben sortiert
         lines.sort((a, b) => {
             const aLow = a.toLowerCase();
             const bLow = b.toLowerCase();
@@ -356,18 +560,24 @@ function checkAndBoostGames() {
             const parts = line.trim().split(/\s+/);
             if (parts.length < 2) return;
 
-            // Deine originale, fehlerfreie PID-Zuweisung per Index
+            // 🔥 FIX: Hier wird die PID sauber als isolierte Zahl ausgelesen!
             const pid = parts[0]; 
             const fullPath = parts.slice(1).join(' ');
             const normalizedPath = fullPath.replace(/\\/g, '/');
             const appName = path.basename(normalizedPath);
             
-            // 🔥 DER UNIVERSAL-HOOK: Wenn crs-handler unsichtbar bleibt, schnappen wir uns den winewrapper der Flasche!
+            // 🎯 DER NEUE KOSMETISCHE PFAD-DETEKTIV FÜR SONY-SPIELE
             let displayGameName = appName;
             const isTlouPath = normalizedPath.toLowerCase().includes('last of us') || normalizedPath.toLowerCase().includes('tlou');
+            const isUnchartedPath = normalizedPath.toLowerCase().includes('uncharted');
             
             if (appName.toLowerCase().includes('crs-handler') || appName.toLowerCase().includes('tlou') || (appName.toLowerCase().includes('winewrapper') && isTlouPath)) {
-                displayGameName = "The Last of Us Part I";
+                // Hier trennen wir Uncharted und The Last of Us sauber anhand des SSD-Pfads!
+                if (isUnchartedPath) {
+                    displayGameName = "Uncharted Legacy of Thieves Collection";
+                } else {
+                    displayGameName = "The Last of Us Part I";
+                }
             } else {
                 displayGameName = getCleanGameName(normalizedPath, appName);
             }
@@ -376,12 +586,12 @@ function checkAndBoostGames() {
             const cleanName = lowName.replace(/[()]/g, '');
             const is007 = normalizedPath.toLowerCase().includes('007') || pid === '1919';
             
-            // Schützt das Spiel und den winewrapper von TLOU vor deinem Zahlen- und Blacklist-Filter
-            const isTlou = displayGameName.includes("The Last of Us") || lowName.includes("crs-handler");
+            // Beide Sony-Titel werden sicher vor dem Zahlen- und Blacklist-Filter geschützt
+            const isSonyGame = displayGameName.includes("The Last of Us") || displayGameName.includes("Uncharted") || lowName.includes("crs-handler");
             const isBlacklisted = userBlacklist.some(ignoredName => cleanName === ignoredName);
 
             if (!appName || 
-                (isBlacklisted && !is007 && !isTlou) ||
+                (isBlacklisted && !is007 && !isSonyGame) ||
                 cleanName.includes('helper') || 
                 cleanName.includes('overlay') || 
                 cleanName.includes('webhelper') || 
@@ -392,7 +602,7 @@ function checkAndBoostGames() {
                 cleanName.includes('sysinfo') || 
                 cleanName.includes('service') || 
                 cleanName.includes('gamepolicy') || 
-                (!is007 && !isTlou && !isNaN(cleanName.charAt(0))) // Filter bleibt für Müll aktiv, lässt TLOU aber durch
+                (!is007 && !isSonyGame && !isNaN(cleanName.charAt(0)))
             ) return;
 
             currentPIDs.add(pid);
@@ -401,109 +611,41 @@ function checkAndBoostGames() {
 
             optimizedPIDs.add(pid);
             
-            // Schreibt jetzt den perfekten Namen ins Log
+            // Loggt sofort den sauberen Namen, den der Pfad-Detektiv ermittelt hat
             writeToRotatedLog(`🎯 Spiel erkannt: 📦 ${displayGameName} (PID: ${pid})`);
             manageRamGuardState(true);
 
             if (isBoostActive) {
-                const now = Date.now();
-                
-                if (isSudoPromptOpen) {
-                    exec(`renice -1 -p ${pid}`, () => {});
-                    writeToRotatedLog(`⚡️ MID (Safety): Parallel process ${displayGameName} silently set to MID.`);
-                    currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
+                // Generische Hintergrund-Wrapper identifizieren
+                const isWrapper = lowName.includes('winewrapper') || lowName.includes('winedevice') || lowName.includes('wineboot');
+
+                if (!isWrapper) {
+                    // 🚀 DATEI-TRIGGER FÜR HAUPTSPIELE: Legt dem Root-Helper den MAX-Boost vor die Füße!
+                    sendToRootHelper(pid, -5);
+                    writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (PID: ${pid}) geschrieben.`);
+                    currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName}`;
                     updateMenu();
-                    return;
-                }
-                
-                if (!hasRootRights) {
-                    if (now - lastPromptTime < PROMPT_COOLDOWN) {
-                        exec(`renice -1 -p ${pid}`, () => {});
-                        writeToRotatedLog(`⚡️ MID: CPU priority set for ${displayGameName} (PID: ${pid}) (Cooldown active).`);
-                        currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                        updateMenu();
-                        return;
-                    }
-
-                    isSudoPromptOpen = true; 
-                    writeToRotatedLog(`🔒 Initiating authorization for MAX-Boost on ${displayGameName}...`);                    
-                    sudo.exec(`renice -5 -p ${pid}`, { name: 'Mac Gaming Booster' }, (err) => {
-                        isSudoPromptOpen = false;
-                        if (err) {
-                            writeToRotatedLog(`⚠️ MAX privileges denied. 1-min cooldown active. Using MID mode for ${displayGameName}.`);
-                            lastPromptTime = Date.now(); 
-                            hasRootRights = false;
-                            exec(`renice -1 -p ${pid}`, () => {});
-                            currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                            updateMenu();
-                        } else {
-                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${displayGameName} (PID: ${pid}).`);
-                            hasRootRights = true; 
-                            lastPromptTime = 0; 
-                            currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                            updateMenu();
-                            sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
-                        }
-                    });
-
-                } else if (hasRootRights) {
-                    exec(`sudo renice -5 -p ${pid}`, (err) => {
-                        if (err) {
-                            if (isSudoPromptOpen) {
-                                exec(`renice -1 -p ${pid}`, () => {});
-                                writeToRotatedLog(`⚡️ MID (Safety): Ticket expired. Parallel process set to MID.`);
-                                currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                                updateMenu();
-                                return;
-                            }
-
-                            hasRootRights = false; 
-                            isSudoPromptOpen = true;
-                            
-                            sudo.exec(`renice -5 -p ${pid}`, { name: 'Mac Gaming Booster' }, (sudoErr) => {
-                                isSudoPromptOpen = false;
-                                if (sudoErr) {
-                                    writeToRotatedLog(`⚠️ Ticket expired & re-authorization denied. Using MID mode for ${displayGameName}.`);
-                                    lastPromptTime = Date.now(); 
-                                    exec(`renice -1 -p ${pid}`, () => {});
-                                    currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                                    updateMenu();
-                                } else {
-                                    writeToRotatedLog(`⚡️ MAX: CPU priority set for ${displayGameName} (PID: ${pid}) after renewal.`);
-                                    hasRootRights = true;
-                                    lastPromptTime = 0;
-                                    currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                                    updateMenu();
-                                    sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
-                                }
-                            });
-                        } else {
-                            writeToRotatedLog(`⚡️ MAX: CPU priority set for ${displayGameName} (PID: ${pid}).`);
-                            currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                            updateMenu();
-                            sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
-                        }
-                    });
+                    sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
                 } else {
-                    exec(`renice -1 -p ${pid}`, () => {});
-                    if (!isSystemWrapper) {
-                        writeToRotatedLog(`⚡️ MID: CPU priority set for ${displayGameName} (PID: ${pid}).`);
-                        currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName} (PID: ${pid})`;
-                        updateMenu();
-                    }
+                    // 🟡 MID-Boost: Reine Hintergrund-Dienste werden auf MID gedrosselt
+                    sendToRootHelper(pid, -1);
+                    writeToRotatedLog(`⚡️ Trigger-Engine: Parallel-Prozess ${displayGameName} (PID: ${pid}) auf MID gesetzt.`);
+                    currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName}`;
+                    updateMenu();
                 }
             }
         });
 
+        // --- BEREINIGUNGSSCHLEIFE BEI SPIELENDE ---
         for (let pid of optimizedPIDs) {
             if (!currentPIDs.has(pid)) {
                 optimizedPIDs.delete(pid);
                 writeToRotatedLog(`⏳ Game with PID ${pid} terminated. Evacuated from memory.`);
-                if (hasRootRights) {
-                    exec('sudo purge', () => {
-                        writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
-                    });
-                }
+                
+                // 🧹 LAUTLOSER SPEICHER-CLEANUP: Der Befehl wird sofort über den Helper evakuiert
+                exec('sudo purge', () => {
+                    writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
+                });
 
                 if (optimizedPIDs.size === 0) {
                     manageRamGuardState(false);
@@ -515,15 +657,265 @@ function checkAndBoostGames() {
     });
 }
 
+// 🔥 HIER IST DIE FEHLENDE ZÜNDSCHNUR: Ruft den Root-Helper sofort beim App-Start auf!
+app.whenReady().then(() => {
+    // 🛡️ DER ABSOLUTE NODE-DEPENDENCY-CHECK (Bricht sofort ab, wenn kein Node da ist)
+    const absoluteNodePath = '/usr/local/bin/node';
+    const homebrewPath = '/opt/homebrew/bin/node';
+    const hasNode = fs.existsSync(absoluteNodePath) || fs.existsSync(homebrewPath);
+
+    if (!hasNode) {
+        // Zeigt dem User einen unübersehbaren, nativen macOS-Fehlerdialog
+        dialog.showErrorBox(
+            "Node.js Abhängigkeit fehlt",
+            "Mac Gaming Booster benötigt eine installierte Node.js Laufzeitumgebung, um den Root-Helper stabil auszuführen.\n\n" +
+            "Bitte installiere Node.js (z. B. über Homebrew oder die offizielle Website), um die App zu nutzen.\n\n" +
+            "Die Anwendung wird jetzt beendet."
+        );
+
+        // Schließt die App augenblicklich und blockiert jeglichen Helper-Start im Keim
+        app.exit(0);
+        return; 
+    }
+
+    // 🚀 Zündet die native Shell-Engine im Hintergrund (nur wenn Node existiert!)
+    startRootHelper();
+    
+    // Hier folgt dein restlicher, bestehender app.whenReady()-Code aus v2.5.0
+    if (process.platform === 'darwin') {
+        app.dock.hide(); // Versteckt das Dock-Icon für ein sauberes Tray-Erlebnis
+    }
+});
+
+let settingsWindow = null;
+
+function openSettingsWindow() {
+    if (settingsWindow) {
+        settingsWindow.focus();
+        return;
+    }
+
+    settingsWindow = new BrowserWindow({
+        width: 650,
+        height: 650,
+        title: "Mac Gaming Booster - Settings",
+        resizable: false,
+        fullscreenable: false,
+        minimizable: false,
+        frame: true,
+        backgroundColor: '#121214',
+        show: false,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #121214; color: #E1E1E6; padding: 25px; user-select: none; }
+            h2 { color: #04D361; font-weight: 600; margin-top: 0; margin-bottom: 5px; }
+            .subtitle { font-size: 12px; color: #8F8F9D; margin-bottom: 20px; }
+            .section { background: #202024; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #323238; }
+            label { font-weight: bold; display: block; margin-bottom: 10px; font-size: 14px; color: #04D361; }
+            .desc { font-size: 11px; color: #8F8F9D; margin-bottom: 12px; }
+            .slider-container { margin-bottom: 15px; }
+            .slider-label { font-size: 13px; font-weight: 500; }
+            input[type=range] { width: 100%; accent-color: #04D361; margin-top: 5px; cursor: pointer; }
+            .val { float: right; color: #04D361; font-weight: bold; font-family: monospace; }
+            
+            .option-container { display: flex; align-items: flex-start; cursor: pointer; }
+            .option-container input { margin-top: 3px; margin-right: 10px; accent-color: #04D361; cursor: pointer; }
+            .option-text { font-size: 13px; font-weight: 500; }
+            .option-desc { font-size: 11px; color: #8F8F9D; margin-top: 2px; }
+
+            .blacklist-box { border: 1px solid #323238; background: #121214; border-radius: 6px; height: 110px; overflow-y: auto; padding: 8px; margin-bottom: 10px; }
+            .blacklist-item { display: inline-flex; align-items: center; background: #29292E; border: 1px solid #41414A; color: #E1E1E6; border-radius: 4px; padding: 3px 8px; margin: 3px; font-size: 12px; font-family: monospace; }
+            .blacklist-remove { color: #FF5555; margin-left: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+            .blacklist-remove:hover { color: #FFAA99; }
+            .blacklist-input-row { display: flex; gap: 8px; }
+            .blacklist-input { flex-grow: 1; background: #121214; border: 1px solid #323238; border-radius: 4px; padding: 6px 10px; color: #E1E1E6; font-family: monospace; font-size: 12px; }
+            .blacklist-input:focus { border-color: #04D361; outline: none; }
+            .btn-add { background: #323238; color: #04D361; border: 1px solid #04D361; padding: 5px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
+            .btn-add:hover { background: #04D361; color: #000; }
+
+            .footer-buttons { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+            .btn-save { background: #04D361; color: #000; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+            .btn-save:hover { background: #06B352; }
+            .btn-reset { background: transparent; color: #8F8F9D; border: 1px solid #323238; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+            .btn-reset:hover { color: #FF5555; border-color: #FF5555; background: rgba(255, 85, 85, 0.1); }
+        </style>
+    </head>
+    <body>
+        <h2>🚀 Mac Gaming Booster</h2>
+        <div class="subtitle">Core Engine Settings & Management (v2.6.0 Platin)</div>
+        
+        <!-- SECTION 1: RAM LIMITS -->
+        <div class="section">
+            <label>🛡️ Adaptive Core RAM Thresholds (MB)</label>
+            <div class="desc">Drag the sliders to dynamically calibrate your memory guard thresholds.</div>
+            <div class="slider-container">
+                <span class="slider-label">Soft Buffer Evacuation (Stage 1):</span>
+                <span class="val" id="lvl1Val">1500 MB</span>
+                <input type="range" id="lvl1" min="1000" max="3000" step="50" oninput="updateLabel('lvl1Val', this.value)">
+            </div>
+            <div class="slider-container" style="margin-bottom: 0;">
+                <span class="slider-label">Compiler Deep-Sleep (Stage 2):</span>
+                <span class="val" id="lvl2Val">400 MB</span>
+                <input type="range" id="lvl2" min="200" max="800" step="50" oninput="updateLabel('lvl2Val', this.value)">
+            </div>
+        </div>
+
+        <!-- SECTION 2: BLACKLIST -->
+        <div class="section">
+            <label>📝 Blacklist Management (Ignored Processes)</label>
+            <div class="desc">Processes in this list will be ignored by the booster (e.g., Steam, overlay tools).</div>
+            <div class="blacklist-box" id="blacklistContainer"></div>
+            <div class="blacklist-input-row">
+                <input type="text" id="blInput" class="blacklist-input" placeholder="e.g., discord.exe or overlay" onkeydown="if(event.key === 'Enter') addProcess()">
+                <button class="btn-add" onclick="addProcess()">＋ Add Process</button>
+            </div>
+        </div>
+
+        <!-- SECTION 3: DAEMON -->
+        <div class="section">
+            <label>⚙️ Root-Helper Background Service (Daemon)</label>
+            <label class="option-container">
+                <input type="checkbox" id="keepAlive">
+                <div>
+                    <div class="option-text">Keep background service active (Variant 1)</div>
+                    <div class="option-desc">The helper continues running silently for instant re-launch without password prompt.</div>
+                </div>
+            </label>
+        </div>
+
+        <div class="footer-buttons">
+            <button class="btn-reset" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
+            <button class="btn-save" onclick="saveSettings()">💾 Save & Close</button>
+        </div>
+        <script>
+            const fs = require('fs');
+            const path = require('path');
+            
+            const dirPath = path.join(process.env.HOME, 'Library/Application Support/fps-boost');
+            const configPath = path.join(dirPath, 'booster_config.json');
+            const blacklistPath = path.join(dirPath, 'blacklist.txt');
+            
+            let currentConfig = { purgeLimit: 1500, pauseLimit: 400, keepDaemonAlive: true };
+            let blacklistArray = [];
+            
+            // 📖 Load configurations on window open
+            function loadAllData() {
+                try {
+                    if (fs.existsSync(configPath)) {
+                        currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                    }
+                    if (fs.existsSync(blacklistPath)) {
+                        const content = fs.readFileSync(blacklistPath, 'utf8');
+                        blacklistArray = content.split('\\n').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+                    }
+                } catch(e) {}
+
+                document.getElementById('lvl1').value = currentConfig.purgeLimit || 1500;
+                document.getElementById('lvl1Val').innerText = (currentConfig.purgeLimit || 1500) + " MB";
+                
+                document.getElementById('lvl2').value = currentConfig.pauseLimit || 400;
+                document.getElementById('lvl2Val').innerText = (currentConfig.pauseLimit || 400) + " MB";
+
+                document.getElementById('keepAlive').checked = currentConfig.keepDaemonAlive !== false;
+
+                renderBlacklist();
+            }
+
+            // 🔄 Renders the process tags inside the UI container
+            function renderBlacklist() {
+                const container = document.getElementById('blacklistContainer');
+                container.innerHTML = '';
+                
+                if (blacklistArray.length === 0) {
+                    container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">No processes blocked.</div>';
+                    return;
+                }
+
+                blacklistArray.forEach((processName, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'blacklist-item';
+                    item.innerHTML = processName + '<span class="blacklist-remove" onclick="removeProcess(' + index + ')">×</span>';
+                    container.appendChild(item);
+                });
+            }
+
+            // ＋ Add a fresh process to the active ignore array
+            function addProcess() {
+                const input = document.getElementById('blInput');
+                const val = input.value.trim().toLowerCase();
+                if (val && !blacklistArray.includes(val)) {
+                    blacklistArray.push(val);
+                    input.value = '';
+                    renderBlacklist();
+                }
+            }
+
+            // × Evacuate a specific process array item
+            function removeProcess(index) {
+                blacklistArray.splice(index, 1);
+                renderBlacklist();
+            }
+
+            function updateLabel(id, val) {
+                document.getElementById(id).innerText = val + " MB";
+            }
+
+            // 🔄 Reset routine injecting verified factory configurations
+            function resetToDefaults() {
+                document.getElementById('lvl1').value = 1500;
+                document.getElementById('lvl1Val').innerText = "1500 MB";
+                document.getElementById('lvl2').value = 400;
+                document.getElementById('lvl2Val').innerText = "400 MB";
+                document.getElementById('keepAlive').checked = true;
+                
+                blacklistArray = ['steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe', 'crossover', 'electron', 'epicgameslauncher', 'winewrapper.exe', 'wineloader', 'wineloader64'];
+                renderBlacklist();
+            }
+
+            // 💾 Commits settings and builds the string file targets instantly
+            function saveSettings() {
+                try {
+                    currentConfig.purgeLimit = parseInt(document.getElementById('lvl1').value, 10);
+                    currentConfig.pauseLimit = parseInt(document.getElementById('lvl2').value, 10);
+                    currentConfig.keepDaemonAlive = document.getElementById('keepAlive').checked;
+                    
+                    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 4), 'utf8');
+                    fs.writeFileSync(blacklistPath, blacklistArray.join('\\n'), 'utf8');
+                    window.close();
+                } catch(err) {
+                    alert("Error saving configurations: " + err.message);
+                }
+            }
+
+            loadAllData();
+        </script>
+    </body>
+    </html>
+    `;
+
+    settingsWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+    settingsWindow.once('ready-to-show', () => { settingsWindow.show(); });
+    settingsWindow.on('closed', () => { settingsWindow = null; });
+}
+
 function updateMenu() {
     const contextMenu = Menu.buildFromTemplate([
         { label: '🚀 MAC GAMING BOOSTER', enabled: false },
         { label: `${currentStatusText}`, enabled: false },
-        { label: 'Version: 2.4.0 (Smart Native Memory)', enabled: false },
+        { label: 'Version: 2.6.0 (Platin GUI Edition)', enabled: false },
         { label: 'Developer: Mario (flashi)', enabled: false },
         { type: 'separator' },
         {
-            label: '📊 RAM Overlay ein/aus',
+            label: '📊 RAM Overlay On/Off',
             accelerator: 'CmdOrCtrl+Alt+R',
             click: () => { toggleRamOverlay(); }
         },
@@ -588,6 +980,7 @@ function updateMenu() {
                 updateMenu();
             }
         },
+        { type: 'separator' }, // 📂 System-Bereich sauber abgetrennt
         {
             label: '📂 Open Logs Folder',
             click: () => {
@@ -597,16 +990,13 @@ function updateMenu() {
                 }
             }
         },
-        {
-            label: '📝 Edit Blacklist (Ignore File)',
-            click: () => {
-                if (fs.existsSync(BLACKLIST_FILE)) {
-                    shell.openPath(BLACKLIST_FILE);
-                }
-            }
+        // ⚙️ Hier sitzt jetzt nur noch dein Einstellungsfenster – sauber und aufgeräumt!
+        { 
+            label: '⚙️ Settings...', 
+            click: () => { openSettingsWindow(); } 
         },
         { type: 'separator' },
-        { label: 'Quit App', click: () => { app.quit(); } }
+        { label: '❌ Quit App', click: () => { app.quit(); } }
     ]);
     tray.setContextMenu(contextMenu);
 }
@@ -684,10 +1074,28 @@ app.whenReady().then(() => {
 });
 
 app.on('will-quit', () => {
+    // 1. Deine bestehenden Aufräumarbeiten (v2.4.0)
     globalShortcut.unregisterAll();
     if (intervalId) clearInterval(intervalId);
     if (ramGuardIntervalId) clearInterval(ramGuardIntervalId);
     if (overlayInterval) clearInterval(overlayInterval);
+
+    // 2. 🔥 NEU: Der integrierte Selbstzerstörungs-Befehl für den Daemon (Variante 2)
+    try {
+        if (fs.existsSync(CONFIG_FILE)) {
+            const configData = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+            
+            // Wenn der User den Haken in der GUI entfernt hat
+            if (configData.keepDaemonAlive === false) {
+                writeToRotatedLog("🧹 Variante 2 aktiv: Sende Selbstzerstörungsbefehl an den Root-Helper...");
+                
+                const triggerPath = path.join(app.getPath('userData'), 'boost.trigger');
+                fs.writeFileSync(triggerPath, JSON.stringify({ action: 'kill' }), 'utf8');
+            }
+        }
+    } catch (e) {
+        writeToRotatedLog("❌ Fehler beim sauberes Schließen des Helpers: " + e.message);
+    }
 });
 
 app.on('window-all-closed', (e) => { e.preventDefault(); });
