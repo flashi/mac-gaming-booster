@@ -1,0 +1,659 @@
+[9:08:55 PM] 🚀 App initiated - Persistent logging ACTIVE.
+[9:08:55 PM] 🔒 Bereite Root-Helper-Dienst vor...
+[9:08:55 PM] ✅ helper.js erfolgreich in den App-Support-Ordner entpackt.
+[9:08:55 PM] 🔍 Node-Pfad sicher bestimmt: /usr/local/bin/node
+[9:09:19 PM] 🎯 Spiel erkannt: 📦 Uncharted Legacy of Thieves Collection (PID: 29717)
+[9:09:19 PM] 🎮 Game Active: Aggressive RAM-Guard (No Sudo) initiated.
+[9:09:19 PM] ⚡️ Trigger-Engine: MAX-Boost für Uncharted Legacy of Thieves Collection (PID: 29717) geschrieben.
+[9:09:19 PM] 🎯 Spiel erkannt: 📦 Uncharted Legacy of Thieves Collection (PID: 29712)
+[9:09:19 PM] ⚡️ Trigger-Engine: MAX-Boost für Uncharted Legacy of Thieves Collection (PID: 29712) geschrieben.
+[9:10:19 PM] 🚨 WARNING: Memory Critical (1486 MB free). Enforcing maximum release!
+[9:10:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:11:04 PM] 🚨 WARNING: Memory Critical (1045 MB free). Enforcing maximum release!
+[9:11:04 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:11:34 PM] 🚨 WARNING: Memory Critical (1055 MB free). Enforcing maximum release!
+[9:11:34 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:12:04 PM] 🚨 WARNING: Memory Critical (636 MB free). Enforcing maximum release!
+[9:12:04 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:12:34 PM] 🚨 WARNING: Memory Critical (625 MB free). Enforcing maximum release!
+[9:12:34 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:13:04 PM] 🚨 WARNING: Memory Critical (618 MB free). Enforcing maximum release!
+[9:13:04 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:13:34 PM] 🚨 WARNING: Memory Critical (181 MB free). Enforcing maximum release!
+[9:13:34 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[9:13:34 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:13:34 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[9:13:36 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[9:14:04 PM] 🚨 WARNING: Memory Critical (1162 MB free). Enforcing maximum release!
+[9:14:04 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:14:34 PM] 🚨 WARNING: Memory Critical (564 MB free). Enforcing maximum release!
+[9:14:34 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:16:10 PM] 🚨 WARNING: Memory Critical (1492 MB free). Enforcing maximum release!
+[9:16:10 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:17:01 PM] 🚨 WARNING: Memory Critical (1378 MB free). Enforcing maximum release!
+[9:17:01 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:17:31 PM] 🚨 WARNING: Memory Critical (454 MB free). Enforcing maximum release!
+[9:17:31 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:18:01 PM] 🚨 WARNING: Memory Critical (608 MB free). Enforcing maximum release!
+[9:18:01 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:18:31 PM] 🚨 WARNING: Memory Critical (610 MB free). Enforcing maximum release!
+[9:18:31 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:19:01 PM] 🚨 WARNING: Memory Critical (1260 MB free). Enforcing maximum release!
+[9:19:01 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:19:31 PM] 🚨 WARNING: Memory Critical (1332 MB free). Enforcing maximum release!
+[9:19:31 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:20:07 PM] 🚨 WARNING: Memory Critical (1463 MB free). Enforcing maximum release!
+[9:20:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:20:37 PM] 🚨 WARNING: Memory Critical (817 MB free). Enforcing maximum release!
+[9:20:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:21:07 PM] 🚨 WARNING: Memory Critical (1038 MB free). Enforcing maximum release!
+[9:21:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:21:37 PM] 🚨 WARNING: Memory Critical (728 MB free). Enforcing maximum release!
+[9:21:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:22:07 PM] 🚨 WARNING: Memory Critical (1414 MB free). Enforcing maximum release!
+[9:22:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:22:37 PM] 🚨 WARNING: Memory Critical (1156 MB free). Enforcing maximum release!
+[9:22:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:23:07 PM] 🚨 WARNING: Memory Critical (1056 MB free). Enforcing maximum release!
+[9:23:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:23:37 PM] 🚨 WARNING: Memory Critical (1251 MB free). Enforcing maximum release!
+[9:23:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:24:07 PM] 🚨 WARNING: Memory Critical (1115 MB free). Enforcing maximum release!
+[9:24:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:24:37 PM] 🚨 WARNING: Memory Critical (596 MB free). Enforcing maximum release!
+[9:24:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:25:07 PM] 🚨 WARNING: Memory Critical (1304 MB free). Enforcing maximum release!
+[9:25:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:26:17 PM] 🚨 WARNING: Memory Critical (1465 MB free). Enforcing maximum release!
+[9:26:17 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:26:50 PM] 🚨 WARNING: Memory Critical (1218 MB free). Enforcing maximum release!
+[9:26:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:27:20 PM] 🚨 WARNING: Memory Critical (1367 MB free). Enforcing maximum release!
+[9:27:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:28:02 PM] 🚨 WARNING: Memory Critical (1309 MB free). Enforcing maximum release!
+[9:28:02 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:30:11 PM] 🚨 WARNING: Memory Critical (1242 MB free). Enforcing maximum release!
+[9:30:11 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:30:44 PM] 🚨 WARNING: Memory Critical (1341 MB free). Enforcing maximum release!
+[9:30:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:31:14 PM] 🚨 WARNING: Memory Critical (1088 MB free). Enforcing maximum release!
+[9:31:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:31:44 PM] 🚨 WARNING: Memory Critical (1072 MB free). Enforcing maximum release!
+[9:31:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:32:14 PM] 🚨 WARNING: Memory Critical (543 MB free). Enforcing maximum release!
+[9:32:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:32:44 PM] 🚨 WARNING: Memory Critical (812 MB free). Enforcing maximum release!
+[9:32:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:33:14 PM] 🚨 WARNING: Memory Critical (641 MB free). Enforcing maximum release!
+[9:33:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:33:44 PM] 🚨 WARNING: Memory Critical (739 MB free). Enforcing maximum release!
+[9:33:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:34:14 PM] 🚨 WARNING: Memory Critical (195 MB free). Enforcing maximum release!
+[9:34:14 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[9:34:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:34:14 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[9:34:16 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[9:34:44 PM] 🚨 WARNING: Memory Critical (1244 MB free). Enforcing maximum release!
+[9:34:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:35:14 PM] 🚨 WARNING: Memory Critical (1241 MB free). Enforcing maximum release!
+[9:35:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:35:44 PM] 🚨 WARNING: Memory Critical (451 MB free). Enforcing maximum release!
+[9:35:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:36:14 PM] 🚨 WARNING: Memory Critical (1482 MB free). Enforcing maximum release!
+[9:36:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:36:47 PM] 🚨 WARNING: Memory Critical (1064 MB free). Enforcing maximum release!
+[9:36:47 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:37:17 PM] 🚨 WARNING: Memory Critical (1215 MB free). Enforcing maximum release!
+[9:37:17 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:37:47 PM] 🚨 WARNING: Memory Critical (1424 MB free). Enforcing maximum release!
+[9:37:47 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:38:17 PM] 🚨 WARNING: Memory Critical (1159 MB free). Enforcing maximum release!
+[9:38:17 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:38:47 PM] 🚨 WARNING: Memory Critical (891 MB free). Enforcing maximum release!
+[9:38:47 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:39:23 PM] 🚨 WARNING: Memory Critical (1093 MB free). Enforcing maximum release!
+[9:39:23 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:40:08 PM] 🚨 WARNING: Memory Critical (1393 MB free). Enforcing maximum release!
+[9:40:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:40:38 PM] 🚨 WARNING: Memory Critical (1258 MB free). Enforcing maximum release!
+[9:40:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:41:11 PM] 🚨 WARNING: Memory Critical (491 MB free). Enforcing maximum release!
+[9:41:11 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:41:41 PM] 🚨 WARNING: Memory Critical (989 MB free). Enforcing maximum release!
+[9:41:41 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:42:17 PM] 🚨 WARNING: Memory Critical (1272 MB free). Enforcing maximum release!
+[9:42:17 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:42:47 PM] 🚨 WARNING: Memory Critical (1354 MB free). Enforcing maximum release!
+[9:42:47 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:43:17 PM] 🚨 WARNING: Memory Critical (999 MB free). Enforcing maximum release!
+[9:43:17 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:43:47 PM] 🚨 WARNING: Memory Critical (955 MB free). Enforcing maximum release!
+[9:43:47 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:44:17 PM] 🚨 WARNING: Memory Critical (1060 MB free). Enforcing maximum release!
+[9:44:17 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:45:18 PM] 🚨 WARNING: Memory Critical (1162 MB free). Enforcing maximum release!
+[9:45:18 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:45:48 PM] 🚨 WARNING: Memory Critical (892 MB free). Enforcing maximum release!
+[9:45:48 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:46:24 PM] 🚨 WARNING: Memory Critical (1478 MB free). Enforcing maximum release!
+[9:46:24 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:46:57 PM] 🚨 WARNING: Memory Critical (1243 MB free). Enforcing maximum release!
+[9:46:57 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:47:27 PM] 🚨 WARNING: Memory Critical (1055 MB free). Enforcing maximum release!
+[9:47:27 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:47:57 PM] 🚨 WARNING: Memory Critical (545 MB free). Enforcing maximum release!
+[9:47:57 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:48:27 PM] 🚨 WARNING: Memory Critical (934 MB free). Enforcing maximum release!
+[9:48:27 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:48:57 PM] 🚨 WARNING: Memory Critical (1238 MB free). Enforcing maximum release!
+[9:48:57 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:49:27 PM] 🚨 WARNING: Memory Critical (602 MB free). Enforcing maximum release!
+[9:49:27 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:49:57 PM] 🚨 WARNING: Memory Critical (718 MB free). Enforcing maximum release!
+[9:49:57 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:50:27 PM] 🚨 WARNING: Memory Critical (292 MB free). Enforcing maximum release!
+[9:50:27 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[9:50:27 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:50:27 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[9:50:29 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[9:50:57 PM] 🚨 WARNING: Memory Critical (805 MB free). Enforcing maximum release!
+[9:50:57 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:51:30 PM] 🚨 WARNING: Memory Critical (1460 MB free). Enforcing maximum release!
+[9:51:30 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:52:00 PM] 🚨 WARNING: Memory Critical (1104 MB free). Enforcing maximum release!
+[9:52:00 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:52:30 PM] 🚨 WARNING: Memory Critical (945 MB free). Enforcing maximum release!
+[9:52:30 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:53:00 PM] 🚨 WARNING: Memory Critical (1058 MB free). Enforcing maximum release!
+[9:53:00 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:53:30 PM] 🚨 WARNING: Memory Critical (1415 MB free). Enforcing maximum release!
+[9:53:30 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:54:00 PM] 🚨 WARNING: Memory Critical (1164 MB free). Enforcing maximum release!
+[9:54:00 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:54:30 PM] 🚨 WARNING: Memory Critical (1044 MB free). Enforcing maximum release!
+[9:54:30 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:55:00 PM] 🚨 WARNING: Memory Critical (1185 MB free). Enforcing maximum release!
+[9:55:00 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:55:30 PM] 🚨 WARNING: Memory Critical (1192 MB free). Enforcing maximum release!
+[9:55:30 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:56:00 PM] 🚨 WARNING: Memory Critical (1062 MB free). Enforcing maximum release!
+[9:56:00 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:56:33 PM] 🚨 WARNING: Memory Critical (1486 MB free). Enforcing maximum release!
+[9:56:33 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:57:03 PM] 🚨 WARNING: Memory Critical (885 MB free). Enforcing maximum release!
+[9:57:03 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:57:33 PM] 🚨 WARNING: Memory Critical (1193 MB free). Enforcing maximum release!
+[9:57:33 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:58:03 PM] 🚨 WARNING: Memory Critical (1124 MB free). Enforcing maximum release!
+[9:58:03 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:58:36 PM] 🚨 WARNING: Memory Critical (1071 MB free). Enforcing maximum release!
+[9:58:36 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:59:12 PM] 🚨 WARNING: Memory Critical (1330 MB free). Enforcing maximum release!
+[9:59:12 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:59:42 PM] 🚨 WARNING: Memory Critical (125 MB free). Enforcing maximum release!
+[9:59:42 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[9:59:42 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[9:59:42 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[9:59:44 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[10:00:12 PM] 🚨 WARNING: Memory Critical (910 MB free). Enforcing maximum release!
+[10:00:12 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:00:42 PM] 🚨 WARNING: Memory Critical (1245 MB free). Enforcing maximum release!
+[10:00:42 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:01:12 PM] 🚨 WARNING: Memory Critical (1177 MB free). Enforcing maximum release!
+[10:01:12 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:01:42 PM] 🚨 WARNING: Memory Critical (1358 MB free). Enforcing maximum release!
+[10:01:42 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:02:12 PM] 🚨 WARNING: Memory Critical (1229 MB free). Enforcing maximum release!
+[10:02:12 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:02:42 PM] 🚨 WARNING: Memory Critical (1362 MB free). Enforcing maximum release!
+[10:02:42 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:03:12 PM] 🚨 WARNING: Memory Critical (1474 MB free). Enforcing maximum release!
+[10:03:12 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:03:42 PM] 🚨 WARNING: Memory Critical (743 MB free). Enforcing maximum release!
+[10:03:42 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:04:12 PM] 🚨 WARNING: Memory Critical (1174 MB free). Enforcing maximum release!
+[10:04:12 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:04:42 PM] 🚨 WARNING: Memory Critical (1118 MB free). Enforcing maximum release!
+[10:04:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:05:13 PM] 🚨 WARNING: Memory Critical (1270 MB free). Enforcing maximum release!
+[10:05:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:05:43 PM] 🚨 WARNING: Memory Critical (642 MB free). Enforcing maximum release!
+[10:05:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:06:13 PM] 🚨 WARNING: Memory Critical (1038 MB free). Enforcing maximum release!
+[10:06:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:06:43 PM] 🚨 WARNING: Memory Critical (788 MB free). Enforcing maximum release!
+[10:06:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:07:13 PM] 🚨 WARNING: Memory Critical (1224 MB free). Enforcing maximum release!
+[10:07:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:07:43 PM] 🚨 WARNING: Memory Critical (1305 MB free). Enforcing maximum release!
+[10:07:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:08:40 PM] 🚨 WARNING: Memory Critical (1344 MB free). Enforcing maximum release!
+[10:08:40 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:09:10 PM] 🚨 WARNING: Memory Critical (1213 MB free). Enforcing maximum release!
+[10:09:10 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:09:43 PM] 🚨 WARNING: Memory Critical (790 MB free). Enforcing maximum release!
+[10:09:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:10:13 PM] 🚨 WARNING: Memory Critical (595 MB free). Enforcing maximum release!
+[10:10:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:10:43 PM] 🚨 WARNING: Memory Critical (711 MB free). Enforcing maximum release!
+[10:10:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:11:13 PM] 🚨 WARNING: Memory Critical (951 MB free). Enforcing maximum release!
+[10:11:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:11:43 PM] 🚨 WARNING: Memory Critical (752 MB free). Enforcing maximum release!
+[10:11:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:12:19 PM] 🚨 WARNING: Memory Critical (1480 MB free). Enforcing maximum release!
+[10:12:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:13:01 PM] 🚨 WARNING: Memory Critical (1254 MB free). Enforcing maximum release!
+[10:13:01 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:13:34 PM] 🚨 WARNING: Memory Critical (1458 MB free). Enforcing maximum release!
+[10:13:34 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:14:07 PM] 🚨 WARNING: Memory Critical (1279 MB free). Enforcing maximum release!
+[10:14:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:15:13 PM] 🚨 WARNING: Memory Critical (1455 MB free). Enforcing maximum release!
+[10:15:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:16:13 PM] 🚨 WARNING: Memory Critical (1160 MB free). Enforcing maximum release!
+[10:16:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:16:43 PM] 🚨 WARNING: Memory Critical (1318 MB free). Enforcing maximum release!
+[10:16:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:17:13 PM] 🚨 WARNING: Memory Critical (1476 MB free). Enforcing maximum release!
+[10:17:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:17:46 PM] 🚨 WARNING: Memory Critical (1385 MB free). Enforcing maximum release!
+[10:17:46 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:18:16 PM] 🚨 WARNING: Memory Critical (1421 MB free). Enforcing maximum release!
+[10:18:16 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:21:40 PM] 🚨 WARNING: Memory Critical (798 MB free). Enforcing maximum release!
+[10:21:40 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:22:10 PM] 🚨 WARNING: Memory Critical (1190 MB free). Enforcing maximum release!
+[10:22:10 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:22:40 PM] 🚨 WARNING: Memory Critical (897 MB free). Enforcing maximum release!
+[10:22:40 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:23:13 PM] 🚨 WARNING: Memory Critical (948 MB free). Enforcing maximum release!
+[10:23:13 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:23:43 PM] 🚨 WARNING: Memory Critical (264 MB free). Enforcing maximum release!
+[10:23:43 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[10:23:43 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:23:43 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[10:23:46 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[10:24:14 PM] 🚨 WARNING: Memory Critical (1222 MB free). Enforcing maximum release!
+[10:24:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:24:44 PM] 🚨 WARNING: Memory Critical (1487 MB free). Enforcing maximum release!
+[10:24:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:25:14 PM] 🚨 WARNING: Memory Critical (824 MB free). Enforcing maximum release!
+[10:25:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:25:44 PM] 🚨 WARNING: Memory Critical (783 MB free). Enforcing maximum release!
+[10:25:44 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:26:14 PM] 🚨 WARNING: Memory Critical (877 MB free). Enforcing maximum release!
+[10:26:14 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:26:53 PM] 🚨 WARNING: Memory Critical (1436 MB free). Enforcing maximum release!
+[10:26:53 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:27:29 PM] 🚨 WARNING: Memory Critical (1419 MB free). Enforcing maximum release!
+[10:27:29 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:27:59 PM] 🚨 WARNING: Memory Critical (1013 MB free). Enforcing maximum release!
+[10:27:59 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:28:29 PM] 🚨 WARNING: Memory Critical (929 MB free). Enforcing maximum release!
+[10:28:29 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:29:02 PM] 🚨 WARNING: Memory Critical (1347 MB free). Enforcing maximum release!
+[10:29:02 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:29:41 PM] 🚨 WARNING: Memory Critical (996 MB free). Enforcing maximum release!
+[10:29:41 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:30:11 PM] 🚨 WARNING: Memory Critical (995 MB free). Enforcing maximum release!
+[10:30:11 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:30:41 PM] 🚨 WARNING: Memory Critical (1419 MB free). Enforcing maximum release!
+[10:30:41 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:31:11 PM] 🚨 WARNING: Memory Critical (1360 MB free). Enforcing maximum release!
+[10:31:11 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:31:50 PM] 🚨 WARNING: Memory Critical (1434 MB free). Enforcing maximum release!
+[10:31:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:32:20 PM] 🚨 WARNING: Memory Critical (1012 MB free). Enforcing maximum release!
+[10:32:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:32:50 PM] 🚨 WARNING: Memory Critical (1084 MB free). Enforcing maximum release!
+[10:32:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:33:20 PM] 🚨 WARNING: Memory Critical (1016 MB free). Enforcing maximum release!
+[10:33:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:33:50 PM] 🚨 WARNING: Memory Critical (525 MB free). Enforcing maximum release!
+[10:33:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:34:20 PM] 🚨 WARNING: Memory Critical (612 MB free). Enforcing maximum release!
+[10:34:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:34:50 PM] 🚨 WARNING: Memory Critical (1047 MB free). Enforcing maximum release!
+[10:34:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:35:20 PM] 🚨 WARNING: Memory Critical (921 MB free). Enforcing maximum release!
+[10:35:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:35:50 PM] 🚨 WARNING: Memory Critical (859 MB free). Enforcing maximum release!
+[10:35:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:36:20 PM] 🚨 WARNING: Memory Critical (1291 MB free). Enforcing maximum release!
+[10:36:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:36:50 PM] 🚨 WARNING: Memory Critical (816 MB free). Enforcing maximum release!
+[10:36:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:37:20 PM] 🚨 WARNING: Memory Critical (471 MB free). Enforcing maximum release!
+[10:37:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:37:50 PM] 🚨 WARNING: Memory Critical (613 MB free). Enforcing maximum release!
+[10:37:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:38:20 PM] 🚨 WARNING: Memory Critical (464 MB free). Enforcing maximum release!
+[10:38:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:38:50 PM] 🚨 WARNING: Memory Critical (550 MB free). Enforcing maximum release!
+[10:38:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:39:20 PM] 🚨 WARNING: Memory Critical (751 MB free). Enforcing maximum release!
+[10:39:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:39:50 PM] 🚨 WARNING: Memory Critical (682 MB free). Enforcing maximum release!
+[10:39:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:40:20 PM] 🚨 WARNING: Memory Critical (585 MB free). Enforcing maximum release!
+[10:40:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:40:50 PM] 🚨 WARNING: Memory Critical (268 MB free). Enforcing maximum release!
+[10:40:50 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[10:40:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:40:50 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[10:40:52 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[10:41:20 PM] 🚨 WARNING: Memory Critical (668 MB free). Enforcing maximum release!
+[10:41:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:41:50 PM] 🚨 WARNING: Memory Critical (520 MB free). Enforcing maximum release!
+[10:41:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:42:20 PM] 🚨 WARNING: Memory Critical (1019 MB free). Enforcing maximum release!
+[10:42:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:42:50 PM] 🚨 WARNING: Memory Critical (756 MB free). Enforcing maximum release!
+[10:42:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:43:20 PM] 🚨 WARNING: Memory Critical (640 MB free). Enforcing maximum release!
+[10:43:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:43:50 PM] 🚨 WARNING: Memory Critical (794 MB free). Enforcing maximum release!
+[10:43:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:44:20 PM] 🚨 WARNING: Memory Critical (135 MB free). Enforcing maximum release!
+[10:44:20 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[10:44:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:44:20 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[10:44:22 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[10:44:50 PM] 🚨 WARNING: Memory Critical (735 MB free). Enforcing maximum release!
+[10:44:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:45:20 PM] 🚨 WARNING: Memory Critical (1006 MB free). Enforcing maximum release!
+[10:45:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:45:50 PM] 🚨 WARNING: Memory Critical (976 MB free). Enforcing maximum release!
+[10:45:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:46:20 PM] 🚨 WARNING: Memory Critical (674 MB free). Enforcing maximum release!
+[10:46:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:46:51 PM] 🚨 WARNING: Memory Critical (465 MB free). Enforcing maximum release!
+[10:46:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:47:21 PM] 🚨 WARNING: Memory Critical (650 MB free). Enforcing maximum release!
+[10:47:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:47:51 PM] 🚨 WARNING: Memory Critical (381 MB free). Enforcing maximum release!
+[10:47:51 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[10:47:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:47:51 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[10:47:53 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[10:48:21 PM] 🚨 WARNING: Memory Critical (417 MB free). Enforcing maximum release!
+[10:48:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:48:51 PM] 🚨 WARNING: Memory Critical (960 MB free). Enforcing maximum release!
+[10:48:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:49:21 PM] 🚨 WARNING: Memory Critical (719 MB free). Enforcing maximum release!
+[10:49:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:49:51 PM] 🚨 WARNING: Memory Critical (832 MB free). Enforcing maximum release!
+[10:49:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:50:21 PM] 🚨 WARNING: Memory Critical (913 MB free). Enforcing maximum release!
+[10:50:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:50:51 PM] 🚨 WARNING: Memory Critical (229 MB free). Enforcing maximum release!
+[10:50:51 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[10:50:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:50:51 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[10:50:53 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[10:51:21 PM] 🚨 WARNING: Memory Critical (649 MB free). Enforcing maximum release!
+[10:51:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:51:51 PM] 🚨 WARNING: Memory Critical (639 MB free). Enforcing maximum release!
+[10:51:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:52:21 PM] 🚨 WARNING: Memory Critical (715 MB free). Enforcing maximum release!
+[10:52:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:52:51 PM] 🚨 WARNING: Memory Critical (648 MB free). Enforcing maximum release!
+[10:52:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:53:21 PM] 🚨 WARNING: Memory Critical (430 MB free). Enforcing maximum release!
+[10:53:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:53:51 PM] 🚨 WARNING: Memory Critical (511 MB free). Enforcing maximum release!
+[10:53:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:54:21 PM] 🚨 WARNING: Memory Critical (856 MB free). Enforcing maximum release!
+[10:54:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:54:51 PM] 🚨 WARNING: Memory Critical (441 MB free). Enforcing maximum release!
+[10:54:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:55:21 PM] 🚨 WARNING: Memory Critical (446 MB free). Enforcing maximum release!
+[10:55:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:55:51 PM] 🚨 WARNING: Memory Critical (567 MB free). Enforcing maximum release!
+[10:55:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:56:21 PM] 🚨 WARNING: Memory Critical (578 MB free). Enforcing maximum release!
+[10:56:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:56:51 PM] 🚨 WARNING: Memory Critical (480 MB free). Enforcing maximum release!
+[10:56:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:57:21 PM] 🚨 WARNING: Memory Critical (816 MB free). Enforcing maximum release!
+[10:57:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:57:51 PM] 🚨 WARNING: Memory Critical (513 MB free). Enforcing maximum release!
+[10:57:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:58:21 PM] 🚨 WARNING: Memory Critical (677 MB free). Enforcing maximum release!
+[10:58:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:58:51 PM] 🚨 WARNING: Memory Critical (418 MB free). Enforcing maximum release!
+[10:58:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:59:21 PM] 🚨 WARNING: Memory Critical (749 MB free). Enforcing maximum release!
+[10:59:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[10:59:51 PM] 🚨 WARNING: Memory Critical (590 MB free). Enforcing maximum release!
+[10:59:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:00:21 PM] 🚨 WARNING: Memory Critical (750 MB free). Enforcing maximum release!
+[11:00:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:00:51 PM] 🚨 WARNING: Memory Critical (1105 MB free). Enforcing maximum release!
+[11:00:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:01:21 PM] 🚨 WARNING: Memory Critical (947 MB free). Enforcing maximum release!
+[11:01:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:01:51 PM] 🚨 WARNING: Memory Critical (759 MB free). Enforcing maximum release!
+[11:01:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:02:21 PM] 🚨 WARNING: Memory Critical (929 MB free). Enforcing maximum release!
+[11:02:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:02:51 PM] 🚨 WARNING: Memory Critical (780 MB free). Enforcing maximum release!
+[11:02:51 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:03:21 PM] 🚨 WARNING: Memory Critical (838 MB free). Enforcing maximum release!
+[11:03:21 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:03:54 PM] 🚨 WARNING: Memory Critical (1459 MB free). Enforcing maximum release!
+[11:03:54 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:04:36 PM] 🚨 WARNING: Memory Critical (1385 MB free). Enforcing maximum release!
+[11:04:36 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:05:06 PM] 🚨 WARNING: Memory Critical (806 MB free). Enforcing maximum release!
+[11:05:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:05:37 PM] 🚨 WARNING: Memory Critical (1436 MB free). Enforcing maximum release!
+[11:05:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:06:07 PM] 🚨 WARNING: Memory Critical (1345 MB free). Enforcing maximum release!
+[11:06:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:06:49 PM] 🚨 WARNING: Memory Critical (1142 MB free). Enforcing maximum release!
+[11:06:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:07:19 PM] 🚨 WARNING: Memory Critical (1166 MB free). Enforcing maximum release!
+[11:07:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:07:49 PM] 🚨 WARNING: Memory Critical (1345 MB free). Enforcing maximum release!
+[11:07:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:08:19 PM] 🚨 WARNING: Memory Critical (884 MB free). Enforcing maximum release!
+[11:08:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:08:49 PM] 🚨 WARNING: Memory Critical (600 MB free). Enforcing maximum release!
+[11:08:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:09:19 PM] 🚨 WARNING: Memory Critical (446 MB free). Enforcing maximum release!
+[11:09:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:09:49 PM] 🚨 WARNING: Memory Critical (695 MB free). Enforcing maximum release!
+[11:09:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:10:19 PM] 🚨 WARNING: Memory Critical (221 MB free). Enforcing maximum release!
+[11:10:19 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:10:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:10:19 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:10:21 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:10:49 PM] 🚨 WARNING: Memory Critical (377 MB free). Enforcing maximum release!
+[11:10:49 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:10:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:10:49 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:10:51 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:11:19 PM] 🚨 WARNING: Memory Critical (775 MB free). Enforcing maximum release!
+[11:11:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:11:49 PM] 🚨 WARNING: Memory Critical (890 MB free). Enforcing maximum release!
+[11:11:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:12:19 PM] 🚨 WARNING: Memory Critical (692 MB free). Enforcing maximum release!
+[11:12:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:12:49 PM] 🚨 WARNING: Memory Critical (1433 MB free). Enforcing maximum release!
+[11:12:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:13:19 PM] 🚨 WARNING: Memory Critical (1019 MB free). Enforcing maximum release!
+[11:13:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:13:49 PM] 🚨 WARNING: Memory Critical (1344 MB free). Enforcing maximum release!
+[11:13:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:14:19 PM] 🚨 WARNING: Memory Critical (694 MB free). Enforcing maximum release!
+[11:14:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:14:49 PM] 🚨 WARNING: Memory Critical (1044 MB free). Enforcing maximum release!
+[11:14:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:15:19 PM] 🚨 WARNING: Memory Critical (558 MB free). Enforcing maximum release!
+[11:15:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:15:49 PM] 🚨 WARNING: Memory Critical (616 MB free). Enforcing maximum release!
+[11:15:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:16:19 PM] 🚨 WARNING: Memory Critical (1027 MB free). Enforcing maximum release!
+[11:16:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:16:49 PM] 🚨 WARNING: Memory Critical (1255 MB free). Enforcing maximum release!
+[11:16:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:17:22 PM] 🚨 WARNING: Memory Critical (1230 MB free). Enforcing maximum release!
+[11:17:22 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:17:55 PM] 🚨 WARNING: Memory Critical (1097 MB free). Enforcing maximum release!
+[11:17:55 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:18:37 PM] 🚨 WARNING: Memory Critical (1053 MB free). Enforcing maximum release!
+[11:18:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:19:07 PM] 🚨 WARNING: Memory Critical (1435 MB free). Enforcing maximum release!
+[11:19:07 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:19:37 PM] 🚨 WARNING: Memory Critical (508 MB free). Enforcing maximum release!
+[11:19:37 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:20:10 PM] 🚨 WARNING: Memory Critical (734 MB free). Enforcing maximum release!
+[11:20:10 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:20:40 PM] 🚨 WARNING: Memory Critical (1444 MB free). Enforcing maximum release!
+[11:20:40 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:21:16 PM] 🚨 WARNING: Memory Critical (1106 MB free). Enforcing maximum release!
+[11:21:16 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:21:46 PM] 🚨 WARNING: Memory Critical (885 MB free). Enforcing maximum release!
+[11:21:46 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:22:19 PM] 🚨 WARNING: Memory Critical (1467 MB free). Enforcing maximum release!
+[11:22:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:22:49 PM] 🚨 WARNING: Memory Critical (1192 MB free). Enforcing maximum release!
+[11:22:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:23:19 PM] 🚨 WARNING: Memory Critical (1100 MB free). Enforcing maximum release!
+[11:23:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:23:49 PM] 🚨 WARNING: Memory Critical (1434 MB free). Enforcing maximum release!
+[11:23:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:24:19 PM] 🚨 WARNING: Memory Critical (1138 MB free). Enforcing maximum release!
+[11:24:19 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:24:50 PM] 🚨 WARNING: Memory Critical (1462 MB free). Enforcing maximum release!
+[11:24:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:25:20 PM] 🚨 WARNING: Memory Critical (1241 MB free). Enforcing maximum release!
+[11:25:20 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:25:50 PM] 🚨 WARNING: Memory Critical (327 MB free). Enforcing maximum release!
+[11:25:50 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:25:50 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:25:50 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:25:52 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:26:23 PM] 🚨 WARNING: Memory Critical (1384 MB free). Enforcing maximum release!
+[11:26:23 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:26:59 PM] 🚨 WARNING: Memory Critical (1353 MB free). Enforcing maximum release!
+[11:26:59 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:27:32 PM] 🚨 WARNING: Memory Critical (1024 MB free). Enforcing maximum release!
+[11:27:32 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:28:02 PM] 🚨 WARNING: Memory Critical (965 MB free). Enforcing maximum release!
+[11:28:02 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:28:32 PM] 🚨 WARNING: Memory Critical (1272 MB free). Enforcing maximum release!
+[11:28:32 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:29:02 PM] 🚨 WARNING: Memory Critical (873 MB free). Enforcing maximum release!
+[11:29:02 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:29:32 PM] 🚨 WARNING: Memory Critical (1336 MB free). Enforcing maximum release!
+[11:29:32 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:30:02 PM] 🚨 WARNING: Memory Critical (1022 MB free). Enforcing maximum release!
+[11:30:02 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:30:32 PM] 🚨 WARNING: Memory Critical (744 MB free). Enforcing maximum release!
+[11:30:32 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:31:05 PM] 🚨 WARNING: Memory Critical (1163 MB free). Enforcing maximum release!
+[11:31:05 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:31:38 PM] 🚨 WARNING: Memory Critical (809 MB free). Enforcing maximum release!
+[11:31:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:32:08 PM] 🚨 WARNING: Memory Critical (479 MB free). Enforcing maximum release!
+[11:32:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:32:38 PM] 🚨 WARNING: Memory Critical (882 MB free). Enforcing maximum release!
+[11:32:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:33:08 PM] 🚨 WARNING: Memory Critical (1022 MB free). Enforcing maximum release!
+[11:33:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:33:38 PM] 🚨 WARNING: Memory Critical (1382 MB free). Enforcing maximum release!
+[11:33:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:34:08 PM] 🚨 WARNING: Memory Critical (1097 MB free). Enforcing maximum release!
+[11:34:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:34:38 PM] 🚨 WARNING: Memory Critical (970 MB free). Enforcing maximum release!
+[11:34:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:35:08 PM] 🚨 WARNING: Memory Critical (1195 MB free). Enforcing maximum release!
+[11:35:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:35:38 PM] 🚨 WARNING: Memory Critical (814 MB free). Enforcing maximum release!
+[11:35:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:36:08 PM] 🚨 WARNING: Memory Critical (1344 MB free). Enforcing maximum release!
+[11:36:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:36:38 PM] 🚨 WARNING: Memory Critical (1162 MB free). Enforcing maximum release!
+[11:36:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:37:08 PM] 🚨 WARNING: Memory Critical (171 MB free). Enforcing maximum release!
+[11:37:08 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:37:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:37:08 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:37:10 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:37:38 PM] 🚨 WARNING: Memory Critical (937 MB free). Enforcing maximum release!
+[11:37:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:38:08 PM] 🚨 WARNING: Memory Critical (1204 MB free). Enforcing maximum release!
+[11:38:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:38:38 PM] 🚨 WARNING: Memory Critical (1242 MB free). Enforcing maximum release!
+[11:38:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:39:08 PM] 🚨 WARNING: Memory Critical (567 MB free). Enforcing maximum release!
+[11:39:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:39:38 PM] 🚨 WARNING: Memory Critical (578 MB free). Enforcing maximum release!
+[11:39:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:40:08 PM] 🚨 WARNING: Memory Critical (639 MB free). Enforcing maximum release!
+[11:40:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:40:38 PM] 🚨 WARNING: Memory Critical (1084 MB free). Enforcing maximum release!
+[11:40:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:41:08 PM] 🚨 WARNING: Memory Critical (773 MB free). Enforcing maximum release!
+[11:41:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:41:38 PM] 🚨 WARNING: Memory Critical (462 MB free). Enforcing maximum release!
+[11:41:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:42:08 PM] 🚨 WARNING: Memory Critical (644 MB free). Enforcing maximum release!
+[11:42:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:42:38 PM] 🚨 WARNING: Memory Critical (678 MB free). Enforcing maximum release!
+[11:42:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:43:08 PM] 🚨 WARNING: Memory Critical (406 MB free). Enforcing maximum release!
+[11:43:08 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:43:38 PM] 🚨 WARNING: Memory Critical (943 MB free). Enforcing maximum release!
+[11:43:38 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:44:11 PM] 🚨 WARNING: Memory Critical (990 MB free). Enforcing maximum release!
+[11:44:11 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:44:42 PM] 🚨 WARNING: Memory Critical (598 MB free). Enforcing maximum release!
+[11:44:42 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:45:18 PM] 🚨 WARNING: Memory Critical (1294 MB free). Enforcing maximum release!
+[11:45:18 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:45:48 PM] 🚨 WARNING: Memory Critical (794 MB free). Enforcing maximum release!
+[11:45:48 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:46:18 PM] 🚨 WARNING: Memory Critical (1247 MB free). Enforcing maximum release!
+[11:46:18 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:46:48 PM] 🚨 WARNING: Memory Critical (1354 MB free). Enforcing maximum release!
+[11:46:48 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:47:24 PM] 🚨 WARNING: Memory Critical (259 MB free). Enforcing maximum release!
+[11:47:24 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:47:24 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:47:24 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:47:26 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:47:54 PM] 🚨 WARNING: Memory Critical (277 MB free). Enforcing maximum release!
+[11:47:54 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:47:54 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:47:54 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:47:56 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:48:24 PM] 🚨 WARNING: Memory Critical (337 MB free). Enforcing maximum release!
+[11:48:24 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:48:24 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:48:24 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:48:26 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:48:54 PM] 🚨 WARNING: Memory Critical (784 MB free). Enforcing maximum release!
+[11:48:54 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:49:24 PM] 🚨 WARNING: Memory Critical (682 MB free). Enforcing maximum release!
+[11:49:24 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:49:54 PM] 🚨 WARNING: Memory Critical (403 MB free). Enforcing maximum release!
+[11:49:54 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:50:24 PM] 🚨 WARNING: Memory Critical (451 MB free). Enforcing maximum release!
+[11:50:24 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:50:54 PM] 🚨 WARNING: Memory Critical (383 MB free). Enforcing maximum release!
+[11:50:54 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:50:54 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:50:54 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:50:56 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:51:24 PM] 🚨 WARNING: Memory Critical (376 MB free). Enforcing maximum release!
+[11:51:24 PM] 🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...
+[11:51:24 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:51:24 PM] 🧹 Führe aggressive RAM-Evakuierung durch...
+[11:51:26 PM] 🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!
+[11:51:54 PM] 🚨 WARNING: Memory Critical (505 MB free). Enforcing maximum release!
+[11:51:54 PM] 🧹 Inactive RAM and system caches successfully evacuated.
