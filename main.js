@@ -21,6 +21,7 @@ const LOG_FILE = path.join(app.getPath('userData'), 'gaming_boost.log');
 const BLACKLIST_FILE = path.join(app.getPath('userData'), 'blacklist.txt');
 let isBoostActive = true;
 let isLoggingActive = false;
+let isHelperDebugActive = false; // <-- DIESE ZEILE HINZUFÜGEN
 let isAutostartActive = false;
 let isShaderGuardActive = false;
 let optimizedPIDs = new Set();
@@ -66,21 +67,37 @@ function startRootHelper() {
         }
 
         const safeDirPath = JSON.stringify(userAppSupportPath);
+        const safeConfigPath = JSON.stringify(CONFIG_FILE); // <-- Neu: Pfad zur Config übergeben
 
         const embeddedHelperCode = `
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const dirPath = ${safeDirPath};
+const configPath = ${safeConfigPath}; // <-- Neu: Config-Pfad im Helper registriert
 const logPath = path.join(dirPath, 'helper_debug.log');
 const triggerPath = path.join(dirPath, 'boost.trigger');
 
+// Neue Hilfsfunktion zur Live-Prüfung der Log-Einstellung
+function isDebugEnabled() {
+    try {
+        if (fs.existsSync(configPath)) {
+            const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            return cfg.isHelperDebugActive === true;
+        }
+    } catch(e) {}
+    return false;
+}
+
 try {
     if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
-    fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 File root helper freshly initialized.\\n", 'utf8');
+    if (isDebugEnabled()) { // <-- Neu: Schreibt Start-Log nur bei Erlaubnis
+        fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 File root helper freshly initialized.\\n", 'utf8');
+    }
 } catch(e) {}
 
 function logDebug(msg) {
+    if (!isDebugEnabled()) return; // <-- Neu: Blockiert alle Schreibvorgänge, wenn deaktiviert
     try {
         const time = new Date().toLocaleTimeString();
         fs.appendFileSync(logPath, "[" + time + "] " + msg + "\\n", 'utf8');
@@ -166,6 +183,7 @@ function loadSettings() {
             const config = JSON.parse(data);
             if (config.isBoostActive !== undefined) isBoostActive = config.isBoostActive;
             if (config.isLoggingActive !== undefined) isLoggingActive = config.isLoggingActive;
+            if (config.isHelperDebugActive !== undefined) isHelperDebugActive = config.isHelperDebugActive; // <-- HINZUFÜGEN
             if (config.isAutostartActive !== undefined) isAutostartActive = config.isAutostartActive;
             if (config.isShaderGuardActive !== undefined) isShaderGuardActive = config.isShaderGuardActive;
             if (config.overlayX !== undefined) overlayX = config.overlayX;
@@ -176,7 +194,7 @@ function loadSettings() {
 
 function saveSettings() {
     try {
-        const config = { isBoostActive, isLoggingActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY };
+        const config = { isBoostActive, isLoggingActive, isHelperDebugActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY }; // <-- isHelperDebugActive HINZUFÜGEN
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
     } catch (e) {}
 }
@@ -668,7 +686,7 @@ function openSettingsWindow() {
     </head>
     <body>
         <h2>🚀 Mac Gaming Booster</h2>
-        <div class="subtitle">Core Engine Settings & Management (v2.7.0 Platin)</div>
+        <div class="subtitle">Core Engine Settings & Management (v2.7.1 Platin)</div>
         
         <!-- SECTION 1: RAM LIMITS -->
         <div class="section">
@@ -700,11 +718,19 @@ function openSettingsWindow() {
         <!-- SECTION 3: DAEMON -->
         <div class="section">
             <label>⚙️ Root-Helper Background Service (Daemon)</label>
-            <label class="option-container">
+            <label class="option-container" style="margin-bottom: 12px;">
                 <input type="checkbox" id="keepAlive">
                 <div>
                     <div class="option-text">Keep background service active (Variant 1)</div>
                     <div class="option-desc">The helper continues running silently for instant re-launch without password prompt.</div>
+                </div>
+            </label>
+            <!-- Neue Option für helper_debug.log -->
+            <label class="option-container">
+                <input type="checkbox" id="helperDebug">
+                <div>
+                    <div class="option-text">Enable Helper Debug Logging (helper_debug.log)</div>
+                    <div class="option-desc">Enables deeper engine logs directly from the privileged background kernel task.</div>
                 </div>
             </label>
         </div>
@@ -742,6 +768,9 @@ function openSettingsWindow() {
                 document.getElementById('lvl2Val').innerText = (currentConfig.pauseLimit || 400) + " MB";
 
                 document.getElementById('keepAlive').checked = currentConfig.keepDaemonAlive !== false;
+                
+                document.getElementById('helperDebug').checked = currentConfig.isHelperDebugActive === true;
+
 
                 renderBlacklist();
             }
@@ -788,6 +817,7 @@ function openSettingsWindow() {
                 document.getElementById('lvl2').value = 400;
                 document.getElementById('lvl2Val').innerText = "400 MB";
                 document.getElementById('keepAlive').checked = true;
+                document.getElementById('helperDebug').checked = false;
                 
                 blacklistArray = ['steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe', 'crossover', 'electron', 'epicgameslauncher', 'winewrapper.exe', 'wineloader', 'wineloader64'];
                 renderBlacklist();
@@ -798,6 +828,7 @@ function openSettingsWindow() {
                     currentConfig.purgeLimit = parseInt(document.getElementById('lvl1').value, 10);
                     currentConfig.pauseLimit = parseInt(document.getElementById('lvl2').value, 10);
                     currentConfig.keepDaemonAlive = document.getElementById('keepAlive').checked;
+                    currentConfig.isHelperDebugActive = document.getElementById('helperDebug').checked;
                     
                     fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 4), 'utf8');
                     fs.writeFileSync(blacklistPath, blacklistArray.join('\\n'), 'utf8');
@@ -822,7 +853,7 @@ function updateMenu() {
     const contextMenu = Menu.buildFromTemplate([
         { label: '🚀 MAC GAMING BOOSTER', enabled: false },
         { label: `${currentStatusText}`, enabled: false },
-        { label: 'Version: 2.7.0 (Platin GUI Edition)', enabled: false },
+        { label: 'Version: 2.7.1 (Platin GUI Edition)', enabled: false },
         { label: 'Developer: Mario (flashi)', enabled: false },
         { type: 'separator' },
         {
