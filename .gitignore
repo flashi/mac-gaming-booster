@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+*.log
+booster_config.json
+blacklist.txt
+dist/
+
+# Logs-Ordner freigeben
+!logs/
+!logs/*.log
