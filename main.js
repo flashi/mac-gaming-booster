@@ -1,4 +1,6 @@
-const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen } = require('electron');
+//const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen } = require('electron');
+const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen, ipcMain } = require('electron'); // <-- ipcMain HINZUFÜGEN
+
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -16,9 +18,19 @@ const rawBytes = os.totalmem();
 const rawGB = rawBytes / 1024 / 1024 / 1024;
 const macStandardSizes = [8, 16, 18, 24, 32, 36, 48, 64, 96, 128, 192, 256];
 const TOTAL_RAM_GB = macStandardSizes.find(size => size >= rawGB) || Math.round(rawGB);
-const CONFIG_FILE = path.join(app.getPath('userData'), 'booster_config.json');
-const LOG_FILE = path.join(app.getPath('userData'), 'gaming_boost.log');
-const BLACKLIST_FILE = path.join(app.getPath('userData'), 'blacklist.txt');
+const USER_DATA_PATH = app.getPath('userData');
+const CONFIG_DIR = path.join(USER_DATA_PATH, 'config'); // Neuer, sauberer Unterordner
+
+// Erstellt den config-Ordner sofort beim App-Start, falls er fehlt
+if (!fs.existsSync(CONFIG_DIR)) {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+}
+
+// Deine Dateien ziehen jetzt dauerhaft in den Unterordner um:
+const CONFIG_FILE = path.join(CONFIG_DIR, 'booster_config.json');
+const LOG_FILE = path.join(CONFIG_DIR, 'gaming_boost.log');
+const BLACKLIST_FILE = path.join(CONFIG_DIR, 'blacklist.txt');
+
 let isBoostActive = true;
 let isLoggingActive = false;
 let isHelperDebugActive = false; // <-- DIESE ZEILE HINZUFÜGEN
@@ -47,8 +59,14 @@ let isHelperStarting = false;
 function startRootHelper() {
     if (isHelperStarting) return;
 
-    const userAppSupportPath = app.getPath('userData');
-    const helperExternalPath = path.join(userAppSupportPath, 'helper.js');
+// ALT:
+// const userAppSupportPath = app.getPath('userData');
+// const helperExternalPath = path.join(userAppSupportPath, 'helper.js');
+
+// NEU (Ersetzen mit diesem Block):
+const userAppSupportPath = CONFIG_DIR; // Nutzt jetzt den sauberen config-Unterordner
+const helperExternalPath = path.join(app.getPath('userData'), 'helper.js'); // helper.js bleibt im Hauptordner, damit der Pfad für osascript unverändert bleibt
+
     const isPackaged = app.isPackaged;
     const iconPath = isPackaged 
         ? path.join(process.resourcesPath, 'rocket.icns')
@@ -613,6 +631,11 @@ function checkAndBoostGames() {
     });
 }
 
+// Höre auf das Start-Signal aus dem Einstellungsfenster
+ipcMain.on('trigger-start-helper', () => {
+    startRootHelper();
+});
+
 app.whenReady().then(() => {
     
     startRootHelper();
@@ -703,6 +726,44 @@ function openSettingsWindow() {
                 <input type="range" id="lvl2" min="200" max="800" step="50" oninput="updateLabel('lvl2Val', this.value)">
             </div>
         </div>
+        
+        <!-- SECTION 0: ENGINE CONTROL -->
+        <div class="section">
+            <label>⚙️ Core Engine Settings</label>
+            <div class="desc">Configure the main behaviors and guards of the optimization engine.</div>
+            
+            <label class="option-container" style="margin-bottom: 12px;">
+                <input type="checkbox" id="fpsBoost">
+                <div>
+                    <div class="option-text">🚀 Enable FPS Boost</div>
+                    <div class="option-desc">Dynamically renices game process priorities via root helper.</div>
+                </div>
+            </label>
+
+            <label class="option-container" style="margin-bottom: 12px;">
+                <input type="checkbox" id="shaderGuard">
+                <div>
+                    <div class="option-text">🛡️ Enable Adaptive Shader Guard (Anti-Panic)</div>
+                    <div class="option-desc">Protects system from kernel panics by managing compiler workloads.</div>
+                </div>
+            </label>
+
+            <label class="option-container" style="margin-bottom: 12px;">
+                <input type="checkbox" id="engineLogging">
+                <div>
+                    <div class="option-text">📝 Enable Logging (gaming_boost.log)</div>
+                    <div class="option-desc">Keeps a persistent transaction log of all optimizations.</div>
+                </div>
+            </label>
+
+            <label class="option-container">
+                <input type="checkbox" id="loginAutostart">
+                <div>
+                    <div class="option-text">⚙️ Start at Login (Autostart)</div>
+                    <div class="option-desc">Launches the booster automatically when you start your Mac.</div>
+                </div>
+            </label>
+        </div>
 
         <!-- SECTION 2: BLACKLIST -->
         <div class="section">
@@ -733,8 +794,15 @@ function openSettingsWindow() {
                     <div class="option-desc">Enables deeper engine logs directly from the privileged background kernel task.</div>
                 </div>
             </label>
+            <!-- Live-Status und dynamischer Start/Stopp-Button -->
+            <div style="margin-top: 15px; padding: 10px; background: #1a1a1e; border-radius: 6px; border: 1px solid #29292e; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 12px; color: #8F8F9D;">Service Status:</span>
+                    <span id="helperStatusText" style="font-size: 12px; font-weight: bold; margin-left: 5px;">Checking...</span>
+                </div>
+                <button id="btnToggleHelper" style="background: transparent; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;" onclick="toggleHelperService()">Service steuern</button>
+            </div>
         </div>
-
         <div class="footer-buttons">
             <button class="btn-reset" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
             <button class="btn-save" onclick="saveSettings()">💾 Save & Close</button>
@@ -743,12 +811,76 @@ function openSettingsWindow() {
             const fs = require('fs');
             const path = require('path');
             
-            const dirPath = path.join(process.env.HOME, 'Library/Application Support/fps-boost');
+            // Zeigt nun direkt auf den neuen, sauberen Unterordner:
+            const userAppSupport = path.join(process.env.HOME, 'Library/Application Support/fps-boost');
+            const dirPath = path.join(userAppSupport, 'config'); 
             const configPath = path.join(dirPath, 'booster_config.json');
             const blacklistPath = path.join(dirPath, 'blacklist.txt');
             
             let currentConfig = { purgeLimit: 1500, pauseLimit: 400, keepDaemonAlive: true };
             let blacklistArray = [];
+
+            let isHelperCurrentlyOnline = false;
+
+            // Aktualisierte Live-Prüfung: Schaltet das Design des Buttons dynamisch um
+            function checkHelperLiveStatus() {
+                const { exec } = require('child_process');
+                exec('ps -Ax | grep "helper.js" | grep -v grep', (err, stdout) => {
+                    const statusText = document.getElementById('helperStatusText');
+                    const toggleBtn = document.getElementById('btnToggleHelper');
+                    
+                    if (!statusText || !toggleBtn) return;
+                    
+                    if (stdout && stdout.trim().length > 0) {
+                        isHelperCurrentlyOnline = true;
+                        statusText.innerText = "● ONLINE";
+                        statusText.style.color = "#04D361";
+                        
+                        // Roter Stop-Button
+                        toggleBtn.innerText = "🛑 Stop Service";
+                        toggleBtn.style.color = "#FF5555";
+                        toggleBtn.style.borderColor = "#FF5555";
+                    } else {
+                        isHelperCurrentlyOnline = false;
+                        statusText.innerText = "○ OFFLINE";
+                        statusText.style.color = "#FF5555";
+                        
+                        // Grüner Start-Button
+                        toggleBtn.innerText = "🚀 Start Service";
+                        toggleBtn.style.color = "#04D361";
+                        toggleBtn.style.borderColor = "#04D361";
+                    }
+                });
+            }
+
+            // Entscheidet je nach Status, ob gekillt oder gestartet werden soll
+            function toggleHelperService() {
+                const { ipcRenderer } = require('electron');
+                const statusText = document.getElementById('helperStatusText');
+                
+                if (isHelperCurrentlyOnline) {
+                    // 1. Sanfter Versuch über die Trigger-Datei
+                    const trigger = path.join(dirPath, 'boost.trigger');
+                    try {
+                        fs.writeFileSync(trigger, JSON.stringify({ action: 'kill' }), 'utf8');
+                    } catch(e) {}
+
+                    // 2. Aggressiverer Versuch direkt über die Shell (Funktioniert bei helper.js oft ohne Sudo, da es dein Prozessraum ist)
+                    const { exec } = require('child_process');
+                    exec("pkill -f helper.js", (err) => {
+                        // Kurze Verzögerung, um den Status live zu prüfen
+                        setTimeout(checkHelperLiveStatus, 500);
+                    });
+
+                    statusText.innerText = "⏳ Stopping...";
+                    statusText.style.color = "#8F8F9D";
+                } else {
+                    // Starten via IPC-Signal an die Haupt-App
+                    ipcRenderer.send('trigger-start-helper');
+                    statusText.innerText = "⏳ Starting...";
+                    statusText.style.color = "#8F8F9D";
+                }
+            }
             
             function loadAllData() {
                 try {
@@ -769,10 +901,17 @@ function openSettingsWindow() {
 
                 document.getElementById('keepAlive').checked = currentConfig.keepDaemonAlive !== false;
                 
+                // Werte für Engine-Checkboxen laden (Standardwerte falls nicht definiert)
+                document.getElementById('fpsBoost').checked = currentConfig.isBoostActive !== false;
+                document.getElementById('shaderGuard').checked = currentConfig.isShaderGuardActive === true;
+                document.getElementById('engineLogging').checked = currentConfig.isLoggingActive === true;
+                document.getElementById('loginAutostart').checked = currentConfig.isAutostartActive === true;
                 document.getElementById('helperDebug').checked = currentConfig.isHelperDebugActive === true;
 
-
                 renderBlacklist();
+
+                // Sofortige Live-Prüfung beim Starten des Fensters ausführen
+                checkHelperLiveStatus();
             }
 
             function renderBlacklist() {
@@ -817,6 +956,12 @@ function openSettingsWindow() {
                 document.getElementById('lvl2').value = 400;
                 document.getElementById('lvl2Val').innerText = "400 MB";
                 document.getElementById('keepAlive').checked = true;
+                
+                // Standardwerte für Engine-Checkboxen setzen
+                document.getElementById('fpsBoost').checked = true;
+                document.getElementById('shaderGuard').checked = false;
+                document.getElementById('engineLogging').checked = false;
+                document.getElementById('loginAutostart').checked = false;
                 document.getElementById('helperDebug').checked = false;
                 
                 blacklistArray = ['steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe', 'crossover', 'electron', 'epicgameslauncher', 'winewrapper.exe', 'wineloader', 'wineloader64'];
@@ -828,6 +973,12 @@ function openSettingsWindow() {
                     currentConfig.purgeLimit = parseInt(document.getElementById('lvl1').value, 10);
                     currentConfig.pauseLimit = parseInt(document.getElementById('lvl2').value, 10);
                     currentConfig.keepDaemonAlive = document.getElementById('keepAlive').checked;
+                    
+                    // Werte aus den Checkboxen in die Konfiguration übernehmen
+                    currentConfig.isBoostActive = document.getElementById('fpsBoost').checked;
+                    currentConfig.isShaderGuardActive = document.getElementById('shaderGuard').checked;
+                    currentConfig.isLoggingActive = document.getElementById('engineLogging').checked;
+                    currentConfig.isAutostartActive = document.getElementById('loginAutostart').checked;
                     currentConfig.isHelperDebugActive = document.getElementById('helperDebug').checked;
                     
                     fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 4), 'utf8');
@@ -838,8 +989,12 @@ function openSettingsWindow() {
                 }
             }
 
+            // Live-Prüfungsintervall starten (alle 2 Sekunden)
+            setInterval(checkHelperLiveStatus, 2000);
+
             loadAllData();
         </script>
+
     </body>
     </html>
     `;
@@ -860,67 +1015,6 @@ function updateMenu() {
             label: '📊 RAM Overlay On/Off',
             accelerator: 'CmdOrCtrl+Alt+R',
             click: () => { toggleRamOverlay(); }
-        },
-        { type: 'separator' },
-        {
-            label: '🚀 Enable FPS Boost',
-            type: 'checkbox',
-            checked: isBoostActive,
-            click: (menuItem) => {
-                isBoostActive = menuItem.checked;
-                saveSettings();
-                optimizedPIDs.clear(); 
-                updateMenu(); 
-            }
-        },
-        {
-            label: '🛡️ Enable Adaptive Shader Guard (Anti-Panic)',
-            type: 'checkbox',
-            checked: isShaderGuardActive,
-            click: (menuItem) => {
-                isShaderGuardActive = menuItem.checked;
-                saveSettings();
-                writeToRotatedLog(`🛡️ Shader Guard ${isShaderGuardActive ? 'ENABLED' : 'DISABLED'} by user.`);
-                if (optimizedPIDs.size > 0) {
-                    manageRamGuardState(true);
-                } else {
-                    manageRamGuardState(false);
-                }
-                updateMenu();
-            }
-        },
-        { 
-            label: '📝 Enable Logging (gaming_boost.log)', 
-            type: 'checkbox', 
-            checked: isLoggingActive, 
-            click: (menuItem) => {
-                isLoggingActive = menuItem.checked;
-                saveSettings();
-                if (isLoggingActive) {
-                    fs.writeFileSync(LOG_FILE, '', 'utf8');
-                    writeToRotatedLog("Logging via menu bar ENABLED.");
-                    optimizedPIDs.clear(); 
-                } else {
-                    if (fs.existsSync(LOG_FILE)) {
-                        fs.unlinkSync(LOG_FILE);
-                    }
-                }
-                updateMenu();
-            }
-        },
-        { 
-            label: '⚙️ Start at Login (Autostart)',
-            type: 'checkbox',
-            checked: isAutostartActive,
-            click: (menuItem) => {
-                isAutostartActive = menuItem.checked;
-                saveSettings();
-                app.setLoginItemSettings({
-                    openAtLogin: isAutostartActive,
-                    openAsHidden: true 
-                });
-                updateMenu();
-            }
         },
         { type: 'separator' },
         {
