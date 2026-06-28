@@ -614,7 +614,7 @@ function openSettingsWindow() {
 
     settingsWindow = new BrowserWindow({
         width: 650,
-        height: 650,
+        height: 800,
         title: "Mac Gaming Booster - Settings",
         resizable: false,
         fullscreenable: false,
