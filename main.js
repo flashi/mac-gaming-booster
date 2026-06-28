@@ -37,7 +37,7 @@ function sendToRootHelper(pid, level) {
         
         fs.writeFileSync(triggerPath, payload, 'utf8');
     } catch (e) {
-        writeToRotatedLog("❌ Fehler beim Schreiben des Datei-Triggers: " + e.message);
+        writeToRotatedLog("❌ Error writing file trigger: " + e.message);
     }
 }
 
@@ -59,7 +59,7 @@ function startRootHelper() {
             return;
         }
 
-        writeToRotatedLog("🔒 Bereite Root-Helper-Dienst vor...");
+        writeToRotatedLog("🔒 Preparing root helper service...");
 
         if (!fs.existsSync(userAppSupportPath)) {
             fs.mkdirSync(userAppSupportPath, { recursive: true });
@@ -77,7 +77,7 @@ const triggerPath = path.join(dirPath, 'boost.trigger');
 
 try {
     if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
-    fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 Datei-Root-Helper frisch initialisiert.\\n", 'utf8');
+    fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 File root helper freshly initialized.\\n", 'utf8');
 } catch(e) {}
 
 function logDebug(msg) {
@@ -87,7 +87,7 @@ function logDebug(msg) {
     } catch (e) {}
 }
 
-logDebug("🚀 Datei-Root-Helper erfolgreich gestartet und aktiv.");
+logDebug("🚀 File root helper successfully started and active.");
 
 setInterval(() => {
     try {
@@ -98,28 +98,28 @@ setInterval(() => {
                 const msg = JSON.parse(content);
 
                 if (msg.action === 'kill') {
-                    logDebug("🛑 Selbstzerstörungsbefehl erhalten. Beende Root-Helper-Prozess sauber.");
+                    logDebug("🛑 Self-termination command received. Exiting root helper process gracefully.");
                     process.exit(0); 
                 }
                 
                 if (msg.action === 'boost' && msg.pid) {
-                    logDebug("📥 Datei-Trigger erhalten für PID: " + msg.pid);
+                    logDebug("📥 File trigger received for PID: " + msg.pid);
                     exec("renice " + msg.level + " " + msg.pid, (err, stdout, stderr) => {
-                        if (err) { logDebug("❌ Kernel-Fehler: " + (stderr || err.message)); }
-                        else { logDebug("✅ Kernel-Erfolg! PID " + msg.pid + " steht auf " + msg.level); }
+                        if (err) { logDebug("❌ Kernel error: " + (stderr || err.message)); }
+                        else { logDebug("✅ Kernel success! PID " + msg.pid + " steht auf " + msg.level); }
                     });
                 }
             }
         }
-    } catch (e) { logDebug("❌ Fehler in Schleife: " + e.message); }
+    } catch (e) { logDebug("❌ Loop error: " + e.message); }
 }, 500);
         `.trim();
 
         try {
             fs.writeFileSync(helperExternalPath, embeddedHelperCode, 'utf8');
-            writeToRotatedLog("✅ helper.js erfolgreich in den App-Support-Ordner entpackt.");
+            writeToRotatedLog("✅ helper.js successfully unpacked into the App Support folder.");
         } catch (fileErr) {
-            writeToRotatedLog("❌ Schreibfehler bei helper.js: " + fileErr.message);
+            writeToRotatedLog("❌ Write error at helper.js: " + fileErr.message);
             isHelperStarting = false; 
             return;
         }
@@ -131,10 +131,10 @@ setInterval(() => {
             absoluteNodePath = homebrewPath; 
         } else if (!fs.existsSync(absoluteNodePath)) {
             absoluteNodePath = process.execPath;
-            writeToRotatedLog("⚠️ Kein globales Node gefunden. Nutze interne Electron-Binary.");
+            writeToRotatedLog("⚠️ No global Node found. Using internal Electron binary.");
         }
         
-        writeToRotatedLog(`🔍 Node-Pfad sicher bestimmt: ${absoluteNodePath}`);
+        writeToRotatedLog(`🔍 Node path securely determined: ${absoluteNodePath}`);
 
         let appleScript = `do shell script "\\"${absoluteNodePath}\\" \\"${helperExternalPath}\\" > /dev/null 2>&1 &" with administrator privileges`;
         
@@ -151,9 +151,9 @@ setInterval(() => {
             }, 5000);
 
             if (err) {
-                writeToRotatedLog("❌ [Test-Osascript] Root-Helper konnte nicht gestartet werden: " + err.message);
+                writeToRotatedLog("❌ [Osascript] Root helper could not be started: " + err.message);
             } else {
-                writeToRotatedLog("🚀 [Test-Osascript] Root-Helper erfolgreich im Hintergrund aktiv.");
+                writeToRotatedLog("🚀 [Osascript] Root helper successfully active in background.");
             }
         });
     });
@@ -335,14 +335,14 @@ function manageRamGuardState(isGameRunning) {
                             }
 
                             else if (availableRamMB < pauseLimit) {
-                                writeToRotatedLog("🚨 Kritischer Speichermangel! Versetze MTLCompilerService temporär in den Tiefschlaf zur Entlastung...");
+                                writeToRotatedLog("🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...");
                                 
                                 exec('killall -STOP MTLCompilerService', () => {
-                                    writeToRotatedLog("🧹 Führe aggressive RAM-Evakuierung durch...");
+                                    writeToRotatedLog("🧹 Performing aggressive RAM evacuation...");
                                     exec('sudo purge', () => {
                                         setTimeout(() => {
                                             exec('killall -CONT MTLCompilerService', () => {
-                                                writeToRotatedLog("🛡️ SUCCESS: MTLCompilerService erfolgreich entlastet und aufgeweckt!");
+                                                writeToRotatedLog("🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!");
                                                 sendNotification("🛡️ Memory depletion prevented! Compiler paused, evacuated and resumed successfully.");
                                             });
                                         }, 2000);
@@ -556,7 +556,7 @@ function checkAndBoostGames() {
 
             optimizedPIDs.add(pid);
             
-            writeToRotatedLog(`🎯 Spiel erkannt: 📦 ${displayGameName} (PID: ${pid})`);
+            writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
             manageRamGuardState(true);
 
             if (isBoostActive) {
