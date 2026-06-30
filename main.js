@@ -43,16 +43,24 @@ const PROMPT_COOLDOWN = 1 * 60 * 1000;
 
 function sendToRootHelper(pid, level) {
     try {
-        const userAppSupportPath = app.getPath('userData');
-        const triggerPath = path.join(userAppSupportPath, 'boost.trigger');
+        // Richtet den Pfad exakt auf den neuen, sauberen fps-boost Config-Ordner aus
+        const triggerPath = path.join(os.homedir(), 'Library/Application Support/fps-boost/config/boost.trigger');
         
-        const payload = JSON.stringify({ action: 'boost', pid: pid, level: level });
+        const payload = JSON.stringify({ 
+            action: 'boost', 
+            pid: parseInt(pid, 10), 
+            level: parseInt(level, 10) 
+        });
         
         fs.writeFileSync(triggerPath, payload, 'utf8');
+        
+        // Nutzt deine bestehende Log-Funktion
+        writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für PID ${pid} (Level: ${level}) geschrieben.`);
     } catch (e) {
         writeToRotatedLog("❌ Error writing file trigger: " + e.message);
     }
 }
+
 
 let isHelperStarting = false;
 
@@ -92,11 +100,10 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const dirPath = ${safeDirPath};
-const configPath = ${safeConfigPath}; // <-- Neu: Config-Pfad im Helper registriert
+const configPath = ${safeConfigPath};
 const logPath = path.join(dirPath, 'helper_debug.log');
 const triggerPath = path.join(dirPath, 'boost.trigger');
 
-// Neue Hilfsfunktion zur Live-Prüfung der Log-Einstellung
 function isDebugEnabled() {
     try {
         if (fs.existsSync(configPath)) {
@@ -109,13 +116,13 @@ function isDebugEnabled() {
 
 try {
     if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
-    if (isDebugEnabled()) { // <-- Neu: Schreibt Start-Log nur bei Erlaubnis
+    if (isDebugEnabled()) {
         fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 File root helper freshly initialized.\\n", 'utf8');
     }
 } catch(e) {}
 
 function logDebug(msg) {
-    if (!isDebugEnabled()) return; // <-- Neu: Blockiert alle Schreibvorgänge, wenn deaktiviert
+    if (!isDebugEnabled()) return;
     try {
         const time = new Date().toLocaleTimeString();
         fs.appendFileSync(logPath, "[" + time + "] " + msg + "\\n", 'utf8');
@@ -128,8 +135,11 @@ setInterval(() => {
     try {
         if (fs.existsSync(triggerPath)) {
             const content = fs.readFileSync(triggerPath, 'utf8').trim();
-            fs.unlinkSync(triggerPath);
-            if (content) {
+            
+            if (content && content.length > 0) {
+                // WICHTIG: Leeren statt Löschen (fs.unlinkSync entfernen!)
+                fs.writeFileSync(triggerPath, '', 'utf8'); 
+                
                 const msg = JSON.parse(content);
 
                 if (msg.action === 'kill') {
@@ -148,6 +158,7 @@ setInterval(() => {
         }
     } catch (e) { logDebug("❌ Loop error: " + e.message); }
 }, 500);
+
         `.trim();
 
         try {
@@ -645,6 +656,56 @@ app.whenReady().then(() => {
     }
 });
 
+// Höre auf das Start-Signal aus dem Einstellungsfenster
+ipcMain.on('trigger-start-helper', () => {
+    startRootHelper();
+});
+
+// =================================================================
+// SYSTEM ENGINE: MANUAL GAME SCANNER IPC CHANNELS (v2.7.1)
+// =================================================================
+
+// Handler 1: Führt das Testskript asynchron aus
+ipcMain.handle('trigger-game-scan', async () => {
+    return new Promise((resolve) => {
+        const scannerPath = path.join(__dirname, 'check_games.js');
+        if (!fs.existsSync(scannerPath)) {
+            resolve({ success: false, error: 'Skript check_games.js fehlt im Verzeichnis.' });
+            return;
+        }
+        const { fork } = require('child_process');
+        const child = fork(scannerPath, [], { silent: true });
+        child.on('close', (code) => {
+            resolve({ success: code === 0 });
+        });
+        child.on('error', () => {
+            resolve({ success: false });
+        });
+    });
+});
+
+// Handler 2: Liest die games_list.txt ein und übergibt sie der GUI
+ipcMain.handle('get-games-list', async () => {
+    try {
+        const gamesFile = path.join(CONFIG_DIR, 'games_list.txt');
+        if (fs.existsSync(gamesFile)) {
+            const content = fs.readFileSync(gamesFile, 'utf-8');
+            const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            return { success: true, games: lines };
+        }
+        return { success: true, games: [] };
+    } catch (e) {
+        return { success: false, games: [] };
+    }
+});
+
+app.whenReady().then(() => {
+    startRootHelper();
+    if (process.platform === 'darwin') {
+        app.dock.hide();
+    }
+});
+
 let settingsWindow = null;
 
 function openSettingsWindow() {
@@ -775,6 +836,17 @@ function openSettingsWindow() {
                 <button class="btn-add" onclick="addProcess()">＋ Add Process</button>
             </div>
         </div>
+        
+<!-- SECTION 4: DETECTED GAMES SYSTEM -->
+<div class="section">
+    <label>🎮 Synchronized Games Registry</label>
+    <div class="desc">Vollautomatisch über die Manifeste der aktiven Launcher eingelesen.</div>
+    <div class="blacklist-box" id="gamesContainer" style="height: 140px; padding: 10px;"></div>
+    <div class="blacklist-input-row" style="justify-content: flex-end;">
+        <button class="btn-add" id="btnScanGames" onclick="performManualGameScan()" style="width: 100%; padding: 8px 0; font-size: 13px;">🔍 Nach installierten Spielen scannen</button>
+    </div>
+</div>
+
 
         <!-- SECTION 3: DAEMON -->
         <div class="section">
@@ -913,6 +985,51 @@ function openSettingsWindow() {
                 // Sofortige Live-Prüfung beim Starten des Fensters ausführen
                 checkHelperLiveStatus();
             }
+            
+// Lädt die exportierten Spiele beim Öffnen des Fensters ohne Scan direkt aus der TXT
+async function loadSavedGamesList() {
+    const { ipcRenderer } = require('electron');
+    const container = document.getElementById('gamesContainer');
+    if (!container) return;
+    
+    container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">Lade Spiele-Register...</div>';
+    
+    const result = await ipcRenderer.invoke('get-games-list');
+    container.innerHTML = '';
+    
+    if (result.success && result.games && result.games.length > 0) {
+        result.games.forEach(game => {
+            const item = document.createElement('div');
+            item.className = 'blacklist-item';
+            item.style.borderColor = '#04D361'; // Grüne Spiele-Border
+            item.innerText = game;
+            container.appendChild(item);
+        });
+    } else {
+        container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">Keine registrierten Spiele vorhanden. Bitte Scan starten.</div>';
+    }
+}
+
+// Triggert den manuellen Scan über den Button im Einstellungsfenster
+async function performManualGameScan() {
+    const { ipcRenderer } = require('electron');
+    const btn = document.getElementById('btnScanGames');
+    const container = document.getElementById('gamesContainer');
+    
+    if (!btn || !container) return;
+    
+    btn.disabled = true;
+    btn.innerText = "⏳ Suche Launcher-Einträge... (Bitte warten)";
+    container.innerHTML = '<div style="color:#04D361; font-size:12px; padding:10px; text-align:center;">Festplatten und Launcher-Manifeste werden analysiert...</div>';
+    
+    const scanResult = await ipcRenderer.invoke('trigger-game-scan');
+    
+    btn.disabled = false;
+    btn.innerText = "🔍 Nach installierten Spielen scannen";
+    
+    // Aktualisiert die Anzeige sofort nach Abschluss des Skripts
+    loadSavedGamesList();
+}
 
             function renderBlacklist() {
                 const container = document.getElementById('blacklistContainer');
@@ -993,6 +1110,7 @@ function openSettingsWindow() {
             setInterval(checkHelperLiveStatus, 2000);
 
             loadAllData();
+            loadSavedGamesList();
         </script>
 
     </body>

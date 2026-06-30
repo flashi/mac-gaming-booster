@@ -1,36 +1,56 @@
-# 🚀 Mac Gaming Booster (Apple Silicon Optimiert)
+# 🚀 Mac Gaming Booster (Apple Silicon Optimized)
 
-**Version:** 2.7.0 | **Plattform:** macOS (arm64) | **Ziel-System:** macOS 15+  
-**Umgebung:** Electron Framework / Native Menüleisten-Anwendung  
-
----
-
-## 🛑 WICHTIG: REALISTISCHE ERWARTUNGEN (⚠️ KEINE WUNDER-FPS!)
-
-Diese App ist **KEIN** Overclocking-Tool. Sie optimiert die Systemressourcen für Spiele, kann aber Hardware-Limits nicht aufheben.
-
-### 💡 Was macht die App wirklich?
-Optimiert CPU, Thread-Priorität und RAM auf Apple Silicon:
-- **Zero-Dependency:** Läuft komplett eigenständig über die interne Electron-Binary.
-- **Mikroruckler-Reduzierung:** Setzt Spielprozesse auf höchste Priorität (`Nice -5`).
-- **Smarte Engine-Priorisierung:** Fokussiert sich auf Hauptspiel-Binaries, während Launcher im Hintergrund gedrosselt werden.
-- **Auto-RAM-Bereinigung:** Stößt beim Beenden `sudo purge` an, um blockierten Speicher freizugeben.
+**Version:** 2.7.1 (Platin GUI Edition) | **Platform:** macOS (arm64) | **Target OS:** macOS 15+  
+**Environment:** Electron Framework / Native Menubar Application  
 
 ---
 
-## 🛠️ Features (v2.7.0)
+## 🛑 IMPORTANT: REALISTIC EXPECTATIONS (⚠️ NO MIRACLE FPS!)
 
-- **Standalone-Architektur:** Kein externes Node.js für Endnutzer erforderlich.
-- **Native Failsafe Engine:** `sudo-prompt` komplett durch `osascript` für sichere Rechteerhöhung ersetzt.
-- **Aggressiver Kernel-Boost:** `renice -5` für Spiele, `-1` für Hilfsdienste.
-- **Einmalige Authentifizierung:** Nur eine Passwortabfrage pro Mac-Kaltstart nötig.
-- **Aktualisierte Spielerkennung:** Präzise Analyse für AAA-Titel (Helldivers 2, TLOU etc.).
-- **Verfeinerte Daemon-Steuerung:** Optionen für Hintergrund-Persistenz oder automatischen Prozess-Kill.
-- **Live RAM HUD:** Rahmenloses, passives In-Game-Overlay mit Speicherstatistiken.
-- **Adaptiver Watchdog:** Verhindert Systemabstürze durch intelligentes Management des `MTLCompilerService` und RAM-Purges.
+This app is **NOT** an overclocking tool. It optimizes system resources for gaming, but cannot bypass hardware limits.
+
+### 💡 What does the app actually do?
+Optimizes CPU, thread priority, and RAM on Apple Silicon:
+- **Zero-Dependency:** Runs standalone via internal Electron binary.
+- **Micro-Stutter Reduction:** Sets game processes to high priority (`Nice -5`).
+- **Smart Engine Prioritization:** Focuses on main game binaries while backgrounding launchers.
+- **Auto RAM Cleanup:** Triggers `sudo purge` on exit for freed memory.
 
 ---
 
-## 📜 Lizenz
+## 🛠️ Features (v2.7.1)
 
-MIT-Lizenz. Vollständiger Text befindet sich in der LICENSE-Datei.
+- **Standalone Architecture:** No external Node.js required.
+- **Native Failsafe Engine:** Replaced `sudo-prompt` with `osascript` for secure elevation.
+- **Aggressive Kernel-Boost:** `renice -5` for games, `-1` for services.
+- **Single-Auth Security:** One password prompt per cold-boot.
+- **Updated Game Detection:** Precise parsing for AAA titles (Helldivers 2, TLOU, etc.).
+- **Refined Daemon Control:** Options for background persistence or auto-kill.
+- **Live RAM HUD:** Non-focusable overlay with memory stats.
+- **Adaptive Watchdog:** Prevents memory leaks by managing `MTLCompilerService` and `purge`.
+- **Integrated Platform Scanner:** Independent `check_games.js` test script for deep-scanning game installations across internal/external drives (`/Volumes`).
+
+---
+
+## 🔄 Recent Changes & Optimizations (v2.7.1)
+
+During the development of the **Platin GUI Edition (v2.7.1)**, critical core engine components were stabilized, made completely persistent across reboots, and deeply integrated into the GUI:
+
+### 1. Reboot-Safe Trigger Architecture (`main.js` & `helper.js`)
+* **Bug Fix:** Previously, the privileged root helper completely deleted the `boost.trigger` file via `fs.unlinkSync()` after reading it. This caused permission conflicts after a macOS reboot, preventing the main user-space app from writing new trigger signals (games remained stuck at standard priority `Mid / 0`).
+* **Optimization:** The deletion command was removed. The root helper now atomically clears the file using `fs.writeFileSync(triggerPath, '', 'utf8')` after processing. The file remains physically intact with its original write permissions. The engine detects games within 2 seconds after a system reboot and automatically forces them back into kernel boost mode (`Max / -5`).
+
+### 2. Path Structure Correction for `sendToRootHelper`
+* The function communicating with the background service has been fully adapted to the new, clean folder structure.
+* Signals are now stored precisely in the central directory `~/Library/Application Support/fps-boost/config/boost.trigger`.
+* All PIDs and performance levels are strictly validated as integers (`parseInt`) before transmission to prevent syntax errors within the POSIX shell.
+
+### 3. GUI Integration for Custom Game List (`games_list.txt`)
+* **New in Settings:** The parsing interface for the external `games_list.txt` file was successfully migrated and integrated directly into the Settings GUI window.
+* **Note:** The deep two-way name resolution and filter heuristics for complex process names within the engine (`checkAndBoostGames`) have been partially reverted for now and will be finalized in an upcoming revision. Management is already handled centrally via the user interface.
+
+---
+
+## 📜 License
+
+MIT License. See LICENSE file for details.
