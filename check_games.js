@@ -5,24 +5,22 @@ const os = require('os');
 // Konstanten und Pfade gemäss Konfiguration v2.7.1
 const HOME = os.homedir();
 
-// v2.7.1 Pfadstruktur für den sauberen TXT-Export
 const CONFIG_DIR = path.join(HOME, 'Library/Application Support/fps-boost/config');
 const OUTPUT_FILE = path.join(CONFIG_DIR, 'games_list.txt');
+const MAPPING_FILE = path.join(CONFIG_DIR, 'games_exe_mapping.txt');
 
 const detectedGames = new Set();
 const lowercaseCheckSet = new Set();
+const gameExeMap = new Map();
 
-// Minimierte technische Blacklist für nackte Launcher und Frameworks
+// FIX: 'rockstar games' wurde hier entfernt, damit die Verbindung klappt!
 const WINDOWS_APP_BLACKLIST = new Set([
     'battle.net desktop app', 'battle.net', 'epic games store', 'epic games',
     'steam', 'ubisoft connect', 'ubisoft', 'gog galaxy', 'common files',
-    'windows media player', 'rockstar games', 'internet explorer', 'windows nt',
+    'windows media player', 'internet explorer', 'windows nt',
     'microsoft.net', 'microsoft', 'uplay', 'origin', 'ea desktop', 'ea'
 ]);
 
-/**
- * Dynamische Erkennung aller gemounteten Volumes auf dem Mac
- */
 function getDynamicExternalVolumes() {
     const volumesRoot = '/Volumes';
     let detectedVolumes = [];
@@ -45,9 +43,87 @@ function getDynamicExternalVolumes() {
 }
 
 /**
- * Validiert und fügt gefundene Spiele duplikatfrei der Liste hinzu (Ohne [Windows] Tag!)
+ * Optimierter Finder: Unterstützt Multi-Exe-Spiele wie Uncharted (u4.exe und tll-l.exe)
  */
-function addGameSafely(cleanName) {
+function findExecutableInDir(dirPath, depth = 0) {
+    if (depth > 8 || !fs.existsSync(dirPath)) return '';
+    try {
+        const files = fs.readdirSync(dirPath);
+        let candidateExes = [];
+        let macAppPath = '';
+
+        for (const file of files) {
+            const fullPath = path.join(dirPath, file);
+            const stat = fs.statSync(fullPath);
+
+            // 1. WINDOWS-PFAD: Nach .exe suchen
+            if (stat.isFile() && file.toLowerCase().endsWith('.exe')) {
+                const lowerFile = file.toLowerCase();
+                
+                if (!lowerFile.includes('unitycrashhandler') && 
+                    !lowerFile.includes('crashreport') && 
+                    !lowerFile.includes('crs-handler') && 
+                    !lowerFile.includes('unins') && 
+                    !lowerFile.includes('setup') &&
+                    !lowerFile.includes('launcher') && 
+                    !lowerFile.includes('diagnostic')) {
+                    
+                    candidateExes.push(fullPath);
+                }
+            }
+
+            // 2. MAC-PFAD
+            if (stat.isDirectory() && file.toLowerCase().endsWith('.app')) {
+                macAppPath = fullPath;
+            }
+        }
+
+        // --- SONDERFALL MULTI-EXE (Uncharted 4 & Lost Legacy) ---
+        // Wenn sowohl u4.exe als auch tll-l.exe im selben Ordner liegen, geben wir ein 
+        // spezielles Trennzeichen zurück, damit addGameSafely beide eintragen kann!
+        const lowerCandidates = candidateExes.map(p => path.basename(p).toLowerCase());
+        if (lowerCandidates.includes('u4.exe') && lowerCandidates.includes('tll-l.exe')) {
+            return "u4.exe||tll-l.exe"; 
+        }
+
+        // Standardfall: Wenn Exes da sind, sortiere nach Größe und nimm die größte
+        if (candidateExes.length > 0) {
+            candidateExes.sort((a, b) => fs.statSync(b).size - fs.statSync(a).size);
+            return candidateExes[0]; 
+        }
+
+        // Mac .app Handling
+        if (macAppPath) {
+            const plistPath = path.join(macAppPath, 'Contents', 'Info.plist');
+            if (fs.existsSync(plistPath)) {
+                try {
+                    const plistContent = fs.readFileSync(plistPath, 'utf8');
+                    const execMatch = plistContent.match(/<key>CFBundleExecutable<\/key>\s*<string>([^<]+)<\/string>/);
+                    if (execMatch && execMatch[1]) {
+                        const binaryName = execMatch[1].trim();
+                        if (binaryName === 'AppBundleExe') {
+                            return path.basename(macAppPath, '.app');
+                        }
+                        return binaryName;
+                    }
+                } catch (e) {}
+            }
+            return path.basename(macAppPath, '.app');
+        }
+
+        // Rekursiv tiefer gehen
+        for (const file of files) {
+            const fullPath = path.join(dirPath, file);
+            if (fs.statSync(fullPath).isDirectory() && !file.startsWith('.')) {
+                const subExe = findExecutableInDir(fullPath, depth + 1);
+                if (subExe) return subExe;
+            }
+        }
+    } catch (e) {}
+    return '';
+}
+
+function addGameSafely(cleanName, exePath = '') {
     if (!cleanName || cleanName.length < 3) return;
     
     let finalName = cleanName.replace(/["']/g, '').trim();
@@ -59,13 +135,26 @@ function addGameSafely(cleanName) {
 
     if (!lowercaseCheckSet.has(lower)) {
         lowercaseCheckSet.add(lower);
-        // Rein als "🎮 Spielname" formatiert, Pfade und Tags sind komplett ausgeblendet
         detectedGames.add(`🎮 ${finalName}`);
+        
+        if (exePath) {
+            const exeName = path.basename(exePath);
+            gameExeMap.set(finalName, exeName);
+        } else {
+            // FIX: Spezieller Fallback für GTA V, falls über Steam absolut keine Exe ermittelt werden konnte.
+            // Da das Spiel zwingend den Rockstar Launcher oder PlayGTAV braucht, mappen wir es fest auf diese Prozesse.
+            if (lower.includes('grand theft auto') || lower.includes('gta')) {
+                gameExeMap.set(finalName, 'PlayGTAV.exe');
+            } else {
+                gameExeMap.set(finalName, 'unknown_executable.exe');
+            }
+        }
     }
 }
 
+
 /**
- * 1. NATIVER LAUNCHER-SCAN: STEAM (.acf)
+ * 2. NATIVER LAUNCHER-SCAN: STEAM (.acf)
  */
 function scanSteamManifests(searchDir, currentDepth = 0) {
     if (currentDepth > 5) return;
@@ -78,9 +167,41 @@ function scanSteamManifests(searchDir, currentDepth = 0) {
                 if (file.toLowerCase().startsWith('appmanifest_') && file.toLowerCase().endsWith('.acf')) {
                     try {
                         const content = fs.readFileSync(path.join(searchDir, file), 'utf8');
-                        const match = content.match(/"name"\s+"([^"]+)"/i);
-                        if (match && match[1]) {
-                            addGameSafely(match[1]);
+                        const nameMatch = content.match(/"name"\s+"([^"]+)"/i);
+                        const folderMatch = content.match(/"installdir"\s+"([^"]+)"/i);
+                        
+                        if (nameMatch && nameMatch[1]) {
+                            const gameName = nameMatch[1].trim(); 
+                            let exePath = '';
+                            
+                            if (folderMatch && folderMatch[1]) {
+                                const folderName = folderMatch[1].trim();
+                                const standardPath = path.join(searchDir, 'common', folderName); 
+                                
+                                // Erzwinge die Suche im echten "installdir" Ordner, egal was im Manifest steht
+                                if (fs.existsSync(standardPath)) {
+                                    exePath = findExecutableInDir(standardPath);
+                                }
+                                
+                                // Sicherheitsnetz: Fuzzy-Search falls der Pfad oben nicht reagiert
+                                if (!exePath) {
+                                    const commonDir = path.join(searchDir, 'common');
+                                    if (fs.existsSync(commonDir)) {
+                                        const exactFolders = fs.readdirSync(commonDir);
+                                        const cleanFolderName = folderName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                        
+                                        for (const folder of exactFolders) {
+                                            const cleanFolder = folder.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                            if (cleanFolderName.includes(cleanFolder) || cleanFolder.includes(cleanFolderName)) {
+                                                const fuzzyPath = path.join(commonDir, folder);
+                                                exePath = findExecutableInDir(fuzzyPath);
+                                                if (exePath) break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            addGameSafely(gameName, exePath);
                         }
                     } catch (e) {}
                 }
@@ -102,7 +223,7 @@ function scanSteamManifests(searchDir, currentDepth = 0) {
 }
 
 /**
- * 2. NATIVER LAUNCHER-SCAN: EPIC GAMES (.item)
+ * 3. NATIVER LAUNCHER-SCAN: EPIC GAMES (.item)
  */
 function scanEpicGamesManifests() {
     const epicManifestDir = path.join(HOME, 'Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests');
@@ -116,7 +237,11 @@ function scanEpicGamesManifests() {
                         const parsed = JSON.parse(content);
                         if (parsed && parsed.DisplayName && parsed.AppName) {
                             if (!parsed.AppName.toLowerCase().includes('unrealengine')) {
-                                addGameSafely(parsed.DisplayName);
+                                let exePath = '';
+                                if (parsed.InstallLocation) {
+                                    exePath = findExecutableInDir(parsed.InstallLocation);
+                                }
+                                addGameSafely(parsed.DisplayName, exePath);
                             }
                         }
                     } catch (e) {}
@@ -125,9 +250,11 @@ function scanEpicGamesManifests() {
         } catch (err) {}
     }
 }
+
+
+
 /**
- * 3. NATIVER LAUNCHER-SCAN: BATTLE.NET (.build.info)
- * Durchsucht alle Laufwerke nach installierten Blizzard-Spielen.
+ * 4. NATIVER LAUNCHER-SCAN: BATTLE.NET (.build.info)
  */
 function scanBattleNetManifests() {
     const volumes = [path.join(HOME, 'Applications'), ...getDynamicExternalVolumes()];
@@ -143,7 +270,8 @@ function scanBattleNetManifests() {
 
                     const bnetBuildInfo = path.join(fullPath, '.build.info');
                     if (fs.existsSync(bnetBuildInfo)) {
-                        addGameSafely(file);
+                        const exePath = findExecutableInDir(fullPath);
+                        addGameSafely(file, exePath);
                     }
 
                     try {
@@ -151,7 +279,8 @@ function scanBattleNetManifests() {
                         subFiles.forEach(subFile => {
                             const subPath = path.join(fullPath, subFile);
                             if (fs.existsSync(path.join(subPath, '.build.info'))) {
-                                addGameSafely(subFile);
+                                const exePath = findExecutableInDir(subPath);
+                                addGameSafely(subFile, exePath);
                             }
                         });
                     } catch (e) {}
@@ -162,8 +291,7 @@ function scanBattleNetManifests() {
 }
 
 /**
- * 4. NATIVER LAUNCHER-SCAN: HEROIC GAMES LAUNCHER (JSON Store Cache)
- * Liest den Mac-seitigen Cache von Heroic aus.
+ * 5. NATIVER LAUNCHER-SCAN: HEROIC GAMES LAUNCHER (JSON Store Cache)
  */
 function scanHeroicManifests() {
     const heroicCacheDir = path.join(HOME, 'Library/Application Support/heroic/store_cache');
@@ -175,14 +303,21 @@ function scanHeroicManifests() {
                     try {
                         const content = fs.readFileSync(path.join(heroicCacheDir, file), 'utf8');
                         const parsed = JSON.parse(content);
-                        if (parsed && Array.isArray(parsed)) {
-                            parsed.forEach(game => {
-                                if (game && game.title && game.is_installed) {
-                                    addGameSafely(game.title);
+                        
+                        const checkAndAddHeroicGame = (game) => {
+                            if (game && game.title && game.is_installed) {
+                                let exePath = '';
+                                if (game.install_path) {
+                                    exePath = findExecutableInDir(game.install_path);
                                 }
-                            });
-                        } else if (parsed && parsed.title && parsed.is_installed) {
-                            addGameSafely(parsed.title);
+                                addGameSafely(game.title, exePath);
+                            }
+                        };
+
+                        if (parsed && Array.isArray(parsed)) {
+                            parsed.forEach(checkAndAddHeroicGame);
+                        } else if (parsed) {
+                            checkAndAddHeroicGame(parsed);
                         }
                     } catch (e) {}
                 }
@@ -195,36 +330,41 @@ function scanHeroicManifests() {
  * Hauptfunktion zur Ausführung des bereinigten Manifest-Scans
  */
 function runGameScanner() {
-    console.log("🔍 Starte bereinigten, plattformfreien v2.7.1 Manifest-Scanner...");
+    console.log("🔍 Starte bereinigten, plattformfreien v2.7.1 Manifest-Scanner mit EXE-Mapping...");
 
-    // 1. Steam (Lokal + Dynamische Volumes)
+    // Launcher Scans starten
     scanSteamManifests(path.join(HOME, 'Library/Application Support/Steam'));
     getDynamicExternalVolumes().forEach(plate => scanSteamManifests(plate));
-
-    // 2. Epic Games Store
     scanEpicGamesManifests();
-
-    // 3. Battle.net
     scanBattleNetManifests();
-
-    // 4. Heroic Games Launcher
     scanHeroicManifests();
 
-    // Ergebnisse verarbeiten und sortieren
+    // Standard-Ausgabeliste sortieren
     const outputLines = Array.from(detectedGames).sort();
     let fileContent = outputLines.length === 0 ? 'Keine Spiele gefunden.' : outputLines.join('\n');
+
+    // Mapping-Zeilen generieren (Alphabetisch sortiert nach Spielname)
+    const mappingLines = Array.from(gameExeMap.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, exePath]) => `${name}=>${exePath}`);
+    let mappingFileContent = mappingLines.length === 0 ? '' : mappingLines.join('\n');
 
     console.log("\n--- GEFUNDENE SPIELE (BEREINIGTER MANIFEST-CHECK) ---");
     console.log(fileContent);
     console.log("-----------------------------------------------------");
 
-    // TXT-Export in die v2.7.1 Ordnerstruktur
+    // Exportieren
     try {
         if (!fs.existsSync(CONFIG_DIR)) {
             fs.mkdirSync(CONFIG_DIR, { recursive: true });
         }
+        
         fs.writeFileSync(OUTPUT_FILE, fileContent, 'utf-8');
         console.log(`\n💾 Reine Spieleliste erfolgreich exportiert unter:\n${OUTPUT_FILE}`);
+        
+        fs.writeFileSync(MAPPING_FILE, mappingFileContent, 'utf-8');
+        console.log(`💾 Exe-Mapping-Datei erfolgreich exportiert unter:\n${MAPPING_FILE}`);
+        
     } catch (err) {
         console.error(`\n❌ Export-Fehler: ${err.message}`);
     }

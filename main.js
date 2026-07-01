@@ -1,4 +1,3 @@
-//const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen } = require('electron');
 const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen, ipcMain } = require('electron'); // <-- ipcMain HINZUFÜGEN
 
 const { exec } = require('child_process');
@@ -40,6 +39,53 @@ let optimizedPIDs = new Set();
 let currentStatusText = '🎮 Status: No active games';
 let lastPromptTime = 0; 
 const PROMPT_COOLDOWN = 1 * 60 * 1000;
+
+// Pfad zur Mapping-Datei und die dynamische Laufzeit-Map
+const MAPPING_FILE = path.join(CONFIG_DIR, 'games_exe_mapping.txt');
+let activeGamesMapping = new Map();
+
+/**
+ * Lädt die games_exe_mapping.txt dynamisch in den Arbeitsspeicher.
+ * Verknüpft die Prozessnamen (.exe oder Mac-Binary) mit dem echten Namen.
+ */
+function loadGamesMappingFile() {
+    const MAPPING_FILE = path.join(os.homedir(), 'Library/Application Support/fps-boost/config/games_exe_mapping.txt');
+    activeGamesMapping.clear();
+    
+    try {
+        if (fs.existsSync(MAPPING_FILE)) {
+            const content = fs.readFileSync(MAPPING_FILE, 'utf-8');
+            content.split('\n').forEach(line => {
+                const parts = line.trim().split('=>');
+                if (parts.length === 2) {
+                    const gameName = parts[0].trim();
+                    const processRaw = parts[1].trim().toLowerCase();
+                    
+                    if (processRaw && processRaw !== 'unknown_executable.exe') {
+                        // FIX: Wenn mehrere Exes mit || getrennt sind, mappen wir jede einzeln!
+                        if (processRaw.includes('||')) {
+                            const multipleExes = processRaw.split('||');
+                            multipleExes.forEach(exe => {
+                                const cleanExe = exe.trim();
+                                if (cleanExe.length > 2) {
+                                    activeGamesMapping.set(cleanExe, gameName);
+                                }
+                            });
+                        } else {
+                            // Standardfall für einzelne Exes/Binaries
+                            activeGamesMapping.set(processRaw, gameName);
+                        }
+                    }
+                }
+            });
+            writeToRotatedLog(`🔄 Dynamische Mapping-Engine: ${activeGamesMapping.size} Spiele-Prozesse erfolgreich geladen.`);
+        } else {
+            writeToRotatedLog("⚠️ Hinweis: games_exe_mapping.txt existiert nicht. Bitte Scan ausführen.");
+        }
+    } catch (e) {
+        writeToRotatedLog("❌ Fehler beim Laden der games_exe_mapping.txt: " + e.message);
+    }
+}
 
 function sendToRootHelper(pid, level) {
     try {
@@ -499,6 +545,12 @@ function getCleanGameName(fullPath, appName) {
 }
 
 function checkAndBoostGames() {
+    // 1. SICHERHEITS-BREMSE: Wenn das Mapping noch nicht geladen ist, brich sofort ab!
+    if (!activeGamesMapping || activeGamesMapping.size === 0) {
+        return;
+    }
+
+    // 2. Blacklist initialisieren, falls sie fehlt
     if (!fs.existsSync(BLACKLIST_FILE)) {
         const defaultBlacklist = [
             'steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe',
@@ -512,17 +564,21 @@ function checkAndBoostGames() {
         fs.writeFileSync(BLACKLIST_FILE, defaultBlacklist, 'utf8');
     }
 
+    // 3. Blacklist einlesen
     let userBlacklist = [];
     try {
-        const fileContent = fs.readFileSync(BLACKLIST_FILE, 'utf8');
-        userBlacklist = fileContent.split('\n')
-            .map(line => line.trim().toLowerCase())
-            .filter(line => line.length > 0);
+        if (fs.existsSync(BLACKLIST_FILE)) {
+            const fileContent = fs.readFileSync(BLACKLIST_FILE, 'utf8');
+            userBlacklist = fileContent.split('\n')
+                .map(line => line.trim().toLowerCase())
+                .filter(line => line.length > 0);
+        }
     } catch (e) {
         writeToRotatedLog("⚠️ Error reading blacklist.txt");
     }
 
-    const searchCommand = "ps -Ax -o pid,comm | grep -Ei 'wine|wineloader|steamapps|crossover|crs-handler|crs-handler.exe|wineloader64' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
+    // 4. ULTIMATIVER PROZESS-SCAN (Scant den vollen Startbefehl)
+    const searchCommand = "ps -Ax -o pid,command | grep -Ei 'wine|wineloader|steamapps|crossover|crs-handler|crs-handler.exe|wineloader64' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
 
     exec(searchCommand, (error, stdout) => {
         if (error || !stdout.trim()) {
@@ -539,75 +595,88 @@ function checkAndBoostGames() {
         const lines = stdout.trim().split('\n');
         const currentPIDs = new Set();
 
-        lines.sort((a, b) => {
-            const aLow = a.toLowerCase();
-            const bLow = b.toLowerCase();
-            const aShipping = aLow.includes('shipping') || aLow.includes('crs-handler');
-            const bShipping = bLow.includes('shipping') || bLow.includes('crs-handler');
-            if (aShipping && !bShipping) return -1;
-            if (!aShipping && bShipping) return 1;
-            return 0;
-        });
-
         lines.forEach(line => {
             const parts = line.trim().split(/\s+/);
             if (parts.length < 2) return;
+            
             const pid = parts[0]; 
             const fullPath = parts.slice(1).join(' ');
             const normalizedPath = fullPath.replace(/\\/g, '/');
-            const appName = path.basename(normalizedPath);
-            let displayGameName = appName;
-            const isTlouPath = normalizedPath.toLowerCase().includes('last of us') || normalizedPath.toLowerCase().includes('tlou');
-            const isUnchartedPath = normalizedPath.toLowerCase().includes('uncharted');
-            const isTlou2Path = normalizedPath.toLowerCase().includes('last of us part ii') || 
-                                normalizedPath.toLowerCase().includes('tlou2') || 
-                                normalizedPath.toLowerCase().includes('tlou ii');
-            const isRealSonyGame = isTlouPath || isTlou2Path || isUnchartedPath;
+            const lowerPath = normalizedPath.toLowerCase();
 
-            if (isRealSonyGame && (appName.toLowerCase().includes('crs-handler') || appName.toLowerCase().includes('tlou') || appName.toLowerCase().includes('winewrapper'))) {
-                if (isUnchartedPath) {
-                    displayGameName = "Uncharted Legacy of Thieves Collection";
-                } else if (isTlou2Path) {
-                    displayGameName = "The Last of Us Part II";
-                } else {
-                    displayGameName = "The Last of Us Part I";
+            // Extrahiert den reinen Dateinamen am Ende des Pfads
+            let extractedExe = path.basename(normalizedPath.split(' ')[0]);
+            const exeExtract = normalizedPath.match(/([^\/]+\.exe)/i);
+            if (exeExtract && exeExtract[1]) {
+                extractedExe = exeExtract[1].split(' ')[0];
+            }
+            
+            const lowName = extractedExe.toLowerCase();
+            const cleanName = lowName.replace(/[()]/g, '');
+
+            // -----------------------------------------------------------------
+            // 🔄 DYNAMISCHER MEHRWEG-ABGLEICH GEGEN DAS MAPPING
+            // -----------------------------------------------------------------
+            let displayGameName = "";
+            let isMatchedGame = false;
+
+            // Weg A: Direkt-Prüfung über den reinen Prozessnamen
+            if (activeGamesMapping.has(cleanName)) {
+                const mappedName = activeGamesMapping.get(cleanName);
+                if (mappedName && mappedName !== 'unknown_executable.exe') {
+                    displayGameName = `🎮 ${mappedName}`;
+                    isMatchedGame = true;
                 }
-            } else {
-                displayGameName = getCleanGameName(normalizedPath, appName);
             }
 
-            const lowName = appName.toLowerCase();
-            const cleanName = lowName.replace(/[()]/g, '');
-            const is007 = normalizedPath.toLowerCase().includes('007') || pid === '1919';
-            const isSonyGame = displayGameName.includes("The Last of Us") || displayGameName.includes("Uncharted") || lowName.includes("crs-handler");
-            const isBlacklisted = userBlacklist.some(ignoredName => cleanName === ignoredName);
+            // Weg B: Tiefen-Pfad-Prüfung über den Key aus der Mapping-Datei
+            if (!isMatchedGame) {
+                for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                    if (processKey && processKey !== 'unknown_executable.exe') {
+                        const cleanKey = processKey.toLowerCase().trim();
+                        if (lowerPath.includes(cleanKey)) {
+                            displayGameName = `🎮 ${gameTitle}`;
+                            isMatchedGame = true;
+                            break;
+                        }
+                    }
+                }
+            }
 
-            if (!appName || 
-                (isBlacklisted && !is007 && !isSonyGame) ||
-                cleanName.includes('helper') || 
-                cleanName.includes('overlay') || 
-                cleanName.includes('webhelper') || 
-                cleanName.includes('ipcserver') || 
-                cleanName.includes('winedevice') || 
-                cleanName.includes('wineboot') || 
-                cleanName.includes('wineserver') || 
-                cleanName.includes('sysinfo') || 
-                cleanName.includes('service') || 
-                cleanName.includes('gamepolicy') || 
-                (!is007 && !isSonyGame && !isNaN(cleanName.charAt(0)))
-            ) return;
+            // Weg C: SONY SPECIAL FIX (Die ultimative Rettung für The Last of Us via crs-handler)
+            // Wenn das Spiel als crs-handler maskiert ist, suchen wir direkt nach dem Klarnamen im Argument!
+            if (!isMatchedGame && lowerPath.includes('crs-handler')) {
+                for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                    // Bereinigt den Spieletitel von Symbolen wie ™ für einen sicheren Treffer
+                    const cleanTitleMatch = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const cleanPathMatch = lowerPath.replace(/[^a-z0-9]/g, '');
+                    
+                    if (cleanPathMatch.includes(cleanTitleMatch)) {
+                        displayGameName = `🎮 ${gameTitle}`;
+                        isMatchedGame = true;
+                        break;
+                    }
+                }
+            }
+
+            // Sicherheits-Stopp: Wenn es absolut kein Treffer aus dem Mapping ist -> Überspringen
+            if (!isMatchedGame) return;
+
+            // Blacklist-Abgleich
+            const isBlacklisted = userBlacklist.some(ignoredName => cleanName === ignoredName);
+            if (isBlacklisted) return;
 
             currentPIDs.add(pid);
 
             if (optimizedPIDs.has(pid)) return;
-
             optimizedPIDs.add(pid);
             
             writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
             manageRamGuardState(true);
 
             if (isBoostActive) {
-                const isWrapper = lowName.includes('winewrapper') || lowName.includes('winedevice') || lowName.includes('wineboot');
+                // Ein crs-handler, der ein verifiziertes Spiel enthält, ist KEIN unbedeutender Wrapper!
+                const isWrapper = (lowName.includes('winewrapper') || lowName.includes('winedevice') || lowName.includes('wineboot')) && !lowerPath.includes('crs-handler');
 
                 if (!isWrapper) {
                     sendToRootHelper(pid, -5);
@@ -624,6 +693,7 @@ function checkAndBoostGames() {
             }
         });
 
+        // Aufräum-Logik für beendete Spiele
         for (let pid of optimizedPIDs) {
             if (!currentPIDs.has(pid)) {
                 optimizedPIDs.delete(pid);
@@ -647,15 +717,6 @@ ipcMain.on('trigger-start-helper', () => {
     startRootHelper();
 });
 
-app.whenReady().then(() => {
-    
-    startRootHelper();
-    
-    if (process.platform === 'darwin') {
-        app.dock.hide();
-    }
-});
-
 // Höre auf das Start-Signal aus dem Einstellungsfenster
 ipcMain.on('trigger-start-helper', () => {
     startRootHelper();
@@ -665,21 +726,30 @@ ipcMain.on('trigger-start-helper', () => {
 // SYSTEM ENGINE: MANUAL GAME SCANNER IPC CHANNELS (v2.7.1)
 // =================================================================
 
-// Handler 1: Führt das Testskript asynchron aus
+// Handler 1: Führt das Testskript asynchron aus und lädt das Mapping neu
 ipcMain.handle('trigger-game-scan', async () => {
     return new Promise((resolve) => {
+        // FIX: Auch hier auf check_games.js geändert
         const scannerPath = path.join(__dirname, 'check_games.js');
         if (!fs.existsSync(scannerPath)) {
             resolve({ success: false, error: 'Skript check_games.js fehlt im Verzeichnis.' });
             return;
         }
+        
         const { fork } = require('child_process');
         const child = fork(scannerPath, [], { silent: true });
+        
         child.on('close', (code) => {
-            resolve({ success: code === 0 });
+            if (code === 0) {
+                loadGamesMappingFile(); // Lädt das Mapping nach dem erfolgreichen Scan neu
+                resolve({ success: true });
+            } else {
+                resolve({ success: false, error: 'Scanner-Skript meldete einen Fehler.' });
+            }
         });
-        child.on('error', () => {
-            resolve({ success: false });
+        
+        child.on('error', (err) => {
+            resolve({ success: false, error: err.message });
         });
     });
 });
@@ -696,13 +766,6 @@ ipcMain.handle('get-games-list', async () => {
         return { success: true, games: [] };
     } catch (e) {
         return { success: false, games: [] };
-    }
-});
-
-app.whenReady().then(() => {
-    startRootHelper();
-    if (process.platform === 'darwin') {
-        app.dock.hide();
     }
 });
 
@@ -1155,10 +1218,51 @@ function updateMenu() {
 }
 
 app.whenReady().then(() => {
+    // 1. ZUERST EINSTELLUNGEN LADEN
     loadSettings();
 
+    // LOGGING INITIALISIEREN
+    if (isLoggingActive) {
+        fs.writeFileSync(LOG_FILE, '', 'utf8');
+        writeToRotatedLog("🚀 App initiated - Persistent logging ACTIVE.");
+    }
+
+    // 2. INTELLIGENTE WEICHE: Spielelisten laden oder initial erstellen
+    const CONFIG_DIR = path.join(os.homedir(), 'Library/Application Support/fps-boost/config');
+    const LIST_FILE = path.join(CONFIG_DIR, 'games_list.txt');
+    const MAPPING_FILE = path.join(CONFIG_DIR, 'games_exe_mapping.txt');
+    
+    const filesExist = fs.existsSync(LIST_FILE) && fs.existsSync(MAPPING_FILE);
+    
+    if (!filesExist) {
+        writeToRotatedLog("ℹ️ Initialer Start: Dateien fehlen. Starte automatischen Hintergrund-Spiele-Scan...");
+        const scannerPath = path.join(__dirname, 'check_games.js');
+        
+        if (fs.existsSync(scannerPath)) {
+            const { fork } = require('child_process');
+            const child = fork(scannerPath, [], { silent: true });
+            child.on('close', (code) => {
+                if (code === 0) {
+                    writeToRotatedLog("✅ Hintergrund-Scan erfolgreich beendet. Lade Mapping...");
+                    loadGamesMappingFile();
+                } else {
+                    writeToRotatedLog("❌ Hintergrund-Scan meldete einen Fehler beim Erstellen der Dateien.");
+                }
+            });
+        } else {
+            writeToRotatedLog("❌ Fehler beim App-Start: check_games.js wurde im Verzeichnis nicht gefunden.");
+        }
+    } else {
+        // Dateien existieren bereits -> Direkt laden und CPU/Festplatte schonen!
+        writeToRotatedLog("💾 Spielelisten bereits vorhanden. Überspringe Scan und lade Daten direkt...");
+        loadGamesMappingFile();
+    }
+
+    // 3. ROOT-HELPER STARTEN & DOCK AUSBLENDEN
+    startRootHelper();
     if (app.dock) app.dock.hide(); 
 
+    // 4. TRAY / MENÜLEISTE INITIALISIEREN
     const isPackaged = app.isPackaged;
     const trayIconPath = isPackaged 
         ? path.join(process.resourcesPath, 'rocket.png') 
@@ -1169,7 +1273,8 @@ app.whenReady().then(() => {
         tray.setToolTip('Mac Gaming Booster');
     }
 
-        globalShortcut.register('CommandOrControl+Alt+R', () => {
+    // 5. GLOBAL SHORTCUTS / HOTKEYS REGISTRIEREN
+    globalShortcut.register('CommandOrControl+Alt+R', () => {
         toggleRamOverlay();
     });
     
@@ -1217,13 +1322,11 @@ app.whenReady().then(() => {
         process.exit(0); 
     });
 
-    if (isLoggingActive) {
-        fs.writeFileSync(LOG_FILE, '', 'utf8');
-        writeToRotatedLog("🚀 App initiated - Persistent logging ACTIVE.");
-    }
-
+    // 6. MENÜ AKTUALISIEREN & MONITORING-INTERVAL STARTEN
     updateMenu();
     intervalId = setInterval(checkAndBoostGames, 4000);
+
+    writeToRotatedLog("⚙️ Alle Start-Systeme erfolgreich verkettet und aktiv.");
 });
 
 app.on('will-quit', () => {

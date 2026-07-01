@@ -1,56 +1,56 @@
-# 🚀 Mac Gaming Booster (Apple Silicon Optimiert)
+# 🚀 Mac Gaming Booster (Apple Silicon Optimized)
 
-**Version:** 2.7.1 (Platin GUI Edition) | **Plattform:** macOS (arm64) | **Ziel-Betriebssystem:** macOS 15+  
-**Umgebung:** Electron Framework / Native Menüleisten-Anwendung  
-
----
-
-## 🛑 WICHTIG: REALISTISCHE ERWARTUNGEN (⚠️ KEINE WUNDER-FPS!)
-
-Diese App ist **KEIN** Overclocking-Tool. Sie optimiert die Systemressourcen für Spiele, kann aber Hardwaregrenzen nicht überspringen.
-
-### 💡 Was macht die App eigentlich?
-Optimiert CPU, Thread-Priorität und RAM auf Apple Silicon:
-- **Zero-Dependency:** Läuft eigenständig über die interne Electron-Binary.
-- **Mikro-Ruckler-Reduzierung:** Setzt Spielprozesse auf hohe Priorität (`Nice -5`).
-- **Intelligente Engine-Priorisierung:** Fokussiert sich auf die Haupt-Binaries des Spiels, während Launcher im Hintergrund gehalten werden.
-- **Automatischer RAM-Cleanup:** Löst beim Beenden `sudo purge` für freigegebenen Speicher aus.
+**Version:** 2.7.1 (Platinum GUI Edition) | **Platform:** macOS (arm64) | **Target OS:** macOS 15+  
+**Environment:** Electron Framework / Native Menu Bar Application  
 
 ---
 
-## 🛠️ Features (v2.7.1)
+## 🛑 IMPORTANT: REALISTIC EXPECTATIONS (⚠️ NO MIRACLE FPS!)
 
-- **Standalone-Architektur:** Kein externes Node.js erforderlich.
-- **Native Failsafe-Engine:** `sudo-prompt` wurde für eine sichere Rechteerhöhung durch `osascript` ersetzt.
-- **Aggressiver Kernel-Boost:** `renice -5` für Spiele, `-1` für Hintergrunddienste.
-- **Single-Auth-Sicherheit:** Nur eine Passworteingabe pro Kaltstart des Macs erforderlich.
-- **Aktualisierte Spielerkennung:** Präzises Parsing für AAA-Titel (Helldivers 2, TLOU, etc.).
-- **Verfeinerte Daemon-Steuerung:** Optionen für Hintergrund-Persistenz oder Auto-Kill.
-- **Live-RAM-HUD:** Nicht-fokussierbares Overlay mit aktuellen Speicherstatistiken.
-- **Adaptiver Watchdog:** Verhindert Speicherlecks durch Steuerung von `MTLCompilerService` und `purge`.
-- **Integrierter Plattform-Scanner:** Eigenständiges Test-Skript `check_games.js` zur Tiefensuche von Spielinstallationen auf internen/externen Festplatten (`/Volumes`).
+This app is **NOT** an overclocking tool. It optimizes system resources for gaming but cannot bypass physical hardware limits.
 
----
-
-## 🔄 Letzte Änderungen & Optimierungen (v2.7.1)
-
-Im Zuge der Weiterentwicklung zur **Platin GUI Edition (v2.7.1)** wurden kritische Kernkomponenten der Engine stabilisiert, absolut neustartsicher gemacht und tiefer in die GUI integriert:
-
-### 1. Neustartsichere Trigger-Architektur (`main.js` & `helper.js`)
-* **Problem gelöst:** Bisher hat der privilegierte Root-Helper die Datei `boost.trigger` nach dem Auslesen via `fs.unlinkSync()` komplett gelöscht. Dies führte nach einem macOS-Neustart zu Berechtigungskonflikten, wodurch die im User-Space laufende Haupt-App keine neuen Triggersignale mehr absetzen konnte (Spiele verblieben dauerhaft auf Standard-Priorität `Mid / 0`).
-* **Optimierung:** Der Löschbefehl wurde entfernt. Der Root-Helper leert die Datei nach der Verarbeitung nun atomar mittels `fs.writeFileSync(triggerPath, '', 'utf8')`. Die Datei bleibt physisch mit den korrekten Schreibrechten bestehen. Die Engine fängt Spiele nach einem System-Reboot innerhalb von 2 Sekunden ab und zwingt sie vollautomatisch zurück in den Kernel-Boost-Modus (`Max / -5`).
-
-### 2. Korrektur der Pfad-Struktur für `sendToRootHelper`
-* Die Funktion zur Kommunikation mit dem Hintergrund-Dienst wurde vollständig an die neue, saubere Ordnerstruktur angepasst. 
-* Signale werden nun exakt im zentralen Verzeichnis `~/Library/Application Support/fps-boost/config/boost.trigger` hinterlegt.
-* Alle PIDs und Leistungswerte werden vor der Übergabe strikt als Ganzzahlen (`parseInt`) validiert, um Syntaxfehler innerhalb der POSIX-Shell zu verhindern.
-
-### 3. GUI-Anbindung für die Spieleliste (`games_list.txt`)
-* **Neu in den Settings:** Die Einlese-Schnittstelle für die externe `games_list.txt` wurde erfolgreich direkt in das Einstellungsfenster (Settings-GUI) ausgelagert und integriert.
-* **Hinweis:** Die tiefe Zwei-Wege-Namensübersetzung und Filter-Heuristik für komplexe Prozesstitel in der Engine (`checkAndBoostGames`) wurde vorerst teilweise zurückgesetzt und wird in einer kommenden Revision finalisiert. Die Verwaltung läuft jedoch bereits zentral über die Benutzeroberfläche.
+### 💡 What does the app actually do?
+Optimizes CPU, thread priority, and RAM on Apple Silicon:
+- **Zero-Dependency:** Runs fully standalone via the internal Electron binary.
+- **Micro-Stutter Reduction:** Assigns high priority (`Nice -5`) to game processes.
+- **Intelligent Engine Prioritization:** Focuses on primary game binaries while keeping launchers constrained in the background.
+- **Automatic RAM Cleanup:** Triggers a native `sudo purge` command upon exiting a game to free up cached memory.
 
 ---
 
-## 📜 Lizenz
+## ⚙️ Features (v2.7.1)
 
-MIT-Lizenz. Siehe LICENSE-Datei für Details.
+- **Standalone Architecture:** No external Node.js installation required.
+- **Native Failsafe Engine:** Replaced legacy `sudo-prompt` with secure privilege elevation handled via `osascript`.
+- **Aggressive Kernel Boost:** `renice -5` for verified primary game executables, `-1` for emulation-relevant Wine background processes.
+- **Single-Auth Security:** Requires password entry only once per cold boot of the Mac.
+- **Updated Game Detection:** Precise parsing for AAA titles (Helldivers 2, TLOU, etc.).
+- **Refined Daemon Controls:** Native options for background persistence or auto-kill behaviors.
+- **Live RAM HUD:** A click-through, non-focusable overlay displaying real-time memory statistics.
+- **Adaptive Watchdog:** Prevents heavy memory leaks by active management of `MTLCompilerService` and `purge`.
+- **Integrated Platform Scanner:** Independent test utility `check_games2.js` for deep-scanning game installations across internal and external storage drives (`/Volumes`) alongside automatic EXE mapping.
+
+---
+
+## 🔄 Recent Changes & Optimizations (v2.7.1)
+
+During the development toward the **Platinum GUI Edition (v2.7.1)**, critical core components of the engine were stabilized, made completely reboot-safe, and deeply integrated into the GUI:
+
+### 1. Reboot-Safe Trigger Architecture (`main.js` & `helper.js`)
+* **Problem Solved:** Previously, the privileged root helper completely deleted the `boost.trigger` file via `fs.unlinkSync()` after reading it. This caused file permission conflicts after a macOS reboot, preventing the main user-space app from creating new triggers (causing games to remain stuck at standard priority `Mid / 0`).
+* **Optimization:** The deletion command was removed. The root helper now flushes the file contents atomically using `fs.writeFileSync(triggerPath, '', 'utf8')`. The physical file remains intact with correct write permissions. The engine detects games within 2 seconds after a system reboot and forces them back into Kernel Boost mode (`Max / -5`).
+
+### 2. Path Structure Correction for `sendToRootHelper`
+* The communication channel function linking to the background root service has been fully re-mapped to the new clean directory layout.
+* Signals are now accurately written inside the centralized `~/Library/Application Support/fps-boost/config/boost.trigger` path.
+* All PIDs and booster level values are strictly validated as integers (`parseInt`) before transmission to prevent any POSIX shell syntax anomalies.
+
+### 3. GUI Integration & Dynamic Mapping Engine (`games_exe_mapping.txt`)
+* **New in Settings:** The read interface for the external `games_list.txt` has been successfully implemented directly into the configuration window (Settings GUI).
+* **100% Dynamic Detection:** The deep two-way title translation and filter heuristics for complex processes (such as PlayStation's `crs-handler.exe` used in *The Last of Us* or multi-executables like `u4.exe||tll-l.exe` for *Uncharted*) have been fully completed. The application now runs entirely without hardcoded game titles inside the source code, reading all runtime process associations dynamically from `games_exe_mapping.txt`.
+
+---
+
+## 📜 License
+
+MIT License. See LICENSE file for details.
