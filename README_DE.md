@@ -28,7 +28,15 @@ Optimiert CPU, Thread-Priorität und RAM auf Apple Silicon:
 - **Verfeinerte Daemon-Steuerung:** Optionen für Hintergrund-Persistenz oder Auto-Kill.
 - **Live-RAM-HUD:** Nicht-fokussierbares Overlay mit aktuellen Speicherstatistiken.
 - **Adaptiver Watchdog:** Verhindert Speicherlecks durch Steuerung von `MTLCompilerService` und `purge`.
-- **Integrierter Plattform-Scanner:** Eigenständiges Test-Skript `check_games2.js` zur Tiefensuche von Spielinstallationen auf internen/externen Festplatten (`/Volumes`) mitsamt automatischem EXE-Mapping.
+- **Integrierter Plattform-Scanner:** Eigenständiges Test-Skript `check_games.js` zur Tiefensuche von Spielinstallationen auf internen/externen Festplatten (`/Volumes`) mitsamt automatischem EXE-Mapping.
+
+---
+
+## ⚠️ WICHTIGER HINWEIS ZUR GUI-BEDIENUNG (MANUELLER NEUSTART)
+
+* **Zustands-Synchronisation:** Wenn du den FPS-Boost in den Einstellungen der Benutzeroberfläche (GUI) aktivierst oder deaktivierst, **muss die App danach zwingend einmal manuell beendet und neu gestartet werden!**
+* **Verhalten der Schleife:** Die Kernel-Priorität (`Nice`-Level) wird ausschließlich beim Kaltstart der App frisch aus der Konfigurationsdatei eingelesen. 
+* **Egal wann das Spiel startet:** Diese Regel gilt immer – vollkommen unabhängig davon, ob das Spiel zum Zeitpunkt der Änderung bereits aktiv im Hintergrund läuft oder erst viel später gestartet wird. Ein manueller App-Neustart schaltet den gewählten Modus sofort scharf.
 
 ---
 
@@ -37,8 +45,8 @@ Optimiert CPU, Thread-Priorität und RAM auf Apple Silicon:
 Im Zuge der Weiterentwicklung zur **Platin GUI Edition (v2.7.1)** wurden kritische Kernkomponenten der Engine stabilisiert, absolut neustartsicher gemacht und tiefer in die GUI integriert:
 
 ### 1. Neustartsichere Trigger-Architektur (`main.js` & `helper.js`)
-* **Problem gelöst:** Bisher hat der privilegierte Root-Helper die Datei `boost.trigger` nach dem Auslesen via `fs.unlinkSync()` komplett gelöscht. Dies führte nach einem macOS-Neustart zu Berechtigungskonflikten, wodurch die im User-Space laufende Haupt-App keine neuen Triggersignale mehr absetzen konnte (Spiele verblieben dauerhaft auf Standard-Priorität `Mid / 0`).
-* **Optimierung:** Der Löschbefehl wurde entfernt. Der Root-Helper leert die Datei nach der Verarbeitung nun atomar mittels `fs.writeFileSync(triggerPath, '', 'utf8')`. Die Datei bleibt physisch mit den korrekten Schreibrechten bestehen. Die Engine fängt Spiele nach einem System-Reboot innerhalb von 2 Sekunden ab und zwingt sie vollautomatisch zurück in den Kernel-Boost-Modus (`Max / -5`).
+* **Problem gelöst:** Bisher hat der privilegierte Root-Helper die Datei `boost.trigger` nach dem Auslesen via `fs.unlinkSync()` komplett gelöscht. Dies führte nach einem macOS-Neustart zu Berechtigungskonflikten, wodurch die im User-Space laufende Haupt-App keine neuen Triggersignale mehr absetzen konnte.
+* **Optimierung:** Der Löschbefehl wurde entfernt. Der Root-Helper leert die Datei nach der Verarbeitung nun atomar mittels `fs.writeFileSync(triggerPath, '', 'utf8')`. Die Datei bleibt physisch mit den korrekten Schreibrechten bestehen. Die Engine fängt Spiele nach einem System-Reboot innerhalb von 2 Sekunden ab und zwingt sie vollautomatisch zurück in den Kernel-Boost-Modus (`Max / -5`), sofern die App gestartet ist.
 
 ### 2. Korrektur der Pfad-Struktur für `sendToRootHelper`
 * Die Funktion zur Kommunikation mit dem Hintergrund-Dienst wurde vollständig an die neue, saubere Ordnerstruktur angepasst. 

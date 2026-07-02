@@ -659,45 +659,87 @@ function checkAndBoostGames() {
                 }
             }
 
-            // Sicherheits-Stopp: Wenn es absolut kein Treffer aus dem Mapping ist -> Überspringen
+            // Sicherheits-Stopp: Wenn kein Treffer im Mapping -> Überspringen
             if (!isMatchedGame) return;
 
             // Blacklist-Abgleich
             const isBlacklisted = userBlacklist.some(ignoredName => cleanName === ignoredName);
             if (isBlacklisted) return;
 
+            // Die PID wird registriert
             currentPIDs.add(pid);
 
+            // Verhindert Signal-Spam: Wenn die PID bereits im Boost-Speicher ist, überspringen
             if (optimizedPIDs.has(pid)) return;
             optimizedPIDs.add(pid);
             
             writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
             manageRamGuardState(true);
 
+
+            // -----------------------------------------------------------------
+            // ⚡️ ADAPTIVE TRIGGER-ENGINE (Zustandssteuerung für Relaunch-Reset)
+            // -----------------------------------------------------------------
             if (isBoostActive) {
+                // Sichert den RAM-Guard Start beim ersten Erfassen des Spiels
+                if (!optimizedPIDs.has(pid)) {
+                    writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
+                    manageRamGuardState(true);
+                }
+
                 // Ein crs-handler, der ein verifiziertes Spiel enthält, ist KEIN unbedeutender Wrapper!
                 const isWrapper = (lowName.includes('winewrapper') || lowName.includes('winedevice') || lowName.includes('wineboot')) && !lowerPath.includes('crs-handler');
 
                 if (!isWrapper) {
-                    sendToRootHelper(pid, -5);
-                    writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (PID: ${pid}) geschrieben.`);
+                    // Signal-Sperre: Nur feuern, wenn der Boost für diese PID noch nicht aktiv ist
+                    if (!optimizedPIDs.has(pid + '_max')) {
+                        optimizedPIDs.delete(pid + '_mid');
+                        optimizedPIDs.add(pid + '_max');
+                        optimizedPIDs.add(pid); // Für die Aufräum-Schleife kompatibel halten
+
+                        sendToRootHelper(pid, -5);
+                        writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (PID: ${pid}) geschrieben.`);
+                        sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
+                    }
                     currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName}`;
                     updateMenu();
-                    sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
                 } else {
-                    sendToRootHelper(pid, -1);
-                    writeToRotatedLog(`⚡️ Trigger-Engine: Parallel-Prozess ${displayGameName} (PID: ${pid}) auf MID gesetzt.`);
+                    // Wrapper-Zweig
+                    if (!optimizedPIDs.has(pid + '_mid')) {
+                        optimizedPIDs.delete(pid + '_max');
+                        optimizedPIDs.add(pid + '_mid');
+                        optimizedPIDs.add(pid);
+
+                        sendToRootHelper(pid, -1);
+                        writeToRotatedLog(`⚡️ Trigger-Engine: Parallel-Prozess ${displayGameName} (PID: ${pid}) auf MID gesetzt.`);
+                    }
                     currentStatusText = `🟡 MID-Boost: 📦 ${displayGameName}`;
                     updateMenu();
                 }
+            } else {
+                // FALLBACK NACH RELAUNCH: Wenn der Boost in der GUI ausgeschaltet wurde!
+                // Wir prüfen, ob die PID im vorherigen Lauf geboostet wurde oder frisch im Speicher ist
+                if (optimizedPIDs.has(pid) || optimizedPIDs.has(pid + '_max') || optimizedPIDs.has(pid + '_mid')) {
+                    optimizedPIDs.delete(pid);
+                    optimizedPIDs.delete(pid + '_max');
+                    optimizedPIDs.delete(pid + '_mid');
+                    
+                    sendToRootHelper(pid, 0);
+                    writeToRotatedLog(`⌛️ Trigger-Engine: Boost deaktiviert. ${displayGameName} (PID: ${pid}) auf Standard (0) zurückgesetzt.`);
+                }
+                currentStatusText = `⚪️ Standby: 📦 ${displayGameName} (Kein Boost)`;
+                updateMenu();
             }
         });
 
         // Aufräum-Logik für beendete Spiele
-        for (let pid of optimizedPIDs) {
-            if (!currentPIDs.has(pid)) {
-                optimizedPIDs.delete(pid);
-                writeToRotatedLog(`⏳ Game with PID ${pid} terminated. Evacuated from memory.`);
+        for (let stateKey of optimizedPIDs) {
+            // Holt die reine PID aus den Zustandsschlüsseln (z.B. "12348_max" -> "12348")
+            const purePID = stateKey.split('_')[0];
+            
+            if (!currentPIDs.has(purePID)) {
+                optimizedPIDs.delete(stateKey);
+                writeToRotatedLog(`⏳ Game with PID ${purePID} terminated. Evacuated from memory.`);
                 exec('sudo purge', () => {
                     writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
                 });
@@ -860,7 +902,7 @@ function openSettingsWindow() {
                 <input type="checkbox" id="fpsBoost">
                 <div>
                     <div class="option-text">🚀 Enable FPS Boost</div>
-                    <div class="option-desc">Dynamically renices game process priorities via root helper.</div>
+                   <div class="option-desc">Dynamically renices game process priorities via root helper. (⚠️ Requires manual app restart after toggling!)</div>
                 </div>
             </label>
 
@@ -906,7 +948,8 @@ function openSettingsWindow() {
     <div class="desc">Vollautomatisch über die Manifeste der aktiven Launcher eingelesen.</div>
     <div class="blacklist-box" id="gamesContainer" style="height: 140px; padding: 10px;"></div>
     <div class="blacklist-input-row" style="justify-content: flex-end;">
-        <button class="btn-add" id="btnScanGames" onclick="performManualGameScan()" style="width: 100%; padding: 8px 0; font-size: 13px;">🔍 Nach installierten Spielen scannen</button>
+        <button class="btn-add" id="btnScanGames" onclick="performManualGameScan()" style="width: 100%; padding: 8px 0; font-size: 13px;">🔍 Scan for installed games</button>
+
     </div>
 </div>
 

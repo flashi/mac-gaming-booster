@@ -22,13 +22,21 @@ Optimizes CPU, thread priority, and RAM on Apple Silicon:
 
 - **Standalone Architecture:** No external Node.js installation required.
 - **Native Failsafe Engine:** Replaced legacy `sudo-prompt` with secure privilege elevation handled via `osascript`.
-- **Aggressive Kernel Boost:** `renice -5` for verified primary game executables, `-1` for emulation-relevant Wine background processes.
+- **Aggressiver Kernel-Boost:** `renice -5` for verified primary game executables, `-1` for emulation-relevant Wine background processes.
 - **Single-Auth Security:** Requires password entry only once per cold boot of the Mac.
 - **Updated Game Detection:** Precise parsing for AAA titles (Helldivers 2, TLOU, etc.).
 - **Refined Daemon Controls:** Native options for background persistence or auto-kill behaviors.
 - **Live RAM HUD:** A click-through, non-focusable overlay displaying real-time memory statistics.
 - **Adaptive Watchdog:** Prevents heavy memory leaks by active management of `MTLCompilerService` and `purge`.
-- **Integrated Platform Scanner:** Independent test utility `check_games2.js` for deep-scanning game installations across internal and external storage drives (`/Volumes`) alongside automatic EXE mapping.
+- **Integrated Platform Scanner:** Independent test utility `check_games.js` for deep-scanning game installations across internal and external storage drives (`/Volumes`) alongside automatic EXE mapping.
+
+---
+
+## ⚠️ IMPORTANT NOTE ON GUI OPERATION (MANUAL RESTART REQUIRED)
+
+* **State Synchronization:** Whenever you toggle the FPS-Boost checkbox on or off inside the configuration GUI, **you must completely close and manually restart the application for the changes to take effect in the macOS kernel!**
+* **Loop Behavior:** The kernel priority execution path evaluates your preferences strictly upon a clean application cold start.
+* **Regardless of Runtime Conditions:** This manual restart rule applies universally—whether your game is already actively running in the background at the moment of the change, or if it will be launched at a later time. A manual application reload activates the chosen configuration immediately.
 
 ---
 
@@ -37,8 +45,8 @@ Optimizes CPU, thread priority, and RAM on Apple Silicon:
 During the development toward the **Platinum GUI Edition (v2.7.1)**, critical core components of the engine were stabilized, made completely reboot-safe, and deeply integrated into the GUI:
 
 ### 1. Reboot-Safe Trigger Architecture (`main.js` & `helper.js`)
-* **Problem Solved:** Previously, the privileged root helper completely deleted the `boost.trigger` file via `fs.unlinkSync()` after reading it. This caused file permission conflicts after a macOS reboot, preventing the main user-space app from creating new triggers (causing games to remain stuck at standard priority `Mid / 0`).
-* **Optimization:** The deletion command was removed. The root helper now flushes the file contents atomically using `fs.writeFileSync(triggerPath, '', 'utf8')`. The physical file remains intact with correct write permissions. The engine detects games within 2 seconds after a system reboot and forces them back into Kernel Boost mode (`Max / -5`).
+* **Problem Solved:** Previously, the privileged root helper completely deleted the `boost.trigger` file via `fs.unlinkSync()` after reading it. This caused file permission conflicts after a macOS reboot, preventing the main user-space app from creating new triggers.
+* **Optimization:** The deletion command was removed. The root helper now flushes the file contents atomically using `fs.writeFileSync(triggerPath, '', 'utf8')`. The physical file remains intact with correct write permissions. The engine detects games within 2 seconds after a system reboot and forces them back into Kernel Boost mode (`Max / -5`), provided the app is open.
 
 ### 2. Path Structure Correction for `sendToRootHelper`
 * The communication channel function linking to the background root service has been fully re-mapped to the new clean directory layout.
