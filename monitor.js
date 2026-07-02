@@ -31,14 +31,9 @@ function loadMapping() {
 
 // Hilfsfunktion für stylische Ladebalken im Video
 function drawBar(percent, width = 20) {
-<<<<<<< HEAD
     const safePercent = (Number.isNaN(percent) || typeof percent !== 'number' || percent < 0) ? 0 : percent;
     const filledLength = Math.round((safePercent / 100) * width);
     const cappedFilled = Math.max(0, Math.min(width, filledLength));
-=======
-    const filledLength = Math.round((percent / 100) * width);
-    const cappedFilled = Math.max(0, Math.min(width, Array.isNaN(filledLength) ? 0 : filledLength));
->>>>>>> 6b3fd24a24400b4d99ce5c7db8316a23e4c7df70
     const emptyLength = width - cappedFilled;
     return '█'.repeat(cappedFilled) + '░'.repeat(emptyLength);
 }
@@ -71,11 +66,7 @@ function findDaemonPIDs() {
     }
 }
 
-<<<<<<< HEAD
 // Scant nach dem aktiven Spiel und bevorzugt den echten Spiele-Prozess (crs-handler)
-=======
-// Scant nach dem aktiven Spiel (identisch zu deiner main.js Logik)
->>>>>>> 6b3fd24a24400b4d99ce5c7db8316a23e4c7df70
 function scanActiveGame() {
     try {
         const searchCommand = "ps -Ax -o pid,command | grep -Ei 'wine|wineloader|steamapps|crossover|crs-handler|wineloader64' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster|monitor.js'";
@@ -83,7 +74,6 @@ function scanActiveGame() {
         if (!stdout) return null;
 
         const lines = stdout.split('\n');
-<<<<<<< HEAD
         let foundGame = null;
 
         for (let line of lines) {
@@ -120,33 +110,10 @@ function scanActiveGame() {
             }
             // Weg C: PlayStation/Sony Special Fix
             if (!currentMatch && lowerPath.includes('crs-handler')) {
-=======
-        for (let line of lines) {
-            const parts = line.trim().split(/\s+/);
-            if (parts.length < 2) continue;
-            const pid = parts[0];
-            const fullPath = parts.slice(1).join(' ').replace(/\\/g, '/');
-            const lowerPath = fullPath.toLowerCase();
-            const appName = path.basename(fullPath.split(' ')[0]).toLowerCase().replace(/[()]/g, '');
-
-            // Weg A: Direkt-Match
-            if (activeGamesMapping.has(appName)) {
-                return { pid, name: activeGamesMapping.get(appName), stats: getProcessStats(pid) };
-            }
-            // Weg B: Tiefen-Pfad-Match
-            for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-                if (lowerPath.includes(processKey.toLowerCase().trim())) {
-                    return { pid, name: gameTitle, stats: getProcessStats(pid) };
-                }
-            }
-            // Weg C: PlayStation/Sony Special Fix
-            if (lowerPath.includes('crs-handler')) {
->>>>>>> 6b3fd24a24400b4d99ce5c7db8316a23e4c7df70
                 for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
                     const cleanTitle = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const cleanPath = lowerPath.replace(/[^a-z0-9]/g, '');
                     if (cleanPath.includes(cleanTitle)) {
-<<<<<<< HEAD
                         currentMatch = { pid, name: gameTitle, stats: getProcessStats(pid) };
                         break;
                     }
@@ -166,31 +133,16 @@ function scanActiveGame() {
             }
         }
         return foundGame;
-=======
-                        return { pid, name: gameTitle, stats: getProcessStats(pid) };
-                    }
-                }
-            }
-        }
->>>>>>> 6b3fd24a24400b4d99ce5c7db8316a23e4c7df70
     } catch (e) {}
     return null;
 }
 
 // Die Live-Update-Schleife für dein YouTube-Video
 function runDashboard() {
-<<<<<<< HEAD
     loadMapping(); 
     const daemons = findDaemonPIDs();
     const activeGame = scanActiveGame();
 
-=======
-    loadMapping(); // Mapping frisch laden
-    const daemons = findDaemonPIDs();
-    const activeGame = scanActiveGame();
-
-    // Terminal leeren für den Live-Effekt
->>>>>>> 6b3fd24a24400b4d99ce5c7db8316a23e4c7df70
     console.clear();
     console.log("================================================================");
     console.log("🚀 MAC GAMING BOOSTER v2.7.1 - LIVE MONITORING DASHBOARD (VIDEO)");
@@ -224,10 +176,6 @@ function runDashboard() {
         console.log(`Erkanntes Spiel: 📦 ${activeGame.name}`);
         console.log(`Prozess-ID:     🆔 PID ${activeGame.pid}`);
         
-<<<<<<< HEAD
-=======
-        // Farbliches Highlight für den Nice-Wert im Video
->>>>>>> 6b3fd24a24400b4d99ce5c7db8316a23e4c7df70
         if (stats.nice <= -5) {
             console.log(`Kernel-Status:  ⚡ NICE ${stats.nice} (🟢 MAX-BOOST KERNEL ACTIVE)`);
         } else if (stats.nice < 0) {
@@ -244,9 +192,5 @@ function runDashboard() {
     console.log("================================================================");
 }
 
-<<<<<<< HEAD
 // Aktualisierungsrate: Jede Sekunde für maximale Flüssigkeit im Video
-=======
-// Aktualisierungsrate: Jede Sekunde (1000ms) für maximale Flüssigkeit im Video
->>>>>>> 6b3fd24a24400b4d99ce5c7db8316a23e4c7df70
 setInterval(runDashboard, 1000);
