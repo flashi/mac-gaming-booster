@@ -18,6 +18,16 @@ Optimizes CPU, thread priority, and RAM on Apple Silicon:
 
 ---
 
+## 📢 COMMUNITY & FEEDBACK (WE NEED YOUR BENCHMARKS!)
+
+We want to make Mac gaming as smooth as possible! Please share your real-world experience, performance changes, and hardware specs directly on our dashboard:
+
+👉 **[Join the Official Feedback & Benchmark Discussion here!](https://github.com/flashi/mac-gaming-booster/discussions/2)**
+
+*Note:* You are welcome to submit your benchmark logs, frame-rate improvements, or feature suggestions in either **English** or **German**! 💬
+
+---
+
 ## ⚙️ Features (v2.7.1)
 
 - **Standalone Architecture:** No external Node.js installation required.
