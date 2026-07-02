@@ -1,6 +1,6 @@
 # 🚀 Mac Gaming Booster (Apple Silicon Optimiert)
 
-**Version:** 2.7.1 (Platin GUI Edition) | **Plattform:** macOS (arm64) | **Ziel-Betriebssystem:** macOS 15+  
+**Version:** 2.8.0 (Platin GUI Edition) | **Plattform:** macOS (arm64) | **Ziel-Betriebssystem:** macOS 15+  
 **Umgebung:** Electron Framework / Native Menüleisten-Anwendung  
 
 ---
@@ -18,13 +18,23 @@ Optimiert CPU, Thread-Priorität und RAM auf Apple Silicon:
 
 ---
 
-## ⚙️ Features (v2.7.1)
+## 📢 COMMUNITY & FEEDBACK (WIR BRAUCHEN DEINE BENCHMARKS!)
+
+Wir wollen Mac-Gaming so flüssig wie möglich machen! Bitte teile deine praktischen Erfahrungen, Performance-Änderungen und Hardware-Spezifikationen direkt auf unserem Board:
+
+👉 **[Hier geht es zur offiziellen Feedback- & Benchmark-Diskussion!](https://github.com/flashi/mac-gaming-booster/discussions/2)**
+
+*Hinweis:* Du kannst deine Benchmark-Protokolle, FPS-Verbesserungen oder Feature-Vorschläge super gerne auf **Deutsch** oder **Englisch** einreichen! 💬
+
+---
+
+## ⚙️ Features (v2.8.0)
 
 - **Standalone-Architektur:** Kein externes Node.js erforderlich.
 - **Native Failsafe-Engine:** `sudo-prompt` wurde für eine sichere Rechteerhöhung durch `osascript` ersetzt.
 - **Aggressiver Kernel-Boost:** `renice -5` für verifizierte Hauptspiele, `-1` für emulationsrelevante Wine-Hintergrundprozesse.
 - **Single-Auth-Sicherheit:** Nur eine Passworteingabe pro Kaltstart des Macs erforderlich.
-- **Aktualisierte Spielerkennung:** Präzises Parsing für AAA-Titel (Helldivers 2, TLOU, etc.).
+- **Aktualisierte Spielerkennung:** Präzises Parsing für AAA-Titel (Stalker 2, Cyberpunk 2077, Helldivers 2, TLOU, etc.).
 - **Verfeinerte Daemon-Steuerung:** Optionen für Hintergrund-Persistenz oder Auto-Kill.
 - **Live-RAM-HUD:** Nicht-fokussierbares Overlay mit aktuellen Speicherstatistiken.
 - **Adaptiver Watchdog:** Verhindert Speicherlecks durch Steuerung von `MTLCompilerService` und `purge`.
@@ -32,30 +42,27 @@ Optimiert CPU, Thread-Priorität und RAM auf Apple Silicon:
 
 ---
 
-## ⚠️ WICHTIGER HINWEIS ZUR GUI-BEDIENUNG (MANUELLER NEUSTART)
+## ⚠️ ⚡️ NEU: REVOLUTIONÄRES LIVE-SWITCHING (KEIN NEUSTART MEHR!)
 
-* **Zustands-Synchronisation:** Wenn du den FPS-Boost in den Einstellungen der Benutzeroberfläche (GUI) aktivierst oder deaktivierst, **muss die App danach zwingend einmal manuell beendet und neu gestartet werden!**
-* **Verhalten der Schleife:** Die Kernel-Priorität (`Nice`-Level) wird ausschließlich beim Kaltstart der App frisch aus der Konfigurationsdatei eingelesen. 
-* **Egal wann das Spiel startet:** Diese Regel gilt immer – vollkommen unabhängig davon, ob das Spiel zum Zeitpunkt der Änderung bereits aktiv im Hintergrund läuft oder erst viel später gestartet wird. Ein manueller App-Neustart schaltet den gewählten Modus sofort scharf.
+* **Echtzeit-Synchronisation:** Du musst die App nach einer Einstellungsänderung **nicht mehr neu starten!** 
+* **Fliegender Wechsel:** Wenn du den FPS-Boost in der GUI deaktivierst, merkt die Hintergrund-Engine das binnen 2 Sekunden vollautomatisch, löscht das Schleifen-Gedächtnis im RAM und zwingt das laufende Spiel im Kernel fliegend zurück auf den Standardwert (`Nice 0`).
+* **Spam-Schutz-Garantie:** Dank intelligenter Suffix-Sperren (`_reset`) wird das Signal im Deaktivierungsmodus exakt ein einziges Mal an den Kernel gefeuert. Dein Logbuch und deine SSD bleiben absolut frei von Datenmüll!
 
 ---
 
-## 🔄 Letzte Änderungen & Optimierungen (v2.7.1)
+## 🔄 Letzte Änderungen & Optimierungen (v2.8.0)
 
-Im Zuge der Weiterentwicklung zur **Platin GUI Edition (v2.7.1)** wurden kritische Kernkomponenten der Engine stabilisiert, absolut neustartsicher gemacht und tiefer in die GUI integriert:
+Im Zuge der Weiterentwicklung zur **Platin GUI Edition (v2.8.0)** wurden kritische Kernkomponenten der Engine stabilisiert, absolut neustartsicher gemacht und tiefgehend optimiert:
 
-### 1. Neustartsichere Trigger-Architektur (`main.js` & `helper.js`)
-* **Problem gelöst:** Bisher hat der privilegierte Root-Helper die Datei `boost.trigger` nach dem Auslesen via `fs.unlinkSync()` komplett gelöscht. Dies führte nach einem macOS-Neustart zu Berechtigungskonflikten, wodurch die im User-Space laufende Haupt-App keine neuen Triggersignale mehr absetzen konnte.
-* **Optimierung:** Der Löschbefehl wurde entfernt. Der Root-Helper leert die Datei nach der Verarbeitung nun atomar mittels `fs.writeFileSync(triggerPath, '', 'utf8')`. Die Datei bleibt physisch mit den korrekten Schreibrechten bestehen. Die Engine fängt Spiele nach einem System-Reboot innerhalb von 2 Sekunden ab und zwingt sie vollautomatisch zurück in den Kernel-Boost-Modus (`Max / -5`), sofern die App gestartet ist.
+### 1. 100% Leerzeichensichere Pfad-Extraktion
+* **Problem gelöst:** Bisher schnitt `.split(' ')` Pfade bei Leerzeichen ab, was bei Spielen in Ordnern wie `Cyberpunk 2077` zu Erkennungsfehlern führte.
+* **Optimierung:** Die Engine nutzt nun `path.basename` direkt auf dem vollen POSIX-Pfad. CrossOver-Hintergrunddienste werden durch die korrekte `lowerPath`-Deklaration bei Regex-Tiefenprüfungen fehlerfrei verarbeitet und stürzen nicht ab.
 
-### 2. Korrektur der Pfad-Struktur für `sendToRootHelper`
-* Die Funktion zur Kommunikation mit dem Hintergrund-Dienst wurde vollständig an die neue, saubere Ordnerstruktur angepasst. 
-* Signale werden nun exakt im zentralen Verzeichnis `~/Library/Application Support/fps-boost/config/boost.trigger` hinterlegt.
-* Alle PIDs und Leistungswerte werden vor der Übergabe strikt als Ganzzahlen (`parseInt`) validiert, um Syntaxfehler innerhalb der POSIX-Shell zu verhindern.
+### 2. Clean-RAM Speicherfilterung (`games_exe_mapping.txt`)
+* Ein neuer `.filter(line => line.length > 0)`-Schutz sortiert leere Zeilen oder fehlerhafte Zeilenumbrüche in deiner Mapping-Datei im Arbeitsspeicher aus, noch *bevor* die ressourcenintensive Verarbeitung startet. Das verhindert Abstürze und RAM-Überlastungen im Kaltstart.
 
-### 3. GUI-Anbindung & Dynamische Mapping-Engine (`games_exe_mapping.txt`)
-* **Neu in den Settings:** Die Einlese-Schnittstelle für die externe `games_list.txt` wurde erfolgreich direkt in das Einstellungsfenster (Settings-GUI) ausgelagert und integriert.
-* **100% Dynamische Erkennung:** Die tiefe Zwei-Wege-Namensübersetzung und Filter-Heuristik für komplexe Prozesstitel (wie Sonys `crs-handler.exe` bei *The Last of Us* oder Multi-Exes wie `u4.exe||tll-l.exe` bei *Uncharted*) wurde vollständig finalisiert. Die App arbeitet nun komplett ohne hardcodierte Spieletitel im Quellcode und liest alle Prozess-Zuweisungen dynamisch aus der `games_exe_mapping.txt`.
+### 3. Integrierter Crash-Radar für Settings
+* Die stummen Catch-Blöcke bei `loadSettings()` und `saveSettings()` wurden geschlossen. Schreib- oder Leseblockaden durch macOS-Rechteeinschränkungen (z.B. `permission denied`) werden nun mitsamt originaler Systemmeldung sofort lesbar ins Logbuch diktiert.
 
 ---
 

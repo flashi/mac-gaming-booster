@@ -1,6 +1,6 @@
 # 🚀 Mac Gaming Booster (Apple Silicon Optimized)
 
-**Version:** 2.7.1 (Platinum GUI Edition) | **Platform:** macOS (arm64) | **Target OS:** macOS 15+  
+**Version:** 2.8.0 (Platinum GUI Edition) | **Platform:** macOS (arm64) | **Target OS:** macOS 15+  
 **Environment:** Electron Framework / Native Menu Bar Application  
 
 ---
@@ -28,13 +28,13 @@ We want to make Mac gaming as smooth as possible! Please share your real-world e
 
 ---
 
-## ⚙️ Features (v2.7.1)
+## ⚙️ Features (v2.8.0)
 
 - **Standalone Architecture:** No external Node.js installation required.
 - **Native Failsafe Engine:** Replaced legacy `sudo-prompt` with secure privilege elevation handled via `osascript`.
-- **Aggressiver Kernel-Boost:** `renice -5` for verified primary game executables, `-1` for emulation-relevant Wine background processes.
+- **Aggressive Kernel Boost:** `renice -5` for verified primary game executables, `-1` for emulation-relevant Wine background processes.
 - **Single-Auth Security:** Requires password entry only once per cold boot of the Mac.
-- **Updated Game Detection:** Precise parsing for AAA titles (Helldivers 2, TLOU, etc.).
+- **Updated Game Detection:** Precise parsing for AAA titles (Stalker 2, Cyberpunk 2077, Helldivers 2, TLOU, etc.).
 - **Refined Daemon Controls:** Native options for background persistence or auto-kill behaviors.
 - **Live RAM HUD:** A click-through, non-focusable overlay displaying real-time memory statistics.
 - **Adaptive Watchdog:** Prevents heavy memory leaks by active management of `MTLCompilerService` and `purge`.
@@ -42,30 +42,26 @@ We want to make Mac gaming as smooth as possible! Please share your real-world e
 
 ---
 
-## ⚠️ IMPORTANT NOTE ON GUI OPERATION (MANUAL RESTART REQUIRED)
+## ⚠️ ⚡️ NEW: REVOLUTIONARY LIVE-SWITCHING (NO RESTART REQUIRED!)
 
-* **State Synchronization:** Whenever you toggle the FPS-Boost checkbox on or off inside the configuration GUI, **you must completely close and manually restart the application for the changes to take effect in the macOS kernel!**
-* **Loop Behavior:** The kernel priority execution path evaluates your preferences strictly upon a clean application cold start.
-* **Regardless of Runtime Conditions:** This manual restart rule applies universally—whether your game is already actively running in the background at the moment of the change, or if it will be launched at a later time. A manual application reload activates the chosen configuration immediately.
+* **Real-Time Synchronization:** Toggling the FPS-Boost checkbox in the settings GUI updates active kernel priorities ('Nice -5' to 'Nice 0') in real-time within 2 seconds—**completely eliminating the need for an application restart!**
+* **Anti-Log-Spam Suffixes:** Equipped with custom state suffixes (`_reset`), the reset signal fires exactly once. Your log file and SSD remain completely clean and free from repetitive I/O overhead.
 
 ---
 
-## 🔄 Recent Changes & Optimizations (v2.7.1)
+## 🔄 Recent Changes & Optimizations (v2.8.0)
 
-During the development toward the **Platinum GUI Edition (v2.7.1)**, critical core components of the engine were stabilized, made completely reboot-safe, and deeply integrated into the GUI:
+During the development toward the **Platinum GUI Edition (v2.8.0)**, critical core components of the engine were stabilized, made completely reboot-safe, and highly optimized:
 
-### 1. Reboot-Safe Trigger Architecture (`main.js` & `helper.js`)
-* **Problem Solved:** Previously, the privileged root helper completely deleted the `boost.trigger` file via `fs.unlinkSync()` after reading it. This caused file permission conflicts after a macOS reboot, preventing the main user-space app from creating new triggers.
-* **Optimization:** The deletion command was removed. The root helper now flushes the file contents atomically using `fs.writeFileSync(triggerPath, '', 'utf8')`. The physical file remains intact with correct write permissions. The engine detects games within 2 seconds after a system reboot and forces them back into Kernel Boost mode (`Max / -5`), provided the app is open.
+### 1. 100% Space-Safe Path Extraction
+* **Problem Solved:** Previously, `.split(' ')` fractured directory structures containing spaces, leading to identification anomalies for games inside folders like `Cyberpunk 2077`.
+* **Optimization:** The engine now applies `path.basename` straight to the untouched POSIX path string, and explicitly evaluates `lowerPath` variables across deep regex passes to guarantee seamless translation.
 
-### 2. Path Structure Correction for `sendToRootHelper`
-* The communication channel function linking to the background root service has been fully re-mapped to the new clean directory layout.
-* Signals are now accurately written inside the centralized `~/Library/Application Support/fps-boost/config/boost.trigger` path.
-* All PIDs and booster level values are strictly validated as integers (`parseInt`) before transmission to prevent any POSIX shell syntax anomalies.
+### 2. Clean-RAM Pre-Filtering (`games_exe_mapping.txt`)
+* Integrated an atomic `.filter(line => line.length > 0)` safety guard that purges empty rows and faulty carriage returns from memory *before* execution loops commence, shielding the Unified Memory from processing data clutter.
 
-### 3. GUI Integration & Dynamic Mapping Engine (`games_exe_mapping.txt`)
-* **New in Settings:** The read interface for the external `games_list.txt` has been successfully implemented directly into the configuration window (Settings GUI).
-* **100% Dynamic Detection:** The deep two-way title translation and filter heuristics for complex processes (such as PlayStation's `crs-handler.exe` used in *The Last of Us* or multi-executables like `u4.exe||tll-l.exe` for *Uncharted*) have been fully completed. The application now runs entirely without hardcoded game titles inside the source code, reading all runtime process associations dynamically from `games_exe_mapping.txt`.
+### 3. Native Catch-Block Diagnostic Integration
+* Sealed all silent catches across `loadSettings()` and `saveSettings()`. Hard drive permission blockages or corrupted configuration files are now immediately written into the log, including the native macOS system notification (`permission denied`).
 
 ---
 

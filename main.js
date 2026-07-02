@@ -55,29 +55,55 @@ function loadGamesMappingFile() {
     try {
         if (fs.existsSync(MAPPING_FILE)) {
             const content = fs.readFileSync(MAPPING_FILE, 'utf-8');
-            content.split('\n').forEach(line => {
-                const parts = line.trim().split('=>');
-                if (parts.length === 2) {
-                    const gameName = parts[0].trim();
-                    const processRaw = parts[1].trim().toLowerCase();
-                    
-                    if (processRaw && processRaw !== 'unknown_executable.exe') {
-                        // FIX: Wenn mehrere Exes mit || getrennt sind, mappen wir jede einzeln!
-                        if (processRaw.includes('||')) {
-                            const multipleExes = processRaw.split('||');
-                            multipleExes.forEach(exe => {
-                                const cleanExe = exe.trim();
-                                if (cleanExe.length > 2) {
-                                    activeGamesMapping.set(cleanExe, gameName);
-                                }
-                            });
-                        } else {
-                            // Standardfall für einzelne Exes/Binaries
-                            activeGamesMapping.set(processRaw, gameName);
+
+            // =================================================================
+            // 🛑 DEAKTIVIERTER ALTER CODE (UNSAUBERE ARBEITSSPEICHER-LAST!)
+            // =================================================================
+            // WARUM DEAKTIVIERT: Läuft ohne Vorfilterung blind durch jede Zeile. 
+            // Leere Zeilen oder Zeilen mit reinen Leerzeichen (Whitespaces) wurden
+            // unbemerkt in die Schleife geschoben und verbrauchten unnötig Rechenzeit
+            // im RAM, obwohl sie keinen verwertbaren Inhalt hatten.
+            // 
+            // content.split('\n').forEach(line => {
+            //     const parts = line.trim().split('=>');
+            //     if (parts.length === 2) {
+            //         const gameName = parts[0].trim();
+            //         const processRaw = parts[1].trim().toLowerCase();
+
+            // =================================================================
+            // ⚡️ NEUER SCHUTZ-FILTER (v2.8.0-ALPHA CLEAN-RAM CODE)
+            // =================================================================
+            // WIE ES FUNKTIONIERT: .map(line => line.trim()) bereinigt Whitespaces.
+            // .filter(line => line.length > 0) wirft alle leeren Zeilen rigoros aus 
+            // dem Speicher, BEVOR das ressourcenintensive .forEach() anspringt.
+            // Das sorgt für einen absolut datenmüllfreien Kaltstart im Unified Memory!
+            content.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .forEach(line => {
+                    const parts = line.split('=>');
+                    if (parts.length === 2) {
+                        const gameName = parts[0].trim();
+                        const processRaw = parts[1].trim().toLowerCase();
+                        
+                        if (processRaw && processRaw !== 'unknown_executable.exe') {
+                            // FIX: Wenn mehrere Exes mit || getrennt sind, mappen wir jede einzeln!
+                            if (processRaw.includes('||')) {
+                                const multipleExes = processRaw.split('||');
+                                multipleExes.forEach(exe => {
+                                    const cleanExe = exe.trim();
+                                    if (cleanExe.length > 2) {
+                                        activeGamesMapping.set(cleanExe, gameName);
+                                    }
+                                });
+                            } else {
+                                // Standardfall für einzelne Exes/Binaries
+                                activeGamesMapping.set(processRaw, gameName);
+                            }
                         }
                     }
-                }
-            });
+                });
+
             writeToRotatedLog(`🔄 Dynamische Mapping-Engine: ${activeGamesMapping.size} Spiele-Prozesse erfolgreich geladen.`);
         } else {
             writeToRotatedLog("⚠️ Hinweis: games_exe_mapping.txt existiert nicht. Bitte Scan ausführen.");
@@ -251,27 +277,55 @@ setInterval(() => {
     });
 }
 
+let initialLoad = true; // Globaler Marker über loadSettings() platzieren
+
 function loadSettings() {
     try {
         if (fs.existsSync(CONFIG_FILE)) {
             const data = fs.readFileSync(CONFIG_FILE, 'utf8');
             const config = JSON.parse(data);
+            
             if (config.isBoostActive !== undefined) isBoostActive = config.isBoostActive;
             if (config.isLoggingActive !== undefined) isLoggingActive = config.isLoggingActive;
-            if (config.isHelperDebugActive !== undefined) isHelperDebugActive = config.isHelperDebugActive; // <-- HINZUFÜGEN
+            if (config.isHelperDebugActive !== undefined) isHelperDebugActive = config.isHelperDebugActive;
             if (config.isAutostartActive !== undefined) isAutostartActive = config.isAutostartActive;
             if (config.isShaderGuardActive !== undefined) isShaderGuardActive = config.isShaderGuardActive;
             if (config.overlayX !== undefined) overlayX = config.overlayX;
             if (config.overlayY !== undefined) overlayY = config.overlayY;
+            
+            // Loggt NUR beim echten Kaltstart, verhindert Spam in der Live-Schleife
+            if (initialLoad) {
+                writeToRotatedLog(`💾 Einstellungen geladen. Boost-Status beim Start: [${isBoostActive}]`);
+                initialLoad = false;
+            }
         }
-    } catch (e) {}
+    } catch (e) {
+        writeToRotatedLog("❌ Fehler beim Laden der booster_config.json: " + e.message);
+    }
 }
 
 function saveSettings() {
     try {
-        const config = { isBoostActive, isLoggingActive, isHelperDebugActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY }; // <-- isHelperDebugActive HINZUFÜGEN
+        const config = { isBoostActive, isLoggingActive, isHelperDebugActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY };
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-    } catch (e) {}
+    } catch (e) {
+        // =================================================================
+        // 🛑 DEAKTIVIERTER ALTER CODE (LAUTLOSER CATCH-BLOCK)
+        // =================================================================
+        // WARUM DEAKTIVIERT: Wenn macOS das Schreiben blockierte (z.B. durch 
+        // plötzlichen Entzug der Schreibrechte oder weil die Festplatte voll war),
+        // hat dieser leere Block den Fehler verschluckt. Die GUI tat so, als wäre
+        // alles gespeichert, aber auf der Platte kam nie etwas an.
+        // 
+        // } catch (e) {}
+
+        // =================================================================
+        // ⚡️ NEUER SCHREIB-MONITOR (v2.8.0-ALPHA LOGGING EFFECT)
+        // =================================================================
+        // WIE ES FUNKTIONIERT: Schreibt den blockierten Schreibbefehl mitsamt der
+        // originalen macOS-Fehlermeldung direkt in dein rotierendes Logbuch!
+        writeToRotatedLog("❌ Fehler beim Speichern der booster_config.json: " + e.message);
+    }
 }
 
 function writeToRotatedLog(newText) {
@@ -544,7 +598,23 @@ function getCleanGameName(fullPath, appName) {
     return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 }
 
+// Wir merken uns den letzten Zustand im RAM, um Änderungen sofort zu erkennen
+let lastKnownBoostState = null; 
+
 function checkAndBoostGames() {
+    // ⚡️ LIVE-SETTINGS-RELOAD
+    loadSettings();
+    
+    // 🧠 DYNAMISCHER LIVE-RESET SCHALTER (v2.8.0-Alpha Flight-Control)
+    // Wenn die Schleife merkt, dass der Haken in der GUI live umgelegt wurde,
+    // löschen wir sofort alle alten RAM-Zustands-Marker, damit die Engine
+    // im selben Moment die Richtung im Kernel wechseln darf!
+    if (lastKnownBoostState !== null && lastKnownBoostState !== isBoostActive) {
+        writeToRotatedLog(`🔄 Live-Umschaltung erkannt! FPS-Boost steht jetzt auf: [${isBoostActive}]`);
+        optimizedPIDs.clear(); // Löscht das alte Schleifen-Gedächtnis fliegend im RAM
+    }
+    lastKnownBoostState = isBoostActive; // Aktualisiert den Kontroll-Zustand
+
     // 1. SICHERHEITS-BREMSE: Wenn das Mapping noch nicht geladen ist, brich sofort ab!
     if (!activeGamesMapping || activeGamesMapping.size === 0) {
         return;
@@ -563,6 +633,9 @@ function checkAndBoostGames() {
         ].join('\n');
         fs.writeFileSync(BLACKLIST_FILE, defaultBlacklist, 'utf8');
     }
+
+    // Ab hier läuft dein ganz normaler ps-Befehl weiter...
+
 
     // 3. Blacklist einlesen
     let userBlacklist = [];
@@ -602,15 +675,23 @@ function checkAndBoostGames() {
             const pid = parts[0]; 
             const fullPath = parts.slice(1).join(' ');
             const normalizedPath = fullPath.replace(/\\/g, '/');
+            
+            // 🔥 WICHTIGER FIX: lowerPath für die Pfad- & Sony-Filter zwingend deklarieren!
             const lowerPath = normalizedPath.toLowerCase();
 
-            // Extrahiert den reinen Dateinamen am Ende des Pfads
-            let extractedExe = path.basename(normalizedPath.split(' ')[0]);
-            const exeExtract = normalizedPath.match(/([^\/]+\.exe)/i);
-            if (exeExtract && exeExtract[1]) {
-                extractedExe = exeExtract[1].split(' ')[0];
-            }
+            // =================================================================
+            // 🛑 DEAKTIVIERTER ALTER CODE (VERURSACHTE FEHLER BEI LEERZEICHEN!)
+            // =================================================================
+            // WARUM GEKIPPT: .split(' ')[0] schnitt Pfade bei Leerzeichen ab ("Cyberpunk 2077").
+            // let extractedExe = path.basename(normalizedPath.split(' ')[0]);
+
+            // =================================================================
+            // ⚡️ NEUER OPTIMIERTER CODE (100% LEERZEICHENSICHER FÜR v2.8.0)
+            // =================================================================
+            // WIE ES FUNKTIONIERT: Nutzung des vollen Pfades und path.basename.
+            let extractedExe = path.basename(normalizedPath);
             
+            // Bereinigung für Prozessname
             const lowName = extractedExe.toLowerCase();
             const cleanName = lowName.replace(/[()]/g, '');
 
@@ -659,6 +740,7 @@ function checkAndBoostGames() {
                 }
             }
 
+
             // Sicherheits-Stopp: Wenn kein Treffer im Mapping -> Überspringen
             if (!isMatchedGame) return;
 
@@ -678,7 +760,7 @@ function checkAndBoostGames() {
 
 
             // -----------------------------------------------------------------
-            // ⚡️ ADAPTIVE TRIGGER-ENGINE (Zustandssteuerung für Relaunch-Reset)
+            // ⚡️ ADAPTIVE TRIGGER-ENGINE (Live-Zustandssteuerung v2.8.0-Alpha)
             // -----------------------------------------------------------------
             if (isBoostActive) {
                 // Sichert den RAM-Guard Start beim ersten Erfassen des Spiels
@@ -693,7 +775,10 @@ function checkAndBoostGames() {
                 if (!isWrapper) {
                     // Signal-Sperre: Nur feuern, wenn der Boost für diese PID noch nicht aktiv ist
                     if (!optimizedPIDs.has(pid + '_max')) {
+                        // LIVE-UMSCHALTUNG (RICHTUNG AN): Löscht einen eventuell aktiven Reset-Marker aus dem RAM
+                        optimizedPIDs.delete(pid + '_reset'); 
                         optimizedPIDs.delete(pid + '_mid');
+                        
                         optimizedPIDs.add(pid + '_max');
                         optimizedPIDs.add(pid); // Für die Aufräum-Schleife kompatibel halten
 
@@ -706,6 +791,7 @@ function checkAndBoostGames() {
                 } else {
                     // Wrapper-Zweig
                     if (!optimizedPIDs.has(pid + '_mid')) {
+                        optimizedPIDs.delete(pid + '_reset');
                         optimizedPIDs.delete(pid + '_max');
                         optimizedPIDs.add(pid + '_mid');
                         optimizedPIDs.add(pid);
@@ -717,32 +803,58 @@ function checkAndBoostGames() {
                     updateMenu();
                 }
             } else {
-                // FALLBACK NACH RELAUNCH: Wenn der Boost in der GUI ausgeschaltet wurde!
-                // Wir prüfen, ob die PID im vorherigen Lauf geboostet wurde oder frisch im Speicher ist
-                if (optimizedPIDs.has(pid) || optimizedPIDs.has(pid + '_max') || optimizedPIDs.has(pid + '_mid')) {
-                    optimizedPIDs.delete(pid);
+                // =================================================================
+                // ⚡️ LIVE-RESET IM LAUFENDEN BETRIEB (100% fliegend & ohne Neustart)
+                // =================================================================
+                
+                // FALL 1: Der Haken wurde gerade live im Spiel ENTFERNT (Von AN auf AUS)
+                if (optimizedPIDs.has(pid + '_max') || optimizedPIDs.has(pid + '_mid')) {
+                    // Lösche die aktiven Boost-Zustände sofort aus dem RAM
                     optimizedPIDs.delete(pid + '_max');
                     optimizedPIDs.delete(pid + '_mid');
                     
+                    // Zwinge den Kernel-Wert des laufenden Spiels live auf 0 zurück
                     sendToRootHelper(pid, 0);
-                    writeToRotatedLog(`⌛️ Trigger-Engine: Boost deaktiviert. ${displayGameName} (PID: ${pid}) auf Standard (0) zurückgesetzt.`);
+                    writeToRotatedLog(`⌛️ Trigger-Engine: Live-Prioritätswechsel! ${displayGameName} (PID: ${pid}) auf Standard (0) zurückgesetzt.`);
+                    
+                    // Setze den Reset-Marker, damit dieser Befehl ab jetzt blockiert wird (Spam-Schutz)
+                    optimizedPIDs.add(pid + '_reset');
                 }
+                
+                // FALL 2: KALTSTART oder Absicherung des Reset-Zustands
+                // Wenn weder ein aktiver Boost noch ein Reset-Marker da ist, initialisieren wir den Standby
+                if (!optimizedPIDs.has(pid + '_reset') && !optimizedPIDs.has(pid + '_max') && !optimizedPIDs.has(pid + '_mid')) {
+                    optimizedPIDs.add(pid + '_reset');
+                    optimizedPIDs.add(pid); // Hält die nackte PID für die Aufräumschleife im RAM
+                    
+                    sendToRootHelper(pid, 0);
+                    writeToRotatedLog(`⌛️ Trigger-Engine: App mit deaktiviertem Boost gestartet. ${displayGameName} (PID: ${pid}) auf Standard (0) gesetzt.`);
+                }
+
                 currentStatusText = `⚪️ Standby: 📦 ${displayGameName} (Kein Boost)`;
                 updateMenu();
             }
+
         });
 
-        // Aufräum-Logik für beendete Spiele
+
+        // =================================================================
+        // 🧹 ABSOLUT STABILE AUFRÄUM-LOGIK (Filtert alle Suffixe & Spam-Marker)
+        // =================================================================
         for (let stateKey of optimizedPIDs) {
-            // Holt die reine PID aus den Zustandsschlüsseln (z.B. "12348_max" -> "12348")
+            // Holt die reine PID aus den Zustandsschlüsseln (z.B. "25114_reset" -> "25114")
             const purePID = stateKey.split('_')[0];
             
             if (!currentPIDs.has(purePID)) {
                 optimizedPIDs.delete(stateKey);
-                writeToRotatedLog(`⏳ Game with PID ${purePID} terminated. Evacuated from memory.`);
-                exec('sudo purge', () => {
-                    writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
-                });
+                
+                // Wir loggen das Beenden des Spiels nur einmalig für die nackte Haupt-PID
+                if (stateKey === purePID) {
+                    writeToRotatedLog(`⏳ Game with PID ${purePID} terminated. Evacuated from memory.`);
+                    exec('sudo purge', () => {
+                        writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
+                    });
+                }
 
                 if (optimizedPIDs.size === 0) {
                     manageRamGuardState(false);
@@ -902,7 +1014,7 @@ function openSettingsWindow() {
                 <input type="checkbox" id="fpsBoost">
                 <div>
                     <div class="option-text">🚀 Enable FPS Boost</div>
-                   <div class="option-desc">Dynamically renices game process priorities via root helper. (⚠️ Requires manual app restart after toggling!)</div>
+                    <div class="option-desc">Dynamically renices game process priorities via root helper in real-time. (⚡️ Changes take effect instantly!)</div>
                 </div>
             </label>
 
