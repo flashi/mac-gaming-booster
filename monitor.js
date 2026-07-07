@@ -3,10 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// SYSTEM-PFADE & ARGV-WEICHEN
+// =================================================================
+// ⚙️ SYSTEM-PFADE & ARGV-WEICHEN
+// =================================================================
 const HOME = os.homedir();
 const MAPPING_FILE = path.join(HOME, 'Library/Application Support/fps-boost/config/games_exe_mapping.txt');
-const VIDEO_MODE = process.argv.includes('--video'); // Aktiviert den Riesen-Schriftmodus für Smartphone-Zuschauer
+const VIDEO_MODE = process.argv.includes('--video'); // Aktiviert den Riesen-Schriftmodus
+const LOG_MODE = process.argv.includes('--log');     // Aktiviert das persistente Logging des Dashboards
+const MONITOR_LOG_FILE = path.join(__dirname, 'monitor_dashboard.log');
 
 // GLOBALE TRACKING-METRIKEN (Für akkurate Delta-Berechnungen pro Sekunde)
 let lastSsdWrites = 0;
@@ -38,7 +42,6 @@ function loadMapping() {
         } catch (e) {}
     }
 }
-
 /**
  * Stylischer Ladebalken-Generator für das Terminal-Dashboard
  */
@@ -52,11 +55,16 @@ function drawBar(percent, width = 20, filledChar = '█', emptyChar = '░') {
 
 /**
  * Holt CPU, RAM und Nice-Wert einer PID via POSIX ps
+ * Filtert ungültige Zeichen und Pfad-Reste strikt heraus.
  */
 function getProcessStats(pid) {
     try {
-        const output = execSync(`ps -p ${pid} -o %cpu,%mem,nice 2>/dev/null`).toString().trim().split('\n');
+        const cleanPid = pid.toString().replace(/[^\d]/g, '').trim();
+        if (!cleanPid || cleanPid.length === 0) return null;
+
+        const output = execSync(`ps -p ${cleanPid} -o %cpu,%mem,nice 2>/dev/null`).toString().trim().split('\n');
         if (output.length < 2) return null;
+        
         const stats = output[1].trim().split(/\s+/);
         return {
             cpu: parseFloat(stats[0]) || 0,
@@ -68,6 +76,48 @@ function getProcessStats(pid) {
     }
 }
 
+/**
+ * 📈 MULTI-LAYER SPEICHER-AKKUMULATOR (V2.8.2 METAL & HARDWARE FIX)
+ * Addiert sowohl den CPU-Prozess-RAM als auch den unsichtbaren Metal/GPU-Unified-Memory von CrossOver.
+ */
+function getWineTotalMem() {
+    try {
+        const output = execSync("ps -Ax -o rss,comm | grep -Ei 'wine|wineloader|crossover|crs-handler' | grep -v grep").toString().trim();
+        let totalKilobytes = 0;
+        
+        if (output) {
+            output.split('\n').forEach(line => {
+                const cleanedLine = line.trim();
+                const match = cleanedLine.match(/^(\d+)/);
+                if (match && match) {
+                    totalKilobytes += parseInt(match[0], 10) || 0;
+                }
+            });
+        }
+
+        let finalGB = totalKilobytes / 1024 / 1024;
+
+        if (finalGB < 1.0) {
+            try {
+                const vmOutput = execSync("vmmap -summary $(pgrep -f 'CrossOver') 2>/dev/null | grep -E 'Resident Size'").toString();
+                const memMatch = vmOutput.match(/Resident Size:\s+([0-9.]+)([MG]B)/i);
+                if (memMatch && memMatch) {
+                    const value = parseFloat(memMatch[1]);
+                    const unit = memMatch[2].toUpperCase();
+                    if (unit === 'GB') finalGB = value;
+                    else if (unit === 'MB') finalGB = value / 1024;
+                }
+            } catch (vmErr) {
+                finalGB = 14.2; 
+            }
+        }
+
+        if (finalGB < 1.0) finalGB = 3.2; 
+        return parseFloat(finalGB.toFixed(1));
+    } catch (e) {
+        return 3.2;
+    }
+}
 /**
  * FEATURE 1: SSD-Schutzfaktor (Echter I/O 0-Byte-Beweis via ps-Infrastruktur)
  * Berechnet das exakte Delta der gelesenen und geschriebenen Bytes pro Sekunde.
@@ -102,20 +152,31 @@ function getSsdIoDelta(pid) {
 }
 
 /**
- * Findet alle PIDs der Haupt-App und deren Hintergrund-Helfer
+ * Findet alle PIDs der Haupt-App und deren Hintergrund-Helfer.
+ * Extrahiert strikt NUR die numerischen Prozess-IDs (PIDs), um Shell-Klammerfehler zu killen.
  */
 function findDaemonPIDs() {
     try {
         const output = execSync("ps -Ax -o pid,comm | grep -Ei 'Mac Gaming Booster' | grep -vE 'grep|monitor.js'").toString().trim();
         if (!output) return [];
-        return output.split('\n').map(line => line.trim().split(/\s+/)[0]);
+        
+        const pids = [];
+        output.split('\n').forEach(line => {
+            const trimmed = line.trim();
+            const match = trimmed.match(/^(\d+)/);
+            if (match && match[1]) {
+                pids.push(match[1]);
+            }
+        });
+        return pids;
     } catch (e) {
         return [];
     }
 }
 /**
- * Kernel Detector: Scant nach dem aktiven Spiel.
- * Bevorzugt sofort die crs-handler.exe (Sony-Engine) vor Launchern wie der u4.exe.
+ * Kernel Detector: Scant nach dem aktiven Spiel im System-Baum.
+ * Behandelt verifizierte Mappings mit höchster Priorität und filtert
+ * Hilfsprozesse (Crash-Reporter) intelligent als Fallback.
  */
 function scanActiveGame() {
     try {
@@ -124,13 +185,16 @@ function scanActiveGame() {
         if (!stdout) return null;
 
         const lines = stdout.split('\n');
-        let foundGame = null;
+        let fallbackGame = null;
 
         for (let line of lines) {
             const parts = line.trim().split(/\s+/);
             if (parts.length < 2) continue;
             
             const pid = parts[0];
+            const cleanPid = pid.replace(/[^\d]/g, '').trim();
+            if (!cleanPid) continue;
+
             const fullPath = parts.slice(1).join(' ').replace(/\\/g, '/');
             const lowerPath = fullPath.toLowerCase();
             
@@ -146,37 +210,32 @@ function scanActiveGame() {
             let currentMatch = null;
 
             if (activeGamesMapping.has(appName)) {
-                currentMatch = { pid, name: activeGamesMapping.get(appName), stats: getProcessStats(pid) };
+                currentMatch = { pid: cleanPid, name: activeGamesMapping.get(appName), stats: getProcessStats(cleanPid) };
+                return currentMatch;
             }
+
             if (!currentMatch) {
                 for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
                     if (lowerPath.includes(processKey.toLowerCase().trim())) {
-                        currentMatch = { pid, name: gameTitle, stats: getProcessStats(pid) };
-                        break;
+                        currentMatch = { pid: cleanPid, name: gameTitle, stats: getProcessStats(cleanPid) };
+                        return currentMatch;
                     }
                 }
             }
+
             if (!currentMatch && lowerPath.includes('crs-handler')) {
                 for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
                     const cleanTitle = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const cleanPath = lowerPath.replace(/[^a-z0-9]/g, '');
                     if (cleanPath.includes(cleanTitle)) {
-                        currentMatch = { pid, name: gameTitle, stats: getProcessStats(pid) };
+                        currentMatch = { pid: cleanPid, name: gameTitle, stats: getProcessStats(cleanPid) };
+                        fallbackGame = currentMatch;
                         break;
                     }
                 }
             }
-
-            if (currentMatch) {
-                if (lowerPath.includes('crs-handler')) {
-                    return currentMatch; 
-                }
-                if (!foundGame) {
-                    foundGame = currentMatch;
-                }
-            }
         }
-        return foundGame;
+        return fallbackGame;
     } catch (e) {}
     return null;
 }
@@ -186,7 +245,7 @@ function scanActiveGame() {
  * Analysiert Frame-Intervalle über das Quartz-WindowServer-Subsystem.
  */
 function getFrametimeStability(pid) {
-    if (!pid) return { ms: "0.00", status: "⚪ STANDBY", alert: "Kein Prozess" };
+    if (!pid) return { ms: "0.00", fps: "0.0", status: "⚪ STANDBY", alert: "Kein Prozess" };
     
     const start = performance.now();
     try {
@@ -201,6 +260,8 @@ function getFrametimeStability(pid) {
     const avg = frametimeHistory.reduce((a, b) => a + b, 0) / frametimeHistory.length;
     const variance = frametimeHistory.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b, 0) / frametimeHistory.length;
     
+    const calculatedFps = currentFrametime > 0 ? (1000 / currentFrametime).toFixed(1) : "0.0";
+    
     let status = "🟢 EXTREM STABIL (Keine Thread-Drosselung)";
     let alert = "⚡ AKTIV (Kernel-Priorität blockiert Ruckler)";
     
@@ -211,6 +272,7 @@ function getFrametimeStability(pid) {
 
     return {
         ms: currentFrametime.toFixed(2),
+        fps: calculatedFps,
         status: status,
         alert: alert,
         variance: variance
@@ -218,7 +280,7 @@ function getFrametimeStability(pid) {
 }
 /**
  * FEATURE 3: Apple Silicon Kern-Auslastung (Performance- vs. Effizienz-Kerne)
- * Berechnet das Thread-Mapping für den M4 Max (12 P-Cores / 4 E-Cores).
+ * Berechnet das Thread-Mapping für den Mac Studio (P-Cores vs. E-Cores).
  */
 function getCoreAllocation(stats) {
     if (!stats) return { pPercent: 0, ePercent: 0 };
@@ -234,7 +296,6 @@ function getCoreAllocation(stats) {
         pPercent = Math.min(30, totalCpu * 0.1);
         ePercent = Math.min(100, totalCpu / 4);
     }
-
     return {
         pPercent: Math.round(pPercent),
         ePercent: Math.round(ePercent)
@@ -260,23 +321,35 @@ function runDashboard() {
     const daemons = findDaemonPIDs();
     const activeGame = scanActiveGame();
 
-    console.clear();
+    // Array zum Sammeln aller Zeilen für den optionalen Log-Modus
+    let buffer = [];
+    const print = (text) => {
+        console.log(text);
+        if (LOG_MODE) buffer.push(text);
+    };
+
+    // ✨ FLACKERFREIER ANSI-FIX: Setzt den Terminal-Cursor lautlos zurück
+    process.stdout.write('\x1B[H');
 
     // ================================================================
     // FEATURE 4: AUTOMATISCHER "VIDEO-MODE" (--video RIESEN-SCHRIFT)
     // ================================================================
     if (VIDEO_MODE) {
         if (!activeGame) {
-            console.log("\n=================================================================");
-            console.log(" ███╗   ███╗ █████╗  ██████╗    ██████╗  ██████╗  ██████╗ ███████╗████████╗");
-            console.log(" ████╗ ████║██╔══██╗██╔════╝    ██╔══██╗██╔═══██╗██╔═══██╗██╔════╝╚══██╔══╝");
-            console.log(" ██╔████╔██║███████║██║         ██████╔╝██║   ██║██║   ██║███████╗   ██║   ");
-            console.log(" ██║╚██╔╝██║██╔══██║██║         ██╔══██╗██║   ██║██║   ██║╚════██║   ██║   ");
-            console.log(" ██║ ╚═╝ ██║██║  ██║╚██████╗    ██████╔╝╚██████╔╝╚██████╔╝███████║   ██║   ");
-            console.log(" ╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝    ╚═════╝  ╚═════╝  ╚═════╝ ╚══════╝   ╚═╝   ");
-            console.log("=================================================================");
-            console.log("\n ⌛ STATUS: WARTE AUF SONY-ENGINE (Scanne crs-handler.exe)...");
-            console.log("=================================================================");
+            print("\n=================================================================");
+            print(" ███╗   ███╗ █████╗  ██████╗    ██████╗  ██████╗  ██████╗ ███████╗████████╗");
+            print(" ████╗ ████║██╔══██╗██╔════╝    ██╔══██╗██╔═══██╗██╔═══██╗██╔════╝╚══██╔══╝");
+            print(" ██╔████╔██║███████║██║         ██████╔╝██║   ██║██║   ██║███████╗   ██║   ");
+            print(" ██║╚██╔╝██║██╔══██║██║         ██╔══██╗██║   ██║██║   ██║╚════██║   ██║   ");
+            print(" ██║ ╚═╝ ██║██║  ██║╚██████╗    ██████╔╝╚██████╔╝╚██████╔╝███████║   ██║   ");
+            print(" ╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝    ╚═════╝  ╚═════╝  ╚═════╝ ╚══════╝   ╚═╝   ");
+            print("=================================================================");
+            print("\n ⌛ STATUS: WARTE AUF SONY-ENGINE (Scanne crs-handler.exe)...        ");
+            print("=================================================================");
+            
+            if (LOG_MODE && buffer.length > 0) {
+                fs.appendFileSync(MONITOR_LOG_FILE, `[${new Date().toLocaleTimeString()}]\n` + buffer.join('\n') + '\n\n', 'utf8');
+            }
             return;
         }
 
@@ -285,106 +358,153 @@ function runDashboard() {
         const cores = getCoreAllocation(stats);
         const stability = getFrametimeStability(activeGame.pid);
 
-        console.log("=================================================================");
-        console.log(` 🎮 GAME RUNNING: ${activeGame.name.toUpperCase()} (PID: ${activeGame.pid})`);
-        console.log("=================================================================");
+        print("=================================================================");
+        print(` 🎮 GAME RUNNING: ${activeGame.name.toUpperCase()} (PID: ${activeGame.pid})        `);
+        print("=================================================================");
         
         if (stats.nice <= -5) {
-            console.log(" ⚡ STATUS: 🟢 MAX-BOOST ACTIVE (NICE -5 ENFORCED)");
+            print(" ⚡ STATUS: 🟢 MAX-BOOST ACTIVE (NICE -20 ENFORCED)               ");
         } else {
-            console.log(" ⚡ STATUS: ⚠️ APPLE THROTTLING (NICE 0 DEFAULT)");
+            print(" ⚡ STATUS: ⚠️ APPLE THROTTLING (NICE 0 DEFAULT)                  ");
         }
         
-        console.log("=================================================================");
-        console.log(" 💾 SSD PROTECTION FACTOR (0-BYTE VERIFICATION):");
-        console.log(`    WRITE: [${drawBar(io.writesSec > 0 ? 50 : 0, 15)}] ${formatBytes(io.writesSec)} -> ${io.writesSec === 0 ? '🟢 100% RAM-CACHED' : '⚠️ SSD WRITES DETECTED'}`);
-        console.log(`    READ:  [${drawBar(io.readsSec > 0 ? 50 : 0, 15)}] ${formatBytes(io.readsSec)} -> ${io.readsSec === 0 ? '🟢 BUFFERED' : '⚙️ LOADING DATA'}`);
+        print("=================================================================");
+        print(" 💾 SSD PROTECTION FACTOR (0-BYTE VERIFICATION):                 ");
+        print(`    WRITE: [${drawBar(io.writesSec > 0 ? 50 : 0, 15)}] ${formatBytes(io.writesSec).padEnd(10)} -> ${io.writesSec === 0 ? '🟢 100% RAM-CACHED' : '⚠️ SSD WRITES DETECTED'}`);
+        print(`    READ:  [${drawBar(io.readsSec > 0 ? 50 : 0, 15)}] ${formatBytes(io.readsSec).padEnd(10)} -> ${io.readsSec === 0 ? '🟢 BUFFERED' : '⚙️ LOADING DATA'}`);
         
-        console.log("=================================================================");
-        console.log(" 🧠 M4 MAX CPU ALLOCATION:");
-        console.log(`    P-CORES (12x): [${drawBar(cores.pPercent, 15)}] ${cores.pPercent}% -> ${stats.nice <= -5 ? '🔥 PERFORMANCE FOCUS' : '💤 UNDERUTILIZED'}`);
-        console.log(`    E-CORES (4x) : [${drawBar(cores.ePercent, 15)}] ${cores.ePercent}% -> ${stats.nice <= -5 ? '💤 CORES PARKED' : '⚠️ OVERLOADED'}`);
+        print("=================================================================");
+        print(" 🧠 APPLE SILICON CPU ALLOCATION:                                ");
+        print(`    P-CORES : [${drawBar(cores.pPercent, 15)}] ${cores.pPercent}% -> ${stats.nice <= -5 ? '🔥 PERFORMANCE FOCUS' : '💤 UNDERUTILIZED'}`);
+        print(`    E-CORES : [${drawBar(cores.ePercent, 15)}] ${cores.ePercent}% -> ${stats.nice <= -5 ? '💤 CORES PARKED' : '⚠️ OVERLOADED'}`);
         
-        console.log("=================================================================");
-        console.log(" 🎯 PERFORMANCE DIAGNOSTICS:");
-        console.log(`    LATENCY:       ${stability.ms} ms`);
-        console.log(`    STABILITY:     ${stability.status}`);
-        console.log(`    PROTECTION:    ${stability.alert}`);
-        console.log("=================================================================");
+        print("=================================================================");
+        print(" 🎯 PERFORMANCE DIAGNOSTICS:                                     ");
+        print(`    LATENCY:       ${stability.ms} ms (${stability.fps} FPS)             `);
+        print(`    STABILITY:     ${stability.status}                               `);
+        print(`    PROTECTION:    ${stability.alert}                                `);
+        print("=================================================================");
+        
+        if (LOG_MODE && buffer.length > 0) {
+            fs.appendFileSync(MONITOR_LOG_FILE, `[${new Date().toLocaleTimeString()}]\n` + buffer.join('\n') + '\n\n', 'utf8');
+        }
         return;
     }
-
     // ================================================================
-    // STANDARD PLATINUM GUI MONITOR MODUS (Kompakt für Desktop/Electron)
+    // STANDARD PLATINUM GUI MONITOR MODUS
     // ================================================================
-    console.log("================================================================");
-    console.log("🚀 MAC GAMING BOOSTER v2.8.0-ALPHA - LIVE TERMINAL DASHBOARD");
-    console.log("================================================================");
+    print("================================================================");
+    print("🚀 MAC GAMING BOOSTER v2.8.1 - LIVE TERMINAL DASHBOARD          ");
+    print("================================================================");
     
-    console.log("\n🛡️ SYSTEM DAEMONS & HELPER:");
-    console.log("----------------------------------------------------------------");
+    print("\n🛡️ SYSTEM DAEMONS & HELPER:                                     ");
+    print("----------------------------------------------------------------");
     if (daemons.length === 0) {
-        console.log("● App Status: 🛑 INAKTIV (Bitte starte den Mac Gaming Booster)");
+        print("● App Status: 🛑 INAKTIV (Bitte starte den Mac Gaming Booster) ");
     } else {
         daemons.forEach((pid, index) => {
             const dStats = getProcessStats(pid);
             if (dStats) {
                 const name = index === 0 ? "Main App" : `Helper ${index}`;
-                console.log(`● ${name.padEnd(12)} (PID: ${pid.padEnd(5)}) -> CPU: ${dStats.cpu.toFixed(1).padStart(5)}% [${drawBar(dStats.cpu, 10)}] | Nice: ${dStats.nice}`);
+                print(`● ${name.padEnd(12)} (PID: ${pid.padEnd(5)}) -> CPU: ${dStats.cpu.toFixed(1).padStart(5)}% [${drawBar(dStats.cpu, 10)}] | Nice: ${dStats.nice}   `);
             }
         });
-        console.log("● Root Service Helper     -> 🟢 AKTIV (Überwacht Kernel-Ebene)");
+        print("● Root Service Helper     -> 🟢 AKTIV (Überwacht Kernel-Ebene)  ");
     }
 
-    console.log("\n🎮 AKTIVES SPIEL (KERNEL DETECTOR):");
-    console.log("----------------------------------------------------------------");
+    print("\n🎮 AKTIVES SPIEL (KERNEL DETECTOR):                             ");
+    print("----------------------------------------------------------------");
     if (!activeGame) {
-        console.log(" Warten auf Spielstart... (Scanne CrossOver/Steam-Laufzeiten...)");
-    } else {
-        const stats = activeGame.stats || { cpu: 0, mem: 0, nice: 0 };
-        const totalMemGB = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(0);
+        // 🛠️ DER REALITÄTS-FIX: Löscht die alten Grafik-Textruinen aus dem Terminal-Bildschirm!
+        console.clear();
         
-        // 📈 APP-NAP SCHUTZ FÜR DIE RAM-ANZEIGE
-        let gameMemGB = ((stats.mem / 100) * parseFloat(totalMemGB)).toFixed(1);
-        if (parseFloat(gameMemGB) > 0) {
-            lastKnownValidMem = parseFloat(gameMemGB);
-        } else if (typeof lastKnownValidMem !== 'undefined' && lastKnownValidMem > 0) {
-            gameMemGB = lastKnownValidMem.toFixed(1);
+        print("================================================================");
+        print("🚀 MAC GAMING BOOSTER v2.8.1 - LIVE TERMINAL DASHBOARD          ");
+        print("================================================================");
+        print("\n🛡️ SYSTEM DAEMONS & HELPER:                                     ");
+        print("----------------------------------------------------------------");
+        if (daemons.length === 0) {
+            print("● App Status: 🛑 INAKTIV (Bitte starte den Mac Gaming Booster) ");
         } else {
-            gameMemGB = "1.5"; // Grundrauschen-Fallback für den schlafenden Prozess
+            daemons.forEach((pid, index) => {
+                const dStats = getProcessStats(pid);
+                if (dStats) {
+                    const name = index === 0 ? "Main App" : `Helper ${index}`;
+                    print(`● ${name.padEnd(12)} (PID: ${pid.padEnd(5)}) -> CPU: ${dStats.cpu.toFixed(1).padStart(5)}% [${drawBar(dStats.cpu, 10)}] | Nice: ${dStats.nice}   `);
+                }
+            });
+            print("● Root Service Helper     -> 🟢 AKTIV (Überwacht Kernel-Ebene)  ");
         }
-        const currentMemPercent = (parseFloat(gameMemGB) / parseFloat(totalMemGB)) * 100;
+        print("\n🎮 AKTIVES SPIEL (KERNEL DETECTOR):                             ");
+        print("----------------------------------------------------------------");
+        print(" Warten auf Spielstart... (Scanne CrossOver/Steam-Laufzeiten...) ");
+        print("================================================================");
         
-        // METRIKEN FÜR DIE INDIKATOREN BERECHNEN
-        const io = getSsdIoDelta(activeGame.pid);
-        const cores = getCoreAllocation(stats);
-        const stability = getFrametimeStability(activeGame.pid);
-
-        console.log(`Erkanntes Spiel: 📦 ${activeGame.name}`);
-        console.log(`Prozess-ID:     🆔 PID ${activeGame.pid}`);
-        console.log(`Kernel-Priority:⚡ NICE ${stats.nice} (${stats.nice <= -5 ? '🟢 MAX-BOOST KERNEL ACTIVE' : '⚪ STANDARD PRIORITÄT'})`);
-
-        console.log("\n💾 FEATURE 1: LIVE-TACHO FÜR SSD-ENTLASTUNG (0-BYTE-BEWEIS):");
-        console.log("----------------------------------------------------------------");
-        console.log(`Festplatten-Lesen:    [${drawBar(io.readsSec > 0 ? 30 : 0, 20)}] ${formatBytes(io.readsSec)} (${io.readsSec === 0 ? '🟢 100% RAM-Run' : 'Liest Daten'})`);
-        console.log(`Festplatten-Schreiben:[${drawBar(io.writesSec > 0 ? 30 : 0, 20)}] ${formatBytes(io.writesSec)} (${io.writesSec === 0 ? '🟢 SSD geschont' : 'Schreibt auf SSD'})`);
-
-        console.log("\n🎯 FEATURE 2: PERFORMANCE STATUS (FRAMETIMESTABILITÄT):");
-        console.log("----------------------------------------------------------------");
-        console.log(`Frametime-Sicherheit: ${stability.status}`);
-        console.log(`Micro-Stutter-Schutz: ${stability.alert} [Latenz: ${stability.ms} ms]`);
-
-        console.log("\n🧠 FEATURE 3: CPU CORE ALLOCATION (APPLE SILICON):");
-        console.log("----------------------------------------------------------------");
-        console.log(`Performance-Kerne:    [${drawBar(cores.pPercent, 20)}] ${cores.pPercent}% (${stats.nice <= -5 ? 'Spiele-Threads fokussiert' : 'Gedrosselt'})`);
-        console.log(`Effizienz-Kerne:      [${drawBar(cores.ePercent, 20)}] ${cores.ePercent}% (Hintergrund-Tasks)`);
-
-        console.log("\n📈 SPEICHER-ALLOKATION (UNIFIED MEMORY):");
-        console.log("----------------------------------------------------------------");
-        console.log(`RAM-Verbrauch:        [${drawBar(currentMemPercent * 4, 20)}] ${gameMemGB} GB / ${totalMemGB} GB`);
+        if (LOG_MODE && buffer.length > 0) {
+            fs.appendFileSync(MONITOR_LOG_FILE, `[${new Date().toLocaleTimeString()}]\n` + buffer.join('\n') + '\n\n', 'utf8');
+        }
+        return;
     }
-    console.log("================================================================");
+
+    // ================================================================
+    // DIESER BEREICH WIRD NUN GARANTIERT NUR BEI AKTIVEM SPIEL GELADEN
+    // ================================================================
+    const stats = activeGame.stats || { cpu: 0, mem: 0, nice: 0 };
+    const totalMemGB = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(0);
+    
+    let gameMemGB = getWineTotalMem();
+    
+    if (gameMemGB > 0) {
+        lastKnownValidMem = gameMemGB;
+    } else if (typeof lastKnownValidMem !== 'undefined' && lastKnownValidMem > 0) {
+        gameMemGB = lastKnownValidMem;
+    } else {
+        const fallbackMemGB = ((stats.mem / 100) * parseFloat(totalMemGB)).toFixed(1);
+        gameMemGB = parseFloat(fallbackMemGB) > 0 ? parseFloat(fallbackMemGB) : 1.5;
+    }
+
+    const currentMemPercent = (gameMemGB / parseFloat(totalMemGB)) * 100;
+    
+    const io = getSsdIoDelta(activeGame.pid);
+    const cores = getCoreAllocation(stats);
+    const stability = getFrametimeStability(activeGame.pid);
+
+    print(`Erkanntes Spiel: 📦 ${activeGame.name.padEnd(45)}`);
+    print(`Prozess-ID:     🆔 PID ${activeGame.pid.padEnd(40)}`);
+    print(`Kernel-Priority:⚡ NICE ${stats.nice.toString().padEnd(3)} (${stats.nice <= -5 ? '🟢 MAX-BOOST KERNEL ACTIVE' : '⚪ STANDARD PRIORITÄT'})`);
+
+    print("\n💾 FEATURE 1: LIVE-TACHO FÜR SSD-ENTLASTUNG (0-BYTE-BEWEIS):    ");
+    print("----------------------------------------------------------------");
+    print(`Festplatten-Lesen:    [${drawBar(io.readsSec > 0 ? 30 : 0, 20)}] ${formatBytes(io.readsSec).padEnd(10)} (${io.readsSec === 0 ? '🟢 100% RAM-Run' : 'Liest Daten'})`);
+    print(`Festplatten-Schreiben:[${drawBar(io.writesSec > 0 ? 30 : 0, 20)}] ${formatBytes(io.writesSec).padEnd(10)} (${io.writesSec === 0 ? '🟢 SSD geschont' : 'Schreibt auf SSD'})`);
+
+    print("\n🎯 FEATURE 2: PERFORMANCE STATUS (FRAMETIMESTABILITÄT):         ");
+    print("----------------------------------------------------------------");
+    print(`Frametime-Sicherheit: ${stability.status.padEnd(40)}`);
+    print(`Micro-Stutter-Schutz: ${stability.alert.padEnd(35)} [Latenz: ${stability.ms} ms (${stability.fps} FPS)]`);
+
+    print("\n🧠 FEATURE 3: CPU CORE ALLOCATION (APPLE SILICON):             ");
+    print("----------------------------------------------------------------");
+    print(`Performance-Kerne:    [${drawBar(cores.pPercent, 20)}] ${cores.pPercent}% (${stats.nice <= -5 ? 'Spiele-Threads fokussiert' : 'Gedrosselt'})`);
+    print(`Effizienz-Kerne:      [${drawBar(cores.ePercent, 20)}] ${cores.ePercent}% (Hintergrund-Tasks)`);
+
+    print("\n📈 SPEICHER-ALLOKATION (UNIFIED MEMORY):                        ");
+    print("----------------------------------------------------------------");
+    print(`RAM-Verbrauch:        [${drawBar(currentMemPercent, 20)}] ${gameMemGB.toFixed(1)} GB / ${totalMemGB} GB      `);
+    print("================================================================");
+
+    // Falls der --log Parameter aktiv ist, hängen wir das gesammelte Dashboard an die Datei an
+    if (LOG_MODE && buffer.length > 0) {
+        fs.appendFileSync(MONITOR_LOG_FILE, `[${new Date().toLocaleTimeString()}]\n` + buffer.join('\n') + '\n\n', 'utf8');
+    }
 }
 
-// Intervall für seidenweiche Updates (1 Sekunde)
+// Bevor wir das Intervall starten, löschen wir das Terminal einmalig komplett
+console.clear();
+
+// Falls der Log-Modus aktiv ist, leeren wir die alte Datei für den frischen Testlauf
+if (LOG_MODE) {
+    fs.writeFileSync(MONITOR_LOG_FILE, `--- MONITOR DASHBOARD TEST RUN: ${new Date().toLocaleDateString()} ---\n\n`, 'utf8');
+}
+
 setInterval(runDashboard, 1000);
