@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #121214; color: #E1E1E6; padding: 25px; user-select: none; }
+        body::-webkit-scrollbar { width: 8px; }
+        body::-webkit-scrollbar-track { background: #121214; }
+        body::-webkit-scrollbar-thumb { background: #202024; border-radius: 4px; border: 1px solid #323238; }
+        h2 { color: #04D361; font-weight: 600; margin-top: 0; margin-bottom: 5px; }
+        .subtitle { font-size: 12px; color: #8F8F9D; margin-bottom: 20px; }
+        .section { background: #202024; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #323238; }
+        label { font-weight: bold; display: block; margin-bottom: 10px; font-size: 14px; color: #04D361; }
+        .desc { font-size: 11px; color: #8F8F9D; margin-bottom: 12px; }
+        .slider-container { margin-bottom: 15px; }
+        .slider-label { font-size: 13px; font-weight: 500; }
+        input[type=range] { width: 100%; accent-color: #04D361; margin-top: 5px; cursor: pointer; }
+        .val { float: right; color: #04D361; font-weight: bold; font-family: monospace; }
+        .option-container { display: flex; align-items: flex-start; cursor: pointer; }
+        .option-container input { margin-top: 3px; margin-right: 10px; accent-color: #04D361; cursor: pointer; }
+        .option-text { font-size: 13px; font-weight: 500; }
+        .option-desc { font-size: 11px; color: #8F8F9D; margin-top: 2px; }
+        .blacklist-box { border: 1px solid #323238; background: #121214; border-radius: 6px; height: 110px; overflow-y: auto; padding: 8px; margin-bottom: 10px; }
+        .blacklist-box::-webkit-scrollbar { width: 6px; }
+        .blacklist-box::-webkit-scrollbar-thumb { background: #202024; border-radius: 3px; }
+        .blacklist-item { display: inline-flex; align-items: center; background: #29292E; border: 1px solid #41414A; color: #E1E1E6; border-radius: 4px; padding: 3px 8px; margin: 3px; font-size: 12px; font-family: monospace; }
+        .blacklist-remove { color: #FF5555; margin-left: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .blacklist-remove:hover { color: #FFAA99; }
+        .blacklist-input-row { display: flex; gap: 8px; }
+        .blacklist-input { flex-grow: 1; background: #121214; border: 1px solid #323238; border-radius: 4px; padding: 6px 10px; color: #E1E1E6; font-family: monospace; font-size: 12px; }
+        .blacklist-input:focus { border-color: #04D361; outline: none; }
+        .btn-add { background: #323238; color: #04D361; border: 1px solid #04D361; padding: 5px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-add:hover { background: #04D361; color: #000; }
+        .footer-buttons { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+        .btn-save { background: #04D361; color: #000; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+        .btn-save:hover { background: #06B352; }
+        .btn-reset { background: transparent; color: #8F8F9D; border: 1px solid #323238; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .btn-reset:hover { color: #FF5555; border-color: #FF5555; background: rgba(255, 85, 85, 0.1); }
+        
+        .radar-card { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; background: #121214; }
+        .radar-card-green { border: 1px solid #04D361; background: rgba(4, 211, 97, 0.03); }
+        .radar-card-red { border: 1px solid #FF5555; background: rgba(255, 85, 85, 0.05); }
+        .radar-btn-assign { background: #FF5555; color: white; border: none; padding: 6px 12px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .radar-btn-assign:hover { background: #FF3333; }
+    </style>
+</head>
+<body>
+    <h2>🚀 Mac Gaming Booster</h2>
+    <div class="subtitle">Core Engine Settings & Management (v2.8.2 Platin)</div>
+    
+    <!-- SECTION 1: RAM LIMITS -->
+    <div class="section">
+        <label>🛡️ Adaptive Core RAM Thresholds (MB)</label>
+        <div class="desc">Drag the sliders to dynamically calibrate your memory guard thresholds.</div>
+        <div class="slider-container">
+            <span class="slider-label">Soft Buffer Evacuation (Stage 1):</span>
+            <span class="val" id="lvl1Val">1500 MB</span>
+            <input type="range" id="lvl1" min="1000" max="3000" step="50" oninput="updateLabel('lvl1Val', this.value)">
+        </div>
+        <div class="slider-container" style="margin-bottom: 0;">
+            <span class="slider-label">Compiler Deep-Sleep (Stage 2):</span>
+            <span class="val" id="lvl2Val">400 MB</span>
+            <input type="range" id="lvl2" min="200" max="800" step="50" oninput="updateLabel('lvl2Val', this.value)">
+        </div>
+    </div>
+    
+    <!-- SECTION 0: ENGINE CONTROL -->
+    <div class="section">
+        <label>⚙️ Core Engine Settings</label>
+        <div class="desc">Configure the main behaviors and guards of the optimization engine.</div>
+        <label class="option-container" style="margin-bottom: 12px;">
+            <input type="checkbox" id="fpsBoost">
+            <div>
+                <div class="option-text">🚀 Enable FPS Boost</div>
+                <div class="option-desc">Dynamically renices game process priorities via root helper in real-time.</div>
+            </div>
+        </label>
+        <label class="option-container" style="margin-bottom: 12px;">
+            <input type="checkbox" id="shaderGuard">
+            <div>
+                <div class="option-text">🛡️ Enable Adaptive Shader Guard (Anti-Panic)</div>
+                <div class="option-desc">Protects system from kernel panics by managing compiler workloads.</div>
+            </div>
+        </label>
+        <label class="option-container" style="margin-bottom: 12px;">
+            <input type="checkbox" id="engineLogging">
+            <div>
+                <div class="option-text">📝 Enable Logging (gaming_boost.log)</div>
+                <div class="option-desc">Keeps a persistent transaction log of all optimizations.</div>
+            </div>
+        </label>
+        <label class="option-container">
+            <input type="checkbox" id="loginAutostart">
+            <div>
+                <div class="option-text">⚙️ Start at Login (Autostart)</div>
+                <div class="option-desc">Launches the booster automatically when you start your Mac.</div>
+            </div>
+        </label>
+    </div>
+    
+    <!-- SECTION 2: BLACKLIST -->
+    <div class="section">
+        <label>📝 Blacklist Management (Ignored Processes)</label>
+        <div class="desc">Processes in this list will be ignored by the booster.</div>
+        <div class="blacklist-box" id="blacklistContainer"></div>
+        <div class="blacklist-input-row">
+            <input type="text" id="blInput" class="blacklist-input" placeholder="e.g., discord.exe or overlay" onkeydown="if(event.key === 'Enter') addProcess()">
+            <button class="btn-add" onclick="addProcess()">＋ Add Process</button>
+        </div>
+    </div>  
+
+    <!-- SECTION 4: DYNAMISCHES EXECUTABLE STATUS RADAR -->
+    <div class="section">
+        <label>📊 Executable Status Radar</label>
+       <div class="desc">Green titles are armed in the kernel. Red titles require a manual game EXE assignment via Finder.</div>
+        <div class="blacklist-box" id="gamesContainer" style="height: 180px; padding: 10px; background: #121214;"></div>
+        <div class="blacklist-input-row" style="justify-content: flex-end; margin-top: 10px;">
+            <button class="btn-add" id="btnScanGames" onclick="performManualGameScan()" style="width: 100%; padding: 8px 0; font-size: 13px;">🔍 Scan for installed games</button>
+        </div>
+    </div>
+    <!-- SECTION 3: DAEMON -->
+    <div class="section">
+        <label>⚙️ Root-Helper Background Service (Daemon)</label>
+        <label class="option-container" style="margin-bottom: 12px;">
+            <input type="checkbox" id="keepAlive">
+            <div>
+                <div class="option-text">Keep background service active (Variant 1)</div>
+                <div class="option-desc">The helper continues running silently for instant re-launch without password prompt.</div>
+            </div>
+        </label>
+        <label class="option-container">
+            <input type="checkbox" id="helperDebug">
+            <div>
+                <div class="option-text">Enable Helper Debug Logging (helper_debug.log)</div>
+                <div class="option-desc">Enables deeper engine logs directly from the privileged background kernel task.</div>
+            </div>
+        </label>
+        <div style="margin-top: 15px; padding: 10px; background: #1a1a1e; border-radius: 6px; border: 1px solid #29292e; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="font-size: 12px; color: #8F8F9D;">Service Status:</span>
+                <span id="helperStatusText" style="font-size: 12px; font-weight: bold; margin-left: 5px;">Checking...</span>
+            </div>
+            <button id="btnToggleHelper" style="background: transparent; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;" onclick="toggleHelperService()">Service steuern</button>
+        </div>
+    </div>
+    
+    <div class="footer-buttons">
+        <button class="btn-reset" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
+        <button class="btn-save" onclick="saveSettings()">💾 Save & Close</button>
+    </div>
+    
+    <script>
+        const fs = require('fs');
+        const path = require('path');  
+        const { ipcRenderer } = require('electron');
+        
+        const userAppSupport = path.join(process.env.HOME, 'Library/Application Support/fps-boost');
+        const dirPath = path.join(userAppSupport, 'config'); 
+        const configPath = path.join(dirPath, 'booster_config.json');
+        const blacklistPath = path.join(dirPath, 'blacklist.txt');
+        const mappingPath = path.join(dirPath, 'games_exe_mapping.txt');
+        
+        let currentConfig = { purgeLimit: 1500, pauseLimit: 400, keepDaemonAlive: true };
+        let blacklistArray = [];
+        let isHelperCurrentlyOnline = false;
+        
+        function checkHelperLiveStatus() {
+            const { exec } = require('child_process');
+            exec('ps -Ax | grep "helper.js" | grep -v grep', (err, stdout) => {
+                const statusText = document.getElementById('helperStatusText');
+                const toggleBtn = document.getElementById('btnToggleHelper'); 
+                if (!statusText || !toggleBtn) return;
+                if (stdout && stdout.trim().length > 0) {
+                    isHelperCurrentlyOnline = true;
+                    statusText.innerText = "● ONLINE";
+                    statusText.style.color = "#04D361";
+                    toggleBtn.innerText = "🛑 Stop Service";
+                    toggleBtn.style.color = "#FF5555";
+                    toggleBtn.style.borderColor = "#FF5555";
+                } else {
+                    isHelperCurrentlyOnline = false;
+                    statusText.innerText = "○ OFFLINE";
+                    statusText.style.color = "#FF5555";
+                    toggleBtn.innerText = "🚀 Start Service";
+                    toggleBtn.style.color = "#04D361";
+                    toggleBtn.style.borderColor = "#04D361";
+                }
+            });
+        }
+        
+        function toggleHelperService() {
+            const trigger = path.join(dirPath, 'boost.trigger');
+            if (isHelperCurrentlyOnline) {
+                try {
+                    fs.writeFileSync(trigger, JSON.stringify({ action: 'kill' }), 'utf8');
+                } catch(e) {}
+                const { exec } = require('child_process');
+                exec("pkill -f helper.js", (err) => {
+                    setTimeout(checkHelperLiveStatus, 500);
+                });
+                const statusText = document.getElementById('helperStatusText');
+                if (statusText) {
+                    statusText.innerText = "⏳ Stopping...";
+                    statusText.style.color = "#8F8F9D";
+                }
+            } else {
+                ipcRenderer.send('trigger-start-helper');
+                const statusText = document.getElementById('helperStatusText');
+                if (statusText) {
+                    statusText.innerText = "⏳ Starting...";
+                    statusText.style.color = "#8F8F9D";
+                }
+            }
+        }
+        async function loadSavedGamesList() {
+            const container = document.getElementById('gamesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            if (!fs.existsSync(mappingPath)) {
+                container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">No registered games found. Please start a scan.</div>';
+                return;
+            }
+            
+            try {
+                const content = fs.readFileSync(mappingPath, 'utf8');
+                
+                // Wir trennen die Zeilen der echten HTML-Datei ganz sauber am Umbruch auf
+                const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                
+                if (lines.length === 0 || content.includes('No games found.')) {
+                    container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">No registered games found. Please start a scan.</div>';
+                    return;
+                }
+                
+                lines.forEach((line, i) => {
+                    if (!line.includes('=>')) return;
+                    const parts = line.split('=>');
+                    const gameTitle = parts[0].trim();
+                    const exeName = parts[1].trim();
+                    const isUnknown = exeName === 'unknown_executable.exe';
+                    
+                    const card = document.createElement('div');
+                    card.className = isUnknown ? 'radar-card radar-card-red' : 'radar-card radar-card-green';
+                    
+                    const safeId = "btn-radar-" + i;
+                    
+                    if (isUnknown) {
+                        card.innerHTML = `<div><div style="font-weight: bold; color: #E1E1E6;">🎮 ${gameTitle}</div><div style="color: #FF5555; font-size: 10px; margin-top: 3px;">⚠️ STATUS: No executable file (.exe) found on SSD!</div></div><button class="radar-btn-assign" id="${safeId}">📂 ASSIGN EXE</button>`;
+                    } else {
+                        // 🟢 UPGRADE: Auch gesunde Spiele bekommen jetzt den Button zum Ändern oder Erweitern!
+                        card.innerHTML = `<div><div style="font-weight: bold; color: #E1E1E6;">🎮 ${gameTitle}</div><div style="color: #04D361; font-size: 10px; margin-top: 3px;">🟢 OK: Actively bound to <span style="font-family: monospace;">${exeName}</span></div></div><button class="radar-btn-assign" id="${safeId}" style="background: #04D361; color: black;">🔄 CHANGE</button>`;
+                    }
+                    
+                    container.appendChild(card);
+                    
+                    // Event-Listener wird jetzt für JEDE Karte (Rot und Grün) sicher gebunden!
+                    const selectBtn = document.getElementById(safeId);
+                    if (selectBtn) {
+                        selectBtn.onclick = function() {
+                            assignExeViaFinder(gameTitle);
+                        };
+                    }
+                });
+            } catch(e) {
+                container.innerHTML = '<div style="color:#FF5555; font-size:12px; padding:10px; text-align:center;">Error loading status radar.</div>';
+            }
+        }
+        
+        async function assignExeViaFinder(gameName) {
+            const response = await ipcRenderer.invoke('open-exe-picker', gameName);
+            if (response && response.success) {
+                loadSavedGamesList();
+            }
+        }
+        
+        async function performManualGameScan() {
+            const btn = document.getElementById('btnScanGames');
+            const container = document.getElementById('gamesContainer');
+            if (!btn || !container) return;
+            
+            btn.disabled = true;
+            btn.innerText = "⏳ Searching for launcher entries... (Please wait)";
+            container.innerHTML = '<div style="color:#04D361; font-size:12px; padding:10px; text-align:center;">Festplatten und Launcher-Manifeste werden analysiert...</div>';
+            
+            await ipcRenderer.invoke('trigger-game-scan');
+            btn.disabled = false;
+            btn.innerText = "🔍 Scan for installed games";
+            loadSavedGamesList();
+        }
+        
+        function renderBlacklist() {
+            const container = document.getElementById('blacklistContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            if (blacklistArray.length === 0) {
+                container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">No processes blocked.</div>';
+                return;
+            }
+            blacklistArray.forEach((processName, index) => {
+                const item = document.createElement('div');
+                item.className = 'blacklist-item';
+                item.innerHTML = processName + '<span class="blacklist-remove" onclick="removeProcess(' + index + ')">×</span>';
+                container.appendChild(item);
+            });
+        }
+        
+        function addProcess() {
+            const input = document.getElementById('blInput');
+            if (!input) return;
+            const val = input.value.trim().toLowerCase();
+            if (val && !blacklistArray.includes(val)) {
+                blacklistArray.push(val);
+                input.value = '';
+                renderBlacklist();
+            }
+        }
+        
+        function removeProcess(index) {
+            blacklistArray.splice(index, 1);
+            renderBlacklist();
+        }
+        
+        function updateLabel(id, val) {
+            const label = document.getElementById(id);
+            if (label) label.innerText = val + " MB";
+        }
+        
+        function resetToDefaults() {
+            document.getElementById('lvl1').value = 1500;
+            document.getElementById('lvl1Val').innerText = "1500 MB";
+            document.getElementById('lvl2').value = 400;
+            document.getElementById('lvl2Val').innerText = "400 MB";
+            document.getElementById('keepAlive').checked = true;
+            document.getElementById('fpsBoost').checked = true;
+            document.getElementById('shaderGuard').checked = false;
+            document.getElementById('engineLogging').checked = false;
+            document.getElementById('loginAutostart').checked = false;
+            document.getElementById('helperDebug').checked = false;
+            blacklistArray = ['steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe', 'crossover', 'electron', 'epicgameslauncher', 'winewrapper.exe', 'wineloader', 'wineloader64'];
+            renderBlacklist();
+        }
+        
+        function saveSettings() {
+            try {
+                currentConfig.purgeLimit = parseInt(document.getElementById('lvl1').value, 10);
+                currentConfig.pauseLimit = parseInt(document.getElementById('lvl2').value, 10);
+                currentConfig.keepDaemonAlive = document.getElementById('keepAlive').checked;
+                currentConfig.isBoostActive = document.getElementById('fpsBoost').checked;
+                currentConfig.isShaderGuardActive = document.getElementById('shaderGuard').checked;
+                currentConfig.isLoggingActive = document.getElementById('engineLogging').checked;
+                currentConfig.isAutostartActive = document.getElementById('loginAutostart').checked;
+                currentConfig.isHelperDebugActive = document.getElementById('helperDebug').checked; 
+                
+                fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 4), 'utf8');
+                fs.writeFileSync(blacklistPath, blacklistArray.join('\n'), 'utf8');
+                window.close();
+            } catch(err) {
+                alert("Error saving configurations: " + err.message);
+            }
+        }
+        
+        window.assignExeViaFinder = assignExeViaFinder;
+        
+        function loadAllData() {
+            try {
+                if (fs.existsSync(configPath)) {
+                    currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                }
+                if (fs.existsSync(blacklistPath)) {
+                    const content = fs.readFileSync(blacklistPath, 'utf8');
+                    blacklistArray = content.split('\n').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+                }
+            } catch(e) {}
+            document.getElementById('lvl1').value = currentConfig.purgeLimit || 1500;
+            document.getElementById('lvl1Val').innerText = (currentConfig.purgeLimit || 1500) + " MB";     
+            document.getElementById('lvl2').value = currentConfig.pauseLimit || 400;
+            document.getElementById('lvl2Val').innerText = (currentConfig.pauseLimit || 400) + " MB";
+            document.getElementById('keepAlive').checked = currentConfig.keepDaemonAlive !== false; 
+            document.getElementById('fpsBoost').checked = currentConfig.isBoostActive !== false;
+            document.getElementById('shaderGuard').checked = currentConfig.isShaderGuardActive === true;
+            document.getElementById('engineLogging').checked = currentConfig.isLoggingActive === true;
+            document.getElementById('loginAutostart').checked = currentConfig.isAutostartActive === true;
+            document.getElementById('helperDebug').checked = currentConfig.isHelperDebugActive === true;
+            renderBlacklist();
+            checkHelperLiveStatus();
+        }
+
+        setInterval(checkHelperLiveStatus, 2000);
+        loadAllData();
+        loadSavedGamesList();
+    </script>
+</body>
+</html>
+

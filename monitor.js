@@ -242,26 +242,36 @@ function scanActiveGame() {
 
 /**
  * FEATURE 2: Farbiger FPS- & Ruckler-Warnmelder (Frametime-Stabilität)
- * Analysiert Frame-Intervalle über das Quartz-WindowServer-Subsystem.
+ * Liest die synchronisierten Echtzeit-Werte direkt aus dem macOS RAM-Speicher (/tmp) aus.
  */
 function getFrametimeStability(pid) {
-    if (!pid) return { ms: "0.00", fps: "0.0", status: "⚪ STANDBY", alert: "Kein Prozess" };
+    const tmpPath = path.join('/tmp', 'fps_boost_live.json');
     
-    const start = performance.now();
-    try {
-        execSync(`lsappinfo info -only Status $(lsappinfo find p=${pid})`, { stdio: 'ignore' });
-    } catch(e) {}
-    const end = performance.now();
-    const currentFrametime = end - start;
+    // Standard-Fallback-Werte, falls die App nicht läuft oder die Datei fehlt
+    let currentFrametime = 0;
+    let calculatedFps = "0.0";
+    
+    if (fs.existsSync(tmpPath)) {
+        try {
+            const liveData = JSON.parse(fs.readFileSync(tmpPath, 'utf8'));
+            // Wir extrahieren die exakte Latenzzeit aus der App
+            currentFrametime = parseFloat(liveData.latencyMs) || 0;
+            calculatedFps = liveData.fpsLive || "0.0";
+        } catch (e) {}
+    }
 
+    // Wir pushen den perfekt synchronisierten Wert für die Jitter-Berechnung in deine Historie
     frametimeHistory.push(currentFrametime);
     if (frametimeHistory.length > 15) frametimeHistory.shift();
 
+    // Deine originale mathematische Varianz-Analyse bleibt voll aktiv!
     const avg = frametimeHistory.reduce((a, b) => a + b, 0) / frametimeHistory.length;
     const variance = frametimeHistory.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b, 0) / frametimeHistory.length;
     
-    const calculatedFps = currentFrametime > 0 ? (1000 / currentFrametime).toFixed(1) : "0.0";
-    
+    if (!pid || currentFrametime === 0) {
+        return { ms: "0.00", fps: "0.0", status: "⚪ STANDBY", alert: "Kein Prozess", variance: 0 };
+    }
+
     let status = "🟢 EXTREM STABIL (Keine Thread-Drosselung)";
     let alert = "⚡ AKTIV (Kernel-Priorität blockiert Ruckler)";
     

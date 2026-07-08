@@ -35,6 +35,15 @@ let lastPromptTime = 0;
 const PROMPT_COOLDOWN = 1 * 60 * 1000;
 const MAPPING_FILE = path.join(CONFIG_DIR, 'games_exe_mapping.txt');
 let activeGamesMapping = new Map();
+const OVERRIDES_FILE = path.join(CONFIG_DIR, 'scanner_overrides.json');
+if (!fs.existsSync(OVERRIDES_FILE)) {
+    try {
+        fs.writeFileSync(OVERRIDES_FILE, JSON.stringify({}, null, 2), 'utf8');
+        console.log("✨ Neue scanner_overrides.json wurde erfolgreich im Config-Ordner generiert!");
+    } catch (e) {
+        console.error("Fehler beim Erstellen der scanner_overrides.json:", e.message);
+    }
+}
 function loadGamesMappingFile() {
     const MAPPING_FILE = path.join(os.homedir(), 'Library/Application Support/fps-boost/config/games_exe_mapping.txt');
     activeGamesMapping.clear();
@@ -75,27 +84,19 @@ function loadGamesMappingFile() {
 function sendToRootHelper(pid, level) {
     try {
         const triggerPath = path.join(os.homedir(), 'Library/Application Support/fps-boost/config/boost.trigger');
-        
         const payload = JSON.stringify({ 
             action: 'boost', 
             pid: parseInt(pid, 10), 
             level: parseInt(level, 10) 
         });
         fs.writeFileSync(triggerPath, payload, 'utf8');
-        
-        // 🛠️ KOSMETISCHER LIVE-LOG-FIX:
-        // Wenn das Level kleiner oder gleich -5 ist, loggen wir die echte -20 für die Übersicht
-        const displayLevel = (parseInt(level, 10) <= -5) ? -20 : level;
-        
+        const displayLevel = (parseInt(level, 10) <= -5) ? -20 : level;   
         writeToRotatedLog(`⚡️ Trigger Engine: MAX-Boost written for PID ${pid} (Level: ${displayLevel}).`);
     } catch (e) {
         writeToRotatedLog("❌ Error writing file trigger: " + e.message);
     }
 }
 let isHelperStarting = false;
-// =================================================================
-// 🛑 TEIL 1: ALTE URSPRÜNGLICHE FUNKTION (ALS SEPARATES BACKUP DEAKTIVIERT)
-// =================================================================
 if (false) {
     function startRootHelper() {
         if (isHelperStarting) return;
@@ -207,9 +208,6 @@ if (false) {
         });
     }
 }
-// =================================================================
-// ✨ TEIL 2: NEUE VERBESSERTE FUNKTION (AKTIV MIT TASKPOLICY & RENICE -20)
-// =================================================================
 function startRootHelper() {
     if (isHelperStarting) return;
     const userAppSupportPath = CONFIG_DIR;
@@ -253,17 +251,13 @@ try {
         fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 File root helper freshly initialized.\\n", 'utf8');
     }
 } catch(e) {}
-// 1. Sichere logDebug-Funktion (ohne statSync-Risiko bei jedem Aufruf)
 function logDebug(msg) {
     if (!isDebugEnabled()) return;
     try {
         const time = new Date().toLocaleTimeString();
-        // Wir nutzen dein originales \\n, um nichts im Helper-Verhalten zu verändern
         fs.appendFileSync(logPath, "[" + time + "] " + msg + "\\n", 'utf8');
     } catch (e) {}
 }
-
-// 2. Einmalige Log-Bremse beim Start des Helpers (Ganz unten im Code platzieren)
 try {
     if (fs.existsSync(logPath)) {
         const stats = fs.statSync(logPath);
@@ -286,10 +280,6 @@ setInterval(() => {
                 }  
                 if (msg.action === 'boost' && msg.pid) {
                     logDebug("📥 File trigger received for PID: " + msg.pid);
-                    
-                    // =================================================================
-                    // NEUE LOGIK (AKTIV: TASKPOLICY-KERNSWITCH + RENICE -20)
-                    // =================================================================
                     let secureCommand = "";
                     if (parseInt(msg.level, 10) === 0) {
                         // Reset: Wir prüfen erst mit kill -0, ob der Prozess noch existiert. 
@@ -302,10 +292,8 @@ setInterval(() => {
                         // Max-Stufe: Holt das Spiel von den E-Kernen auf die P-Kerne (-B) und zwingt die CPU auf das harte -20 Limit!
                         secureCommand = "taskpolicy -B -p " + msg.pid + " && renice -20 -p " + msg.pid;
                     }
-
                     exec(secureCommand, (err, stdout, stderr) => {
-                        if (err) { 
-                            // Wenn der Prozess beim Reset bereits beendet war, loggen wir es als saubere Info statt als Kernel-Error
+                        if (err) {
                             if (parseInt(msg.level, 10) === 0 && (stderr.includes("No such process") || err.message.includes("No such process"))) {
                                 logDebug("ℹ️ Process was already closed by user. No reset required.");
                             } else {
@@ -355,7 +343,6 @@ setInterval(() => {
         });
     });
 }
-/*
 let initialLoad = true;
 function loadSettings() {
     try {
@@ -369,52 +356,13 @@ function loadSettings() {
             if (config.isShaderGuardActive !== undefined) isShaderGuardActive = config.isShaderGuardActive;
             if (config.overlayX !== undefined) overlayX = config.overlayX;
             if (config.overlayY !== undefined) overlayY = config.overlayY;
-            
-            // --- HIER DEN MAC-FIX EINBAUEN ---
-            // Sobald die Settings geladen sind, synchronisieren wir den Status mit macOS
             if (typeof app !== 'undefined') {
                 app.setLoginItemSettings({
                     openAtLogin: isAutostartActive,
-                    openAsHidden: false,      // false ist sicherer unter modernem macOS
-                    path: app.getPath('exe')  // Zwingend erforderlich für verpackte Apps (.app)
+                    openAsHidden: false,
+                    path: app.getPath('exe')
                 });
             }
-            // ---------------------------------
-
-            if (initialLoad) {
-                writeToRotatedLog(`💾 Settings loaded. Boost status at startup: [${isBoostActive}]`);
-                initialLoad = false;
-            }
-        }
-    } catch (e) {
-        writeToRotatedLog("❌ Error loading booster_config.json: " + e.message);
-    }
-}*/
-let initialLoad = true;
-function loadSettings() {
-    try {
-        if (fs.existsSync(CONFIG_FILE)) {
-            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
-            const config = JSON.parse(data);   
-            if (config.isBoostActive !== undefined) isBoostActive = config.isBoostActive;
-            if (config.isLoggingActive !== undefined) isLoggingActive = config.isLoggingActive;
-            if (config.isHelperDebugActive !== undefined) isHelperDebugActive = config.isHelperDebugActive;
-            if (config.isAutostartActive !== undefined) isAutostartActive = config.isAutostartActive;
-            if (config.isShaderGuardActive !== undefined) isShaderGuardActive = config.isShaderGuardActive;
-            if (config.overlayX !== undefined) overlayX = config.overlayX;
-            if (config.overlayY !== undefined) overlayY = config.overlayY;
-            
-            // --- HIER DEN MAC-FIX EINBAUEN ---
-            // Sobald die Settings geladen sind, synchronisieren wir den Status mit macOS
-            if (typeof app !== 'undefined') {
-                app.setLoginItemSettings({
-                    openAtLogin: isAutostartActive,
-                    openAsHidden: false,      // false ist sicherer unter modernem macOS
-                    path: app.getPath('exe')  // Zwingend erforderlich für verpackte Apps (.app)
-                });
-            }
-            // ---------------------------------
-
             if (initialLoad) {
                 writeToRotatedLog(`💾 Settings loaded. Boost status at startup: [${isBoostActive}]`);
                 initialLoad = false;
@@ -434,23 +382,16 @@ function saveSettings() {
 }
 function writeToRotatedLog(newText) {
     if (!isLoggingActive) return;
-    
     const timestamp = new Date().toLocaleTimeString();
     const logLine = `[${timestamp}] ${newText}\n`;
-    
     try {
-        // Prüfen, ob die Datei existiert und wie groß sie ist
         if (fs.existsSync(LOG_FILE)) {
             const stats = fs.statSync(LOG_FILE);
             const fileSizeInMB = stats.size / (1024 * 1024);
-            
-            // Wenn das Log größer als 1 MB ist, leeren wir es automatisch
             if (fileSizeInMB > 1) {
                 fs.writeFileSync(LOG_FILE, `[${timestamp}] 🔄 Log rotated: Cleared old entries due to 1MB size limit.\n`, 'utf8');
             }
         }
-        
-        // Den neuen Eintrag wie gewohnt anhängen
         fs.appendFileSync(LOG_FILE, logLine, 'utf8');
     } catch (e) {
         console.error("Failed to write to log:", e.message);
@@ -478,7 +419,6 @@ function toggleRamOverlay() {
     overlayWindow = new BrowserWindow({
         width: 300,
         height: 165,
-        // HIER DIE VARIABLEN EINSETZEN (mit Fallback, falls die JSON leer ist)
         x: (typeof overlayX !== 'undefined' && overlayX !== undefined) ? overlayX : (width - 270),
         y: (typeof overlayY !== 'undefined' && overlayY !== undefined) ? overlayY : 40,
         frame: false,
@@ -520,8 +460,7 @@ function toggleRamOverlay() {
             </div>
         </body>
     `;
-    overlayWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-    
+    overlayWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);   
     overlayWindow.once('ready-to-show', () => {
         if (overlayWindow) {
             overlayWindow.showInactive(); 
@@ -549,9 +488,17 @@ function toggleRamOverlay() {
                         require('child_process').execSync(`lsappinfo info -only Status $(lsappinfo find p=${activePID})`, { stdio: 'ignore' });
                     } catch (e) {}
                     const end = performance.now();
-                    
                     const latencyMs = (end - start).toFixed(1);
                     const latency = parseFloat(latencyMs);
+                    try {
+                        const tmpPath = require('path').join('/tmp', 'fps_boost_live.json');
+                        require('fs').writeFileSync(tmpPath, JSON.stringify({
+                            latencyMs: latencyMs,
+                            fpsLive: (1000 / (end - start)).toFixed(1),
+                            gameName: currentStatusText.replace('🟢 MAX-Boost: 📦 ', '').replace('🎮 ', '').trim(),
+                            pid: activePID
+                        }), 'utf8');
+                    } catch (e) {}
                     if (latency < 15) {
                         kernelStatus = `⚡️ OPTIMAL [${latencyMs} ms]`;
                         statusColor = "#00ffcc";
@@ -569,6 +516,50 @@ function toggleRamOverlay() {
                     kernelStatus = "⚡️ MID-BOOST (-1)";
                     statusColor = "#ffcc00";
                     activeGameName = currentStatusText.replace('🟡 MID-Boost: 📦 ', '').replace('🎮 ', '').trim();
+                    try {
+                        const tmpPath = require('path').join('/tmp', 'fps_boost_live.json');
+                        require('fs').writeFileSync(tmpPath, JSON.stringify({
+                            latencyMs: "0.0",
+                            fpsLive: "0.0",
+                            gameName: activeGameName,
+                            pid: activePID
+                        }), 'utf8');
+                    } catch (e) {}
+                    break;
+                } else {
+                    activePID = key.includes('_') ? key.split('_')[0] : key;
+                    const start = performance.now();
+                    try {
+                        require('child_process').execSync(`lsappinfo info -only Status $(lsappinfo find p=${activePID})`, { stdio: 'ignore' });
+                    } catch (e) {}
+                    const end = performance.now();
+                    const latencyMs = (end - start).toFixed(1);
+                    const latency = parseFloat(latencyMs);
+                    activeGameName = currentStatusText
+                        .replace('🟢 MAX-Boost: 📦 ', '')
+                        .replace('🟡 MID-Boost: 📦 ', '')
+                        .replace('🔴 Boost Off: 📦 ', '')
+                        .replace('🎮 ', '')
+                        .trim();
+                    try {
+                        const tmpPath = require('path').join('/tmp', 'fps_boost_live.json');
+                        require('fs').writeFileSync(tmpPath, JSON.stringify({
+                            latencyMs: latencyMs,
+                            fpsLive: (1000 / (end - start)).toFixed(1),
+                            gameName: activeGameName,
+                            pid: activePID
+                        }), 'utf8');
+                    } catch (e) {}
+                    if (latency < 15) {
+                        kernelStatus = `⚡️ OPTIMAL [${latencyMs} ms]`;
+                        statusColor = "#00ffcc";
+                    } else if (latency >= 15 && latency < 35) {
+                        kernelStatus = `⚡️ GOOD [${latencyMs} ms]`;
+                        statusColor = "#00ff00";
+                    } else {
+                        kernelStatus = `⏳ HEAVY LOAD [${latencyMs} ms]`;
+                        statusColor = "#ffcc00";
+                    }
                     break;
                 }
             }
@@ -672,25 +663,7 @@ function manageRamGuardState(isGameRunning) {
         }
     }
 }
-/*
-setInterval(() => {
-    if (!ramGuardIntervalId) {
-        exec('vm_stat', (error, stdout) => {
-            if (error || !stdout) return;
-            const freePagesMatch = stdout.match(/Pages free:\s+(\d+)/);
-            const specPagesMatch = stdout.match(/Pages speculative:\s+(\d+)/);
-            if (freePagesMatch) {
-                const freePages = parseInt(freePagesMatch[1], 10);
-                const specPages = specPagesMatch ? parseInt(specPagesMatch[1], 10) : 0;
-                currentFreeRamMB = Math.round(((freePages + specPages) * 16384) / 1024 / 1024);
-            }
-        });
-    }
-}, 2000);
-*/
-// Variable oben im Code definieren (falls noch nicht vorhanden)
 let vmStatIntervalId = null;
-// Die ID beim Starten des Intervalls zuweisen
 vmStatIntervalId = setInterval(() => {
     if (!ramGuardIntervalId) {
         exec('vm_stat', (error, stdout) => {
@@ -765,7 +738,6 @@ function getCleanGameName(fullPath, appName) {
                            .replace(/[_\-]/g, ' ')
                            .replace(/shipping/i, '')
                            .trim();
-                           
     return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 }
 let lastKnownBoostState = null; 
@@ -831,70 +803,70 @@ function checkAndBoostGames() {
             if (lowerPath.includes('steamapps')) {
                 const standardPath = normalizedPath.replace(/\\/g, '/');
                 const detectedName = getCleanGameName(standardPath, extractedExe);
-                if (detectedName) {
-                    const cleanDetected = detectedName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-                        if (processKey) {
-                            const cleanKey = processKey.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-                            if (cleanKey.includes(cleanDetected) || cleanDetected.includes(cleanKey)) {
-                                displayGameName = `🎮 ${processKey}`;
-                                isMatchedGame = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!isMatchedGame) {
-                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-                        if (gameTitle) {
-                            const exes = gameTitle.toLowerCase().split('||').map(e => e.trim());
-                            if (exes.includes(cleanName) || exes.some(e => e.includes(cleanName) || cleanName.includes(e))) {
-                                displayGameName = `🎮 ${processKey}`;
-                                isMatchedGame = true;
-                                break;
-                            }
-                        }
-                    }
-                }
+if (detectedName) {
+    const cleanDetected = detectedName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+        if (processKey) {
+            const cleanKey = processKey.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+            if (cleanKey.includes(cleanDetected) || cleanDetected.includes(cleanKey)) {
+                displayGameName = `🎮 ${gameTitle}`;
+                isMatchedGame = true;
+                break;
             }
-            if (!isMatchedGame) {
-                for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-                    if (processKey && processKey !== 'unknown_executable.exe') {
-                        const cleanKey = processKey.toLowerCase().trim();
-                        if (cleanName === cleanKey || (cleanName.includes(cleanKey) && cleanKey.length > 2)) {
-                            displayGameName = `🎮 ${gameTitle}`;
-                            isMatchedGame = true;
-                            break;
-                        }
-                    }
-                }
+        }
+    }
+}
+if (!isMatchedGame) {
+    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+        if (gameTitle) {
+            const exes = gameTitle.toLowerCase().split('||').map(e => e.trim());
+            if (exes.includes(cleanName) || exes.some(e => e.includes(cleanName) || cleanName.includes(e))) {
+                displayGameName = `🎮 ${gameTitle}`;
+                isMatchedGame = true;
+                break;
             }
-            if (!isMatchedGame) {
-                for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-                    if (processKey && processKey !== 'unknown_executable.exe') {
-                        const cleanKey = processKey.toLowerCase().trim();
-                        if (lowerPath.includes(cleanKey)) {
-                            displayGameName = `🎮 ${gameTitle}`;
-                            isMatchedGame = true;
-                            break;
-                        }
-                    }
-                }
+        }
+    }
+}
+if (!isMatchedGame) {
+    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+        if (processKey && processKey !== 'unknown_executable.exe') {
+            const cleanKey = processKey.toLowerCase().trim();
+            if (cleanName === cleanKey || (cleanName.includes(cleanKey) && cleanKey.length > 2)) {
+                displayGameName = `🎮 ${gameTitle}`;
+                isMatchedGame = true;
+                break;
             }
-            if (isMatchedGame && displayGameName.toLowerCase().endsWith('.exe')) {
-                displayGameName = displayGameName.replace(/\.exe$/i, '').trim();
+        }
+    }
+}
+if (!isMatchedGame) {
+    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+        if (processKey && processKey !== 'unknown_executable.exe') {
+            const cleanKey = processKey.toLowerCase().trim();
+            if (lowerPath.includes(cleanKey)) {
+                displayGameName = `🎮 ${gameTitle}`;
+                isMatchedGame = true;
+                break;
             }
-            if (!isMatchedGame && lowerPath.includes('crs-handler')) {
-                for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-                    const cleanTitleMatch = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const cleanPathMatch = lowerPath.replace(/[^a-z0-9]/g, '');
-                    if (cleanPathMatch.includes(cleanTitleMatch)) {
-                        displayGameName = `🎮 ${gameTitle}`;
-                        isMatchedGame = true;
-                        break;
-                    }
-                }
-            }
+        }
+    }
+}
+if (isMatchedGame && displayGameName.toLowerCase().endsWith('.exe')) {
+    displayGameName = displayGameName.replace(/\.exe$/i, '').trim();
+}
+if (!isMatchedGame && lowerPath.includes('crs-handler')) {
+    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+        const cleanTitleMatch = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanPathMatch = lowerPath.replace(/[^a-z0-9]/g, '');
+        if (cleanPathMatch.includes(cleanTitleMatch)) {
+            displayGameName = `🎮 ${gameTitle}`;
+            isMatchedGame = true;
+            break;
+        }
+    }
+}
+}
             if (!isMatchedGame) return;
             const isBlacklisted = userBlacklist.some(ignoredName => cleanName === ignoredName);
             if (isBlacklisted) return;
@@ -912,25 +884,33 @@ function checkAndBoostGames() {
                 const isWrapper = (lowName.includes('winewrapper') || lowName.includes('winedevice') || lowName.includes('wineboot')) 
                                   && !lowerPath.includes('crs-handler') 
                                   && !isUbisoftTrackmania;
-                if (!isWrapper) {
-                    const nameSpecificKey = `${pid}_max_${cleanName}`;
-                    if (!optimizedPIDs.has(nameSpecificKey)) {
-                        for (let key of optimizedPIDs) {
-                            if (key.startsWith(`${pid}_max_`)) {
-                                optimizedPIDs.delete(key);
-                            }
-                        }
-                        optimizedPIDs.delete(pid + '_reset'); 
-                        optimizedPIDs.delete(pid + '_mid');
-                        optimizedPIDs.add(nameSpecificKey);
-                        optimizedPIDs.add(pid);
-                        sendToRootHelper(pid, -5);
-                        writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (${cleanName} / PID: ${pid}) geschrieben.`);
-                        sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
-                    }
-                    currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName}`;
-                    updateMenu();
-                } else {
+if (!isWrapper) {
+    let finalCleanName = cleanName;
+    if (finalCleanName.toLowerCase().includes('.exe')) {
+        const exeMatch = finalCleanName.match(/^([^\s]+\.exe)/i);
+        if (exeMatch && exeMatch[1]) {
+            finalCleanName = exeMatch[1];
+        }
+    }
+    const nameSpecificKey = `${pid}_max_${finalCleanName}`;
+    if (!optimizedPIDs.has(nameSpecificKey)) {
+        for (let key of optimizedPIDs) {
+            if (key.startsWith(`${pid}_max_`)) {
+                optimizedPIDs.delete(key);
+            }
+        }
+        optimizedPIDs.delete(pid + '_reset'); 
+        optimizedPIDs.delete(pid + '_mid');
+        optimizedPIDs.add(nameSpecificKey);
+        optimizedPIDs.add(pid);
+        sendToRootHelper(pid, -5);
+        writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (${finalCleanName} / PID: ${pid}) geschrieben.`);
+        sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
+    }
+    currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName}`;
+    updateMenu();
+}
+ else {
                     if (!optimizedPIDs.has(pid + '_mid')) {
                         optimizedPIDs.delete(pid + '_reset');
                         optimizedPIDs.delete(pid + '_max');
@@ -956,7 +936,7 @@ function checkAndBoostGames() {
                     sendToRootHelper(pid, 0);
                     writeToRotatedLog(`⌛️ Trigger-Engine: App mit deaktiviertem Boost gestartet. ${displayGameName} (PID: ${pid}) auf Standard (0) gesetzt.`);
                 }
-                currentStatusText = `⚪️ Standby: 📦 ${displayGameName} (Kein Boost)`;
+                currentStatusText = `${displayGameName} (Kein Boost)`;
                 updateMenu();
             }
         });
@@ -988,9 +968,9 @@ ipcMain.on('trigger-start-helper', () => {
 });
 ipcMain.handle('trigger-game-scan', async () => {
     return new Promise((resolve) => {
-        const scannerPath = path.join(__dirname, 'check_games.js');
+        const scannerPath = path.join(__dirname, 'check_games2.js');
         if (!fs.existsSync(scannerPath)) {
-            resolve({ success: false, error: 'Script check_games.js is missing from the directory.' });
+            resolve({ success: false, error: 'Script check_games2.js is missing from the directory.' });
             return;
         }
         const { fork } = require('child_process');
@@ -1029,7 +1009,7 @@ function openSettingsWindow() {
     }
     settingsWindow = new BrowserWindow({
         width: 650,
-        height: 800,
+        height: 850,
         title: "Mac Gaming Booster - Settings",
         resizable: false,
         fullscreenable: false,
@@ -1042,319 +1022,7 @@ function openSettingsWindow() {
             contextIsolation: false
         }
     });
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #121214; color: #E1E1E6; padding: 25px; user-select: none; }
-            h2 { color: #04D361; font-weight: 600; margin-top: 0; margin-bottom: 5px; }
-            .subtitle { font-size: 12px; color: #8F8F9D; margin-bottom: 20px; }
-            .section { background: #202024; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #323238; }
-            label { font-weight: bold; display: block; margin-bottom: 10px; font-size: 14px; color: #04D361; }
-            .desc { font-size: 11px; color: #8F8F9D; margin-bottom: 12px; }
-            .slider-container { margin-bottom: 15px; }
-            .slider-label { font-size: 13px; font-weight: 500; }
-            input[type=range] { width: 100%; accent-color: #04D361; margin-top: 5px; cursor: pointer; }
-            .val { float: right; color: #04D361; font-weight: bold; font-family: monospace; }
-            .option-container { display: flex; align-items: flex-start; cursor: pointer; }
-            .option-container input { margin-top: 3px; margin-right: 10px; accent-color: #04D361; cursor: pointer; }
-            .option-text { font-size: 13px; font-weight: 500; }
-            .option-desc { font-size: 11px; color: #8F8F9D; margin-top: 2px; }
-            .blacklist-box { border: 1px solid #323238; background: #121214; border-radius: 6px; height: 110px; overflow-y: auto; padding: 8px; margin-bottom: 10px; }
-            .blacklist-item { display: inline-flex; align-items: center; background: #29292E; border: 1px solid #41414A; color: #E1E1E6; border-radius: 4px; padding: 3px 8px; margin: 3px; font-size: 12px; font-family: monospace; }
-            .blacklist-remove { color: #FF5555; margin-left: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
-            .blacklist-remove:hover { color: #FFAA99; }
-            .blacklist-input-row { display: flex; gap: 8px; }
-            .blacklist-input { flex-grow: 1; background: #121214; border: 1px solid #323238; border-radius: 4px; padding: 6px 10px; color: #E1E1E6; font-family: monospace; font-size: 12px; }
-            .blacklist-input:focus { border-color: #04D361; outline: none; }
-            .btn-add { background: #323238; color: #04D361; border: 1px solid #04D361; padding: 5px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; }
-            .btn-add:hover { background: #04D361; color: #000; }
-            .footer-buttons { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
-            .btn-save { background: #04D361; color: #000; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: background 0.2s; }
-            .btn-save:hover { background: #06B352; }
-            .btn-reset { background: transparent; color: #8F8F9D; border: 1px solid #323238; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
-            .btn-reset:hover { color: #FF5555; border-color: #FF5555; background: rgba(255, 85, 85, 0.1); }
-        </style>
-    </head>
-    <body>
-        <h2>🚀 Mac Gaming Booster</h2>
-        <div class="subtitle">Core Engine Settings & Management (v2.8.1 Platin)</div>
-        <!-- SECTION 1: RAM LIMITS -->
-        <div class="section">
-            <label>🛡️ Adaptive Core RAM Thresholds (MB)</label>
-            <div class="desc">Drag the sliders to dynamically calibrate your memory guard thresholds.</div>
-            <div class="slider-container">
-                <span class="slider-label">Soft Buffer Evacuation (Stage 1):</span>
-                <span class="val" id="lvl1Val">1500 MB</span>
-                <input type="range" id="lvl1" min="1000" max="3000" step="50" oninput="updateLabel('lvl1Val', this.value)">
-            </div>
-            <div class="slider-container" style="margin-bottom: 0;">
-                <span class="slider-label">Compiler Deep-Sleep (Stage 2):</span>
-                <span class="val" id="lvl2Val">400 MB</span>
-                <input type="range" id="lvl2" min="200" max="800" step="50" oninput="updateLabel('lvl2Val', this.value)">
-            </div>
-        </div>
-        <!-- SECTION 0: ENGINE CONTROL -->
-        <div class="section">
-            <label>⚙️ Core Engine Settings</label>
-            <div class="desc">Configure the main behaviors and guards of the optimization engine.</div>
-            <label class="option-container" style="margin-bottom: 12px;">
-                <input type="checkbox" id="fpsBoost">
-                <div>
-                    <div class="option-text">🚀 Enable FPS Boost</div>
-                    <div class="option-desc">Dynamically renices game process priorities via root helper in real-time. (⚡️ Changes take effect instantly!)</div>
-                </div>
-            </label>
-            <label class="option-container" style="margin-bottom: 12px;">
-                <input type="checkbox" id="shaderGuard">
-                <div>
-                    <div class="option-text">🛡️ Enable Adaptive Shader Guard (Anti-Panic)</div>
-                    <div class="option-desc">Protects system from kernel panics by managing compiler workloads.</div>
-                </div>
-            </label>
-            <label class="option-container" style="margin-bottom: 12px;">
-                <input type="checkbox" id="engineLogging">
-                <div>
-                    <div class="option-text">📝 Enable Logging (gaming_boost.log)</div>
-                    <div class="option-desc">Keeps a persistent transaction log of all optimizations.</div>
-                </div>
-            </label>
-            <label class="option-container">
-                <input type="checkbox" id="loginAutostart">
-                <div>
-                    <div class="option-text">⚙️ Start at Login (Autostart)</div>
-                    <div class="option-desc">Launches the booster automatically when you start your Mac.</div>
-                </div>
-            </label>
-        </div>
-        <!-- SECTION 2: BLACKLIST -->
-        <div class="section">
-            <label>📝 Blacklist Management (Ignored Processes)</label>
-            <div class="desc">Processes in this list will be ignored by the booster (e.g., Steam, overlay tools).</div>
-            <div class="blacklist-box" id="blacklistContainer"></div>
-            <div class="blacklist-input-row">
-                <input type="text" id="blInput" class="blacklist-input" placeholder="e.g., discord.exe or overlay" onkeydown="if(event.key === 'Enter') addProcess()">
-                <button class="btn-add" onclick="addProcess()">＋ Add Process</button>
-            </div>
-        </div>  
-<!-- SECTION 4: DETECTED GAMES SYSTEM -->
-<div class="section">
-    <label>🎮 Synchronized Games Registry</label>
-    <div class="desc">Fully automatically read via the manifests of the active launchers.</div>
-    <div class="blacklist-box" id="gamesContainer" style="height: 140px; padding: 10px;"></div>
-    <div class="blacklist-input-row" style="justify-content: flex-end;">
-        <button class="btn-add" id="btnScanGames" onclick="performManualGameScan()" style="width: 100%; padding: 8px 0; font-size: 13px;">🔍 Scan for installed games</button>
-    </div>
-</div>
-        <!-- SECTION 3: DAEMON -->
-        <div class="section">
-            <label>⚙️ Root-Helper Background Service (Daemon)</label>
-            <label class="option-container" style="margin-bottom: 12px;">
-                <input type="checkbox" id="keepAlive">
-                <div>
-                    <div class="option-text">Keep background service active (Variant 1)</div>
-                    <div class="option-desc">The helper continues running silently for instant re-launch without password prompt.</div>
-                </div>
-            </label>
-            <!-- Neue Option für helper_debug.log -->
-            <label class="option-container">
-                <input type="checkbox" id="helperDebug">
-                <div>
-                    <div class="option-text">Enable Helper Debug Logging (helper_debug.log)</div>
-                    <div class="option-desc">Enables deeper engine logs directly from the privileged background kernel task.</div>
-                </div>
-            </label>
-            <!-- Live-Status und dynamischer Start/Stopp-Button -->
-            <div style="margin-top: 15px; padding: 10px; background: #1a1a1e; border-radius: 6px; border: 1px solid #29292e; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span style="font-size: 12px; color: #8F8F9D;">Service Status:</span>
-                    <span id="helperStatusText" style="font-size: 12px; font-weight: bold; margin-left: 5px;">Checking...</span>
-                </div>
-                <button id="btnToggleHelper" style="background: transparent; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;" onclick="toggleHelperService()">Service steuern</button>
-            </div>
-        </div>
-        <div class="footer-buttons">
-            <button class="btn-reset" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
-            <button class="btn-save" onclick="saveSettings()">💾 Save & Close</button>
-        </div>
-        <script>
-            const fs = require('fs');
-            const path = require('path');  
-            const userAppSupport = path.join(process.env.HOME, 'Library/Application Support/fps-boost');
-            const dirPath = path.join(userAppSupport, 'config'); 
-            const configPath = path.join(dirPath, 'booster_config.json');
-            const blacklistPath = path.join(dirPath, 'blacklist.txt');
-            let currentConfig = { purgeLimit: 1500, pauseLimit: 400, keepDaemonAlive: true };
-            let blacklistArray = [];
-            let isHelperCurrentlyOnline = false;
-            function checkHelperLiveStatus() {
-                const { exec } = require('child_process');
-                exec('ps -Ax | grep "helper.js" | grep -v grep', (err, stdout) => {
-                    const statusText = document.getElementById('helperStatusText');
-                    const toggleBtn = document.getElementById('btnToggleHelper'); 
-                    if (!statusText || !toggleBtn) return;
-                    if (stdout && stdout.trim().length > 0) {
-                        isHelperCurrentlyOnline = true;
-                        statusText.innerText = "● ONLINE";
-                        statusText.style.color = "#04D361";
-                        toggleBtn.innerText = "🛑 Stop Service";
-                        toggleBtn.style.color = "#FF5555";
-                        toggleBtn.style.borderColor = "#FF5555";
-                    } else {
-                        isHelperCurrentlyOnline = false;
-                        statusText.innerText = "○ OFFLINE";
-                        statusText.style.color = "#FF5555";
-                        toggleBtn.innerText = "🚀 Start Service";
-                        toggleBtn.style.color = "#04D361";
-                        toggleBtn.style.borderColor = "#04D361";
-                    }
-                });
-            }
-            function toggleHelperService() {
-                const { ipcRenderer } = require('electron');
-                const statusText = document.getElementById('helperStatusText');  
-                if (isHelperCurrentlyOnline) {
-                    const trigger = path.join(dirPath, 'boost.trigger');
-                    try {
-                        fs.writeFileSync(trigger, JSON.stringify({ action: 'kill' }), 'utf8');
-                    } catch(e) {}
-                    const { exec } = require('child_process');
-                    exec("pkill -f helper.js", (err) => {
-                        setTimeout(checkHelperLiveStatus, 500);
-                    });
-                    statusText.innerText = "⏳ Stopping...";
-                    statusText.style.color = "#8F8F9D";
-                } else {
-                    ipcRenderer.send('trigger-start-helper');
-                    statusText.innerText = "⏳ Starting...";
-                    statusText.style.color = "#8F8F9D";
-                }
-            } 
-            function loadAllData() {
-                try {
-                    if (fs.existsSync(configPath)) {
-                        currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                    }
-                    if (fs.existsSync(blacklistPath)) {
-                        const content = fs.readFileSync(blacklistPath, 'utf8');
-                        blacklistArray = content.split('\\n').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
-                    }
-                } catch(e) {}
-                document.getElementById('lvl1').value = currentConfig.purgeLimit || 1500;
-                document.getElementById('lvl1Val').innerText = (currentConfig.purgeLimit || 1500) + " MB";     
-                document.getElementById('lvl2').value = currentConfig.pauseLimit || 400;
-                document.getElementById('lvl2Val').innerText = (currentConfig.pauseLimit || 400) + " MB";
-                document.getElementById('keepAlive').checked = currentConfig.keepDaemonAlive !== false; 
-                document.getElementById('fpsBoost').checked = currentConfig.isBoostActive !== false;
-                document.getElementById('shaderGuard').checked = currentConfig.isShaderGuardActive === true;
-                document.getElementById('engineLogging').checked = currentConfig.isLoggingActive === true;
-                document.getElementById('loginAutostart').checked = currentConfig.isAutostartActive === true;
-                document.getElementById('helperDebug').checked = currentConfig.isHelperDebugActive === true;
-                renderBlacklist();
-                checkHelperLiveStatus();
-            }
-async function loadSavedGamesList() {
-    const { ipcRenderer } = require('electron');
-    const container = document.getElementById('gamesContainer');
-    if (!container) return;
-    container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">Lade Spiele-Register...</div>';
-    const result = await ipcRenderer.invoke('get-games-list');
-    container.innerHTML = '';
-    if (result.success && result.games && result.games.length > 0) {
-        result.games.forEach(game => {
-            const item = document.createElement('div');
-            item.className = 'blacklist-item';
-            item.style.borderColor = '#04D361';
-            item.innerText = game;
-            container.appendChild(item);
-        });
-    } else {
-        container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">Keine registrierten Spiele vorhanden. Bitte Scan starten.</div>';
-    }
-}
-async function performManualGameScan() {
-    const { ipcRenderer } = require('electron');
-    const btn = document.getElementById('btnScanGames');
-    const container = document.getElementById('gamesContainer');
-    if (!btn || !container) return;
-    btn.disabled = true;
-    btn.innerText = "⏳ Searching for launcher entries... (Please wait)";
-    container.innerHTML = '<div style="color:#04D361; font-size:12px; padding:10px; text-align:center;">Festplatten und Launcher-Manifeste werden analysiert...</div>';
-    const scanResult = await ipcRenderer.invoke('trigger-game-scan');
-    btn.disabled = false;
-    btn.innerText = "🔍 Scan for installed games";
-    loadSavedGamesList();
-}
-            function renderBlacklist() {
-                const container = document.getElementById('blacklistContainer');
-                container.innerHTML = '';
-                if (blacklistArray.length === 0) {
-                    container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">No processes blocked.</div>';
-                    return;
-                }
-                blacklistArray.forEach((processName, index) => {
-                    const item = document.createElement('div');
-                    item.className = 'blacklist-item';
-                    item.innerHTML = processName + '<span class="blacklist-remove" onclick="removeProcess(' + index + ')">×</span>';
-                    container.appendChild(item);
-                });
-            }
-            function addProcess() {
-                const input = document.getElementById('blInput');
-                const val = input.value.trim().toLowerCase();
-                if (val && !blacklistArray.includes(val)) {
-                    blacklistArray.push(val);
-                    input.value = '';
-                    renderBlacklist();
-                }
-            }
-            function removeProcess(index) {
-                blacklistArray.splice(index, 1);
-                renderBlacklist();
-            }
-            function updateLabel(id, val) {
-                document.getElementById(id).innerText = val + " MB";
-            }
-            function resetToDefaults() {
-                document.getElementById('lvl1').value = 1500;
-                document.getElementById('lvl1Val').innerText = "1500 MB";
-                document.getElementById('lvl2').value = 400;
-                document.getElementById('lvl2Val').innerText = "400 MB";
-                document.getElementById('keepAlive').checked = true;
-                document.getElementById('fpsBoost').checked = true;
-                document.getElementById('shaderGuard').checked = false;
-                document.getElementById('engineLogging').checked = false;
-                document.getElementById('loginAutostart').checked = false;
-                document.getElementById('helperDebug').checked = false;
-                blacklistArray = ['steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe', 'crossover', 'electron', 'epicgameslauncher', 'winewrapper.exe', 'wineloader', 'wineloader64'];
-                renderBlacklist();
-            }
-            function saveSettings() {
-                try {
-                    currentConfig.purgeLimit = parseInt(document.getElementById('lvl1').value, 10);
-                    currentConfig.pauseLimit = parseInt(document.getElementById('lvl2').value, 10);
-                    currentConfig.keepDaemonAlive = document.getElementById('keepAlive').checked;
-                    currentConfig.isBoostActive = document.getElementById('fpsBoost').checked;
-                    currentConfig.isShaderGuardActive = document.getElementById('shaderGuard').checked;
-                    currentConfig.isLoggingActive = document.getElementById('engineLogging').checked;
-                    currentConfig.isAutostartActive = document.getElementById('loginAutostart').checked;
-                    currentConfig.isHelperDebugActive = document.getElementById('helperDebug').checked; 
-                    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 4), 'utf8');
-                    fs.writeFileSync(blacklistPath, blacklistArray.join('\\n'), 'utf8');
-                    window.close();
-                } catch(err) {
-                    alert("Error saving configurations: " + err.message);
-                }
-            }
-            setInterval(checkHelperLiveStatus, 2000);
-            loadAllData();
-            loadSavedGamesList();
-        </script>
-    </body>
-    </html>
-    `;
-    settingsWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+    settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
     settingsWindow.once('ready-to-show', () => { settingsWindow.show(); });
     settingsWindow.on('closed', () => { settingsWindow = null; });
 }
@@ -1401,7 +1069,7 @@ app.whenReady().then(() => {
     const filesExist = fs.existsSync(LIST_FILE) && fs.existsSync(MAPPING_FILE);
     if (!filesExist) {
         writeToRotatedLog("ℹ️ Initial startup: Files are missing. Starting automatic background game scan...");
-        const scannerPath = path.join(__dirname, 'check_games.js');
+        const scannerPath = path.join(__dirname, 'check_games2.js');
         if (fs.existsSync(scannerPath)) {
             const { fork } = require('child_process');
             const child = fork(scannerPath, [], { silent: true });
@@ -1414,7 +1082,7 @@ app.whenReady().then(() => {
                 }
             });
         } else {
-            writeToRotatedLog("❌ Error during app startup: check_games.js was not found in the directory.");
+            writeToRotatedLog("❌ Error during app startup: check_games2.js was not found in the directory.");
         }
     } else {
         writeToRotatedLog("💾 Game lists already exist. Skipping scan and loading data directly...");
@@ -1476,6 +1144,65 @@ app.whenReady().then(() => {
     intervalId = setInterval(checkAndBoostGames, 4000);
     writeToRotatedLog("⚙️ All startup systems successfully chained and active.");
 });
+if (typeof ipcMain !== 'undefined') {
+    ipcMain.handle('open-exe-picker', async (event, targetGameName) => {
+        const { dialog } = require('electron');
+        const os = require('os');
+        let defaultStartPath = path.join(os.homedir(), 'Library/Application Support/CrossOver/Bottles');
+        const CONFIG_DIR = path.join(os.homedir(), 'Library/Application Support/fps-boost/config');
+        const OVERRIDES_FILE = path.join(CONFIG_DIR, 'scanner_overrides.json');
+        const result = await dialog.showOpenDialog({
+            title: `🎮 Wähle die Haupt-EXE für: ${targetGameName}`,
+            defaultPath: defaultStartPath, 
+            properties: ['openFile'],
+            filters: [
+                { name: 'Windows Executables', extensions: ['exe'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+        if (result.canceled || result.filePaths.length === 0) {
+            return { success: false };
+        }
+        const fullPath = result.filePaths[0];
+        const exeName = path.basename(fullPath); 
+        const folderPath = path.dirname(fullPath);
+        const folderName = path.basename(folderPath); 
+        let detectedExes = [];
+        try {
+            const files = fs.readdirSync(folderPath);
+            files.forEach(file => {
+                const lowerFile = file.toLowerCase();
+                if (lowerFile.endsWith('.exe') && 
+                    !lowerFile.includes('crash') && 
+                    !lowerFile.includes('unity') && 
+                    !lowerFile.includes('install') &&
+                    !lowerFile.includes('setup')) {
+                    detectedExes.push(file.trim());
+                }
+            });
+        } catch (e) {
+            console.error("Fehler beim Scannen des Ordner-Inhalts:", e);
+        }
+        let finalExeValue = detectedExes.length > 1 ? detectedExes.join('||') : exeName;
+        let overrides = {};
+        if (fs.existsSync(OVERRIDES_FILE)) {
+            try { overrides = JSON.parse(fs.readFileSync(OVERRIDES_FILE, 'utf8')); } catch (e) {}
+        }
+        const cleanKey = targetGameName.toLowerCase().replace(/🎮/g, '').trim();
+        overrides[cleanKey] = finalExeValue;
+        overrides[folderName.toLowerCase().trim()] = finalExeValue;
+        try {
+            fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(overrides, null, 2), 'utf8');
+            if (typeof runGameScanner === 'function') {
+                runGameScanner();
+            }
+            return { success: true, exeName: finalExeValue };
+        } catch (e) {
+            console.error("Fehler beim Schreiben der JSON-Datei:", e);
+            return { success: false };
+        }
+    });
+}
 let isAppCleaningUp = false;
 app.on('before-quit', (event) => {
     if (isAppCleaningUp) return;
