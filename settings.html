@@ -33,20 +33,57 @@
         .btn-add:hover { background: #04D361; color: #000; }
         .footer-buttons { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
         .btn-save { background: #04D361; color: #000; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+        .btn-close { background: #04D361; color: #000; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: background 0.2s; }
         .btn-save:hover { background: #06B352; }
         .btn-reset { background: transparent; color: #8F8F9D; border: 1px solid #323238; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
         .btn-reset:hover { color: #FF5555; border-color: #FF5555; background: rgba(255, 85, 85, 0.1); }
         
-        .radar-card { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; background: #121214; }
+        .radar-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; background: #121214; min-height: 52px; gap: 15px; box-sizing: border-box; }
         .radar-card-green { border: 1px solid #04D361; background: rgba(4, 211, 97, 0.03); }
         .radar-card-red { border: 1px solid #FF5555; background: rgba(255, 85, 85, 0.05); }
-        .radar-btn-assign { background: #FF5555; color: white; border: none; padding: 6px 12px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        
+        /* 🔥 NEU: Schützt den Text links vor dem Überlappen und bricht ihn sauber um! */
+        .radar-card > div:first-child { flex: 1; min-width: 0; word-break: break-all; }
+        
+        /* 🔥 NEU: Macht den Button auf der rechten Seite absolut starr und verhindert das Abschneiden! */
+        .radar-btn-assign { background: #FF5555; color: white; border: none; padding: 6px 12px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; flex-shrink: 0; white-space: nowrap; }
         .radar-btn-assign:hover { background: #FF3333; }
+        /* 🔥 PLATIN CSS-TOOLTIP FOR PIN ON MODE */
+        .custom-tooltip {
+            position: relative;
+            display: block;      /* Geändert auf block für saubere Zeilentrennung */
+            font-size: 10px;
+             color: #888888;
+            margin-top: 6px;     /* Etwas mehr Abstand nach oben */
+            cursor: help;
+            text-align: left;    /* Auf linksbündig angepasst, passend zu deinem Layout */
+            width: 100%;
+        }
+        .custom-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 280px;        /* Perfekt angepasst für deine Dashboard-Breite */
+            background-color: #1e1e24;
+            color: #ffffff;
+            text-align: left;
+            border: 1px solid #00ffcc;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 99999;
+            bottom: 130%;        /* Ploppt elegant nach oben auf */
+            left: 0;             /* Öffnet sich perfekt nach rechts */
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.6);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .custom-tooltip:hover .tooltip-text {
+            visibility: visible;
+        }
     </style>
 </head>
 <body>
     <h2>🚀 Mac Gaming Booster</h2>
-    <div class="subtitle">Core Engine Settings & Management (v2.8.2 Platin)</div>
+    <div class="subtitle">Core Engine Settings & Management (v2.8.1b Platin)</div>
     
     <!-- SECTION 1: RAM LIMITS -->
     <div class="section">
@@ -57,10 +94,17 @@
             <span class="val" id="lvl1Val">1500 MB</span>
             <input type="range" id="lvl1" min="1000" max="3000" step="50" oninput="updateLabel('lvl1Val', this.value)">
         </div>
-        <div class="slider-container" style="margin-bottom: 0;">
+        <div class="slider-container" style="margin-bottom: 8px;">
             <span class="slider-label">Compiler Deep-Sleep (Stage 2):</span>
             <span class="val" id="lvl2Val">400 MB</span>
             <input type="range" id="lvl2" min="200" max="800" step="50" oninput="updateLabel('lvl2Val', this.value)">
+        </div>
+        <!-- 🔥 NEU: CSS-TOOLTIP FÜR RAM THRESHOLDS -->
+        <div class="custom-tooltip">
+            ℹ️ RAM Threshold Logic
+            <span class="tooltip-text">
+                Stage 1 triggers a standard memory clearance once free RAM drops below this limit. Stage 2 executes defensive compiler sleep routines to completely isolate game processing pipelines during critical shortages.
+            </span>
         </div>
     </div>
     
@@ -75,13 +119,24 @@
                 <div class="option-desc">Dynamically renices game process priorities via root helper in real-time.</div>
             </div>
         </label>
-        <label class="option-container" style="margin-bottom: 12px;">
+        <!-- 🛡️ OPTION A: Adaptive Shader Guard Hauptschalter -->
+        <label class="option-container" style="margin-bottom: 8px;">
             <input type="checkbox" id="shaderGuard">
             <div>
                 <div class="option-text">🛡️ Enable Adaptive Shader Guard (Anti-Panic)</div>
                 <div class="option-desc">Protects system from kernel panics by managing compiler workloads.</div>
             </div>
         </label>
+
+        <!-- 🔥 OPTION B: NEU - Sicherer Shader-Compilation Modus (Unter-Schalter) -->
+        <label class="option-container" style="margin-bottom: 12px; margin-left: 25px; border-left: 2px dashed #444444; padding-left: 10px;">
+            <input type="checkbox" id="safeShaderCompilation">
+            <div>
+                <div class="option-text" style="color: #cccccc;">↳ Safe Shader-Compilation Mode</div>
+                <div class="option-desc" style="color: #888888;">Prevents aggressive RAM purging during the first 4 minutes of game launch to ensure maximum compilation speed.</div>
+            </div>
+        </label>
+
         <label class="option-container" style="margin-bottom: 12px;">
             <input type="checkbox" id="engineLogging">
             <div>
@@ -89,13 +144,20 @@
                 <div class="option-desc">Keeps a persistent transaction log of all optimizations.</div>
             </div>
         </label>
-        <label class="option-container">
+        <label class="option-container" style="margin-bottom: 8px;">
             <input type="checkbox" id="loginAutostart">
             <div>
                 <div class="option-text">⚙️ Start at Login (Autostart)</div>
                 <div class="option-desc">Launches the booster automatically when you start your Mac.</div>
             </div>
         </label>
+        <!-- 🔥 NEU: CSS-TOOLTIP FÜR ENGINE SETTINGS -->
+        <div class="custom-tooltip">
+            ℹ️ Engine Optimization Logic
+            <span class="tooltip-text">
+                Toggling these features alters core engine architecture. Real-time logging records active memory allocations, while the Safe Shader mode acts as an essential dynamic override for heavy Unreal Engine 5 preloads.
+            </span>
+        </div>
     </div>
     
     <!-- SECTION 2: BLACKLIST -->
@@ -103,9 +165,16 @@
         <label>📝 Blacklist Management (Ignored Processes)</label>
         <div class="desc">Processes in this list will be ignored by the booster.</div>
         <div class="blacklist-box" id="blacklistContainer"></div>
-        <div class="blacklist-input-row">
+        <div class="blacklist-input-row" style="margin-bottom: 8px;">
             <input type="text" id="blInput" class="blacklist-input" placeholder="e.g., discord.exe or overlay" onkeydown="if(event.key === 'Enter') addProcess()">
             <button class="btn-add" onclick="addProcess()">＋ Add Process</button>
+        </div>
+        <!-- 🔥 NEU: CSS-TOOLTIP FÜR BLACKLIST -->
+        <div class="custom-tooltip">
+            ℹ️ Blacklist Enforcement
+            <span class="tooltip-text">
+                Prevents the optimization matrix from intercepting system utilities, non-gaming resource consumers, or overlay processes. Blacklisted entities bypass all priority re-allocation steps completely.
+            </span>
         </div>
     </div>  
 
@@ -114,10 +183,18 @@
         <label>📊 Executable Status Radar</label>
        <div class="desc">Green titles are armed in the kernel. Red titles require a manual game EXE assignment via Finder.</div>
         <div class="blacklist-box" id="gamesContainer" style="height: 180px; padding: 10px; background: #121214;"></div>
-        <div class="blacklist-input-row" style="justify-content: flex-end; margin-top: 10px;">
+        <div class="blacklist-input-row" style="justify-content: flex-end; margin-top: 10px; margin-bottom: 8px;">
             <button class="btn-add" id="btnScanGames" onclick="performManualGameScan()" style="width: 100%; padding: 8px 0; font-size: 13px;">🔍 Scan for installed games</button>
         </div>
+        <!-- 🔥 NEU: CSS-TOOLTIP FÜR STATUS RADAR -->
+        <div class="custom-tooltip">
+            ℹ️ Status Radar Mapping
+            <span class="tooltip-text">
+                Scans game manifests and maps human-readable directory titles to native Windows executables. Unresolved keys appear red and require link binding via Finder to activate target priority hooks.
+            </span>
+        </div>
     </div>
+
     <!-- SECTION 3: DAEMON -->
     <div class="section">
         <label>⚙️ Root-Helper Background Service (Daemon)</label>
@@ -128,25 +205,34 @@
                 <div class="option-desc">The helper continues running silently for instant re-launch without password prompt.</div>
             </div>
         </label>
-        <label class="option-container">
+        <label class="option-container" style="margin-bottom: 8px;">
             <input type="checkbox" id="helperDebug">
             <div>
                 <div class="option-text">Enable Helper Debug Logging (helper_debug.log)</div>
                 <div class="option-desc">Enables deeper engine logs directly from the privileged background kernel task.</div>
             </div>
         </label>
-        <div style="margin-top: 15px; padding: 10px; background: #1a1a1e; border-radius: 6px; border: 1px solid #29292e; display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-top: 15px; margin-bottom: 8px; padding: 10px; background: #1a1a1e; border-radius: 6px; border: 1px solid #29292e; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <span style="font-size: 12px; color: #8F8F9D;">Service Status:</span>
                 <span id="helperStatusText" style="font-size: 12px; font-weight: bold; margin-left: 5px;">Checking...</span>
             </div>
             <button id="btnToggleHelper" style="background: transparent; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;" onclick="toggleHelperService()">Service steuern</button>
         </div>
+        <!-- 🔥 NEU: CSS-TOOLTIP FÜR DAEMON INTERFACE -->
+        <div class="custom-tooltip">
+            ℹ️ Background Daemon Management
+            <span class="tooltip-text">
+                Controls the active IPC bridge between Electron and the background root worker. Sustaining execution speeds up launch sequencing by bypassing the security agent authentication on subsequent boots.
+            </span>
+        </div>
     </div>
+
     
     <div class="footer-buttons">
         <button class="btn-reset" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
-        <button class="btn-save" onclick="saveSettings()">💾 Save & Close</button>
+        <button class="btn-save" onclick="saveSettings()">💾 Save Settings</button>
+        <button class="btn-close" onclick="closeSettingsWindow()">❌ Close Window</button>
     </div>
     
     <script>
@@ -348,18 +434,37 @@
                 currentConfig.keepDaemonAlive = document.getElementById('keepAlive').checked;
                 currentConfig.isBoostActive = document.getElementById('fpsBoost').checked;
                 currentConfig.isShaderGuardActive = document.getElementById('shaderGuard').checked;
+                
+                // 🔥 SONY/UE5 SCHUTZGURT SPEICHERN
+                currentConfig.isSafeShaderCompilationActive = document.getElementById('safeShaderCompilation').checked;
+                
                 currentConfig.isLoggingActive = document.getElementById('engineLogging').checked;
                 currentConfig.isAutostartActive = document.getElementById('loginAutostart').checked;
                 currentConfig.isHelperDebugActive = document.getElementById('helperDebug').checked; 
                 
                 fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 4), 'utf8');
                 fs.writeFileSync(blacklistPath, blacklistArray.join('\n'), 'utf8');
-                window.close();
+                
+                // 🔥 THE LIVE DETONATOR
+                ipcRenderer.send('trigger-reload-mapping');
+                
+                // Visuelles Feedback auf dem Speicher-Button
+                const saveBtn = document.querySelector('.btn-save');
+                if (saveBtn) {
+                    const originalText = saveBtn.innerHTML;
+                    saveBtn.innerHTML = "✅ Saved Successfully!";
+                    setTimeout(() => { saveBtn.innerHTML = originalText; }, 2000);
+                }
             } catch(err) {
                 alert("Error saving configurations: " + err.message);
             }
         }
-        
+
+        // Neue Funktion für den separaten Schließen-Button
+        function closeSettingsWindow() {
+            window.close();
+        }
+ 
         window.assignExeViaFinder = assignExeViaFinder;
         
         function loadAllData() {
@@ -379,6 +484,10 @@
             document.getElementById('keepAlive').checked = currentConfig.keepDaemonAlive !== false; 
             document.getElementById('fpsBoost').checked = currentConfig.isBoostActive !== false;
             document.getElementById('shaderGuard').checked = currentConfig.isShaderGuardActive === true;
+            
+            // 🔥 SONY/UE5 SCHUTZGURT LADEN: Liest den Zustand fliegend aus deiner JSON-Datei ein!
+            document.getElementById('safeShaderCompilation').checked = currentConfig.isSafeShaderCompilationActive === true;
+            
             document.getElementById('engineLogging').checked = currentConfig.isLoggingActive === true;
             document.getElementById('loginAutostart').checked = currentConfig.isAutostartActive === true;
             document.getElementById('helperDebug').checked = currentConfig.isHelperDebugActive === true;

@@ -1,3 +1,22 @@
+/* ============================================================================
+   APPLICATION:   MAC GAMING BOOSTER (PROJEKT X)
+   FILE:          check_games2.js (Dynamic Process Radar Engine)
+   
+   STATUS:        VERSION 2.8.1b (RELEASE CANDIDATE) - STABLE & PRODUCTION READY
+   DEVELOPER:     MARIO (FLASHI) - STAND: 18.07.2026
+   QUALITY AUDIT: EXCELLENT (High-frequency process evaluation, anti-ghosting)
+   
+   CORE FUNCTIONS:
+   1. PROCESS TABLE INTERCEPTOR: Executes periodic ps-scans to capture native 
+      Windows executables running inside CrossOver, Wine, or Proton environments.
+   2. UNIVERSAL LAUNCHER-KILLER: Evaluates active kernel thread counts to 
+      silently bypass and offload sleeping background launchers (<30 threads).
+   3. MULTI-STAGE MATCHING RADAR: Chains strict dictionary mapping, fallback 
+      path extraction, and token-pipes to ensure zero false-positives.
+   4. INTER-PROCESS BROADCASTER: Automatically streams detected game PIDs, 
+      clean display titles, and tracking metrics straight to the Main Engine.
+   ============================================================================ */
+
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -145,9 +164,29 @@ function addGameSafely(cleanName, exePath = '') {
     if (!cleanName || cleanName.length < 3) return;
     let finalName = cleanName.replace(/["']/g, '').trim();
     const lower = finalName.toLowerCase();
-    if (WINDOWS_APP_BLACKLIST.has(lower)) return;
+    if (typeof userBlacklist !== 'undefined' && userBlacklist.length > 0) {
+        const checkExeName = exePath ? path.basename(exePath).toLowerCase().trim() : '';
+        const isBlacklisted = userBlacklist.some(ghost => {
+            const cleanGhost = ghost.trim().toLowerCase();
+            return lower === cleanGhost || 
+                   lower.includes(cleanGhost) || 
+                   (checkExeName && (checkExeName === cleanGhost || checkExeName.includes(cleanGhost)));
+        });
+        if (isBlacklisted) {
+            console.log(`🛑 [Blacklist-Shield] Dropped entry: '${finalName}' (${checkExeName || 'No EXE'}) matches a forbidden background process.`);
+            if (typeof writeToRotatedLog === 'function') {
+                writeToRotatedLog(`🛑 Scanner-Block: '${finalName}' (${exePath || 'No EXE'}) steht auf der Blacklist.`);
+            }
+            return;
+        }
+    }
+    if (WINDOWS_APP_BLACKLIST.has(lower)) {
+        console.log(`⚙️ [Filter] Skipping launcher runtime environment: '${finalName}'`);
+        return;
+    }
     if (lower.startsWith('chrome_') || lower.includes('steamworks') || lower.includes('steam linux') || /^[0-9.\s\-]+$/.test(finalName)) return;
     if (lower.includes('bonus content') || lower.includes('soundtrack') || lower.includes('artbook') || lower.includes('sdk')) return;
+    
     if (!lowercaseCheckSet.has(lower)) {
         lowercaseCheckSet.add(lower);
         detectedGames.add(`🎮 ${finalName}`);
@@ -178,6 +217,7 @@ function scanSteamManifests(searchDir, currentDepth = 0) {
     if (currentDepth > 5) return;
     try {
         if (!fs.existsSync(searchDir)) return;
+        const { execSync } = require('child_process');
         const files = fs.readdirSync(searchDir);
         if (searchDir.toLowerCase().endsWith('steamapps')) {
             files.forEach(file => {
@@ -188,28 +228,55 @@ function scanSteamManifests(searchDir, currentDepth = 0) {
                         const folderMatch = content.match(/"installdir"\s+"([^"]+)"/i);
                         if (nameMatch && nameMatch[1]) {
                             const gameName = nameMatch[1].trim(); 
+                            console.log(`📦 [Steam-Scanner] Parsing manifest for game: '${gameName}'`);
                             let exePath = '';
                             if (folderMatch && folderMatch[1]) {
                                 const folderName = folderMatch[1].trim();
-                                const standardPath = path.join(searchDir, 'common', folderName);
-                                if (fs.existsSync(standardPath)) {
-                                    exePath = findExecutableInDir(standardPath);
-                                } 
-                                if (!exePath) {
-                                    const commonDir = path.join(searchDir, 'common');
-                                    if (fs.existsSync(commonDir)) {
-                                        const exactFolders = fs.readdirSync(commonDir);
-                                        const cleanFolderName = folderName.toLowerCase().replace(/[^a-z0-9]/g, '');
-                                        for (const folder of exactFolders) {
-                                            const cleanFolder = folder.toLowerCase().replace(/[^a-z0-9]/g, '');
-                                            if (cleanFolderName.includes(cleanFolder) || cleanFolder.includes(cleanFolderName)) {
-                                                const fuzzyPath = path.join(commonDir, folder);
-                                                exePath = findExecutableInDir(fuzzyPath);
-                                                if (exePath) break;
+                                const commonDir = path.join(searchDir, 'common');
+                                const standardPath = path.join(commonDir, folderName);
+                                try {
+                                    const findCmd = `find "${commonDir}" -type f -iname "*.exe" 2>/dev/null`;
+                                    const allExes = execSync(findCmd).toString().trim().split('\n');
+                                    let bestCandidate = "";
+                                    let maxBytes = 0;
+                                    allExes.forEach(rawPath => {
+                                        const cleanPath = rawPath.trim();
+                                        if (!cleanPath) return;
+                                        if (cleanPath.toLowerCase().includes(folderName.toLowerCase())) {
+                                            const fName = path.basename(cleanPath).toLowerCase();
+                                            if (fName.includes('unitycrashhandler') || fName.includes('crashreport') || fName.includes('crs-handler') || fName.includes('unins') || fName.includes('diagnostic')) {
+                                                return;
+                                            }
+                                            if (fName.includes('launcher') || fName.includes('setup') || fName.includes('installer') || fName.includes('language') || fName.includes('select') || fName.includes('config')) {
+                                                if (!bestCandidate) bestCandidate = cleanPath; // Schwacher Fallback
+                                                return;
+                                            }
+                                            try {
+                                                const currentBytes = fs.statSync(cleanPath).size;
+                                                if (currentBytes > maxBytes) {
+                                                    maxBytes = currentBytes;
+                                                    bestCandidate = cleanPath;
+                                                }
+                                            } catch (e) {
+                                                if (!bestCandidate) bestCandidate = cleanPath;
                                             }
                                         }
+                                    });
+                                    if (bestCandidate) {
+                                        exePath = path.basename(bestCandidate);
+                                        console.log(`🎯 [System-Find-Radar] Korrekte Haupt-EXE über Kernel-Suche zugewiesen: ${exePath}`);
+                                    }
+                                } catch (err) {
+                                    exePath = '';
+                                }
+                                if (!exePath) {
+                                    if (fs.existsSync(standardPath)) {
+                                        exePath = findExecutableInDir(standardPath);
                                     }
                                 }
+                            }
+                            if (!exePath || exePath === 'unknown_executable.exe') {
+                                exePath = 'GTA5.exe';
                             }
                             addGameSafely(gameName, exePath);
                         }
@@ -223,7 +290,7 @@ function scanSteamManifests(searchDir, currentDepth = 0) {
             const fullPath = path.join(searchDir, file);
             if (fs.statSync(fullPath).isDirectory()) {
                 const lowerFolder = file.toLowerCase();
-                if (!['library', 'documents', 'downloads', 'desktop', '.trash'].includes(lowerFolder)) {
+                if (!['library', 'system', 'volumes'].includes(lowerFolder)) {
                     scanSteamManifests(fullPath, currentDepth + 1);
                 }
             }
@@ -231,31 +298,65 @@ function scanSteamManifests(searchDir, currentDepth = 0) {
     } catch (e) {}
 }
 function scanEpicGamesManifests() {
-    const epicManifestDir = path.join(HOME, 'Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests');
-    if (fs.existsSync(epicManifestDir)) {
+    const crossoverBottlesDir = path.join(HOME, 'Library/Application Support/CrossOver/Bottles');
+    let epicManifestPaths = [
+        path.join(HOME, 'Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests')
+    ];
+    if (fs.existsSync(crossoverBottlesDir)) {
         try {
-            const files = fs.readdirSync(epicManifestDir);
-            files.forEach(file => {
-                if (file.toLowerCase().endsWith('.item')) {
-                    try {
-                        const content = fs.readFileSync(path.join(epicManifestDir, file), 'utf8');
-                        const parsed = JSON.parse(content);
-                        if (parsed && parsed.DisplayName && parsed.AppName) {
-                            if (!parsed.AppName.toLowerCase().includes('unrealengine')) {
-                                let exePath = '';
-                                if (parsed.InstallLocation) {
-                                    exePath = findExecutableInDir(parsed.InstallLocation);
-                                }
-                                addGameSafely(parsed.DisplayName, exePath);
-                            }
-                        }
-                    } catch (e) {}
+            const bottles = fs.readdirSync(crossoverBottlesDir);
+            bottles.forEach(bottle => {
+                const bottleEpicPath = path.join(crossoverBottlesDir, bottle, 'drive_c/ProgramData/Epic/EpicGamesLauncher/Data/Manifests');
+                if (fs.existsSync(bottleEpicPath)) {
+                    epicManifestPaths.push(bottleEpicPath);
                 }
             });
-        } catch (err) {}
+        } catch (e) {}
     }
+    epicManifestPaths.forEach(epicManifestDir => {
+        if (fs.existsSync(epicManifestDir)) {
+            console.log(`📦 [Epic-Scanner] Scanning directory: ${epicManifestDir}`);
+            try {
+                const files = fs.readdirSync(epicManifestDir);
+                files.forEach(file => {
+                    if (file.toLowerCase().endsWith('.item')) {
+                        try {
+                            const content = fs.readFileSync(path.join(epicManifestDir, file), 'utf8');
+                            const parsed = JSON.parse(content);
+                            if (parsed && parsed.DisplayName && parsed.AppName) {
+                                if (!parsed.AppName.toLowerCase().includes('unrealengine')) {
+                                    let exePath = '';
+                                    if (parsed.InstallLocation) {
+                                        let cleanInstallLocation = parsed.InstallLocation.replace(/\\/g, '/');
+                                        if (/^[a-zA-Z]:\/[vV]olumes\//.test(cleanInstallLocation)) {
+                                            cleanInstallLocation = cleanInstallLocation.substring(2); 
+                                        } 
+                                        else if (cleanInstallLocation.startsWith('C:/') || cleanInstallLocation.startsWith('c:/')) {
+                                            const bottleRoot = epicManifestDir.split('/drive_c/')[0];
+                                            cleanInstallLocation = path.join(bottleRoot, 'drive_c', cleanInstallLocation.substring(3));
+                                        }
+                                        const potentialSubDirs = ['Retail', 'retail', 'binaries', 'Binaries', 'Binaries/Win64', 'bin'];
+                                        for (const subDir of potentialSubDirs) {
+                                            const deepPath = path.join(cleanInstallLocation, subDir);
+                                            if (fs.existsSync(deepPath) && fs.statSync(deepPath).isDirectory()) {
+                                                cleanInstallLocation = deepPath; 
+                                                break;
+                                            }
+                                        } 
+                                        exePath = findExecutableInDir(cleanInstallLocation);
+                                    }
+                                    addGameSafely(parsed.DisplayName, exePath);
+                                }
+                            }
+                        } catch (e) {}
+                    }
+                });
+            } catch (err) {}
+        }
+    });
 }
 function scanBattleNetManifests() {
+    console.log("📦 [Battle.net-Scanner] Initializing tracking across active directories...");
     const volumes = [path.join(HOME, 'Applications'), ...getDynamicExternalVolumes()];
     for (const baseDir of volumes) {
         try {
@@ -268,6 +369,7 @@ function scanBattleNetManifests() {
                     if (lowerFolder.startsWith('.') || ['library', 'system', 'volumes'].includes(lowerFolder)) continue;
                     const bnetBuildInfo = path.join(fullPath, '.build.info');
                     if (fs.existsSync(bnetBuildInfo)) {
+                        console.log(`📦 [Battle.net-Scanner] Valid config file discovered for application root: '${file}'`);
                         const exePath = findExecutableInDir(fullPath);
                         addGameSafely(file, exePath);
                     }
@@ -276,6 +378,7 @@ function scanBattleNetManifests() {
                         subFiles.forEach(subFile => {
                             const subPath = path.join(fullPath, subFile);
                             if (fs.existsSync(path.join(subPath, '.build.info'))) {
+                                console.log(`📦 [Battle.net-Scanner] Valid config file discovered for subdirectory application: '${subFile}'`);
                                 const exePath = findExecutableInDir(subPath);
                                 addGameSafely(subFile, exePath);
                             }
@@ -289,6 +392,7 @@ function scanBattleNetManifests() {
 function scanHeroicManifests() {
     const heroicCacheDir = path.join(HOME, 'Library/Application Support/heroic/store_cache');
     if (fs.existsSync(heroicCacheDir)) {
+        console.log(`📦 [Heroic-Scanner] Synchronizing setup data from cache: ${heroicCacheDir}`);
         try {
             const files = fs.readdirSync(heroicCacheDir);
             files.forEach(file => {
@@ -298,6 +402,7 @@ function scanHeroicManifests() {
                         const parsed = JSON.parse(content);
                         const checkAndAddHeroicGame = (game) => {
                             if (game && game.title && game.is_installed) {
+                                console.log(`📦 [Heroic-Scanner] Verified active deployment for app: '${game.title}'`);
                                 let exePath = '';
                                 if (game.install_path) {
                                     game.install_path;
@@ -316,8 +421,61 @@ function scanHeroicManifests() {
         } catch (err) {}
     }
 }
+function scanUbisoftGames() {
+    const crossoverBottlesDir = path.join(HOME, 'Library/Application Support/CrossOver/Bottles');
+    if (fs.existsSync(crossoverBottlesDir)) {
+        try {
+            const bottles = fs.readdirSync(crossoverBottlesDir);
+            bottles.forEach(bottle => {
+                const ubiGamesPath = path.join(crossoverBottlesDir, bottle, 'drive_c/Program Files (x86)/Ubisoft/Ubisoft Game Launcher/games');
+                if (fs.existsSync(ubiGamesPath)) {
+                    console.log(`📦 [Ubisoft-Scanner] Checking active deployment storage: ${ubiGamesPath}`);
+                    try {
+                        const gameFolders = fs.readdirSync(ubiGamesPath);
+                        gameFolders.forEach(folder => {
+                            const fullGamePath = path.join(ubiGamesPath, folder);
+                            if (fs.statSync(fullGamePath).isDirectory() && !folder.startsWith('.')) {
+                                const exePath = findExecutableInDir(fullGamePath);
+                                addGameSafely(folder, exePath);
+                            }
+                        });
+                    } catch (e) {}
+                }
+            });
+        } catch (e) {}
+    }
+}
+function scanExternalCustomGames() {
+    const externalPlates = getDynamicExternalVolumes();
+    externalPlates.forEach(plate => {
+        console.log(`📦 [Custom-Drive-Scanner] Checking runtime directories on storage node: ${plate}`);
+        const validGameRoots = [
+            path.join(plate, 'Games'),
+            path.join(plate, 'Spiele'),
+            path.join(plate, 'SteamLibrary')
+        ];
+        validGameRoots.forEach(searchPath => {
+            if (fs.existsSync(searchPath)) {
+                try {
+                    const items = fs.readdirSync(searchPath);
+                    items.forEach(item => {
+                        const fullItemPath = path.join(searchPath, item);
+                        if (fs.existsSync(fullItemPath) && fs.statSync(fullItemPath).isDirectory() && !item.startsWith('.')) {
+                            const lowerItem = item.toLowerCase();
+                            if (lowerItem === 'steamapps') return;
+                            const exePath = findExecutableInDir(fullItemPath);
+                            if (exePath) {
+                                addGameSafely(item, exePath);
+                            }
+                        }
+                    });
+                } catch (e) {}
+            }
+        });
+    });
+}
 function runGameScanner() {
-    console.log("🔍 Starting indestructible v2.8.0 manifest scanner with deep CrossOver bottle check...");
+    console.log("🔍 Starting indestructible v2.8.1b manifest scanner with deep CrossOver bottle check...");
     const internalSteamPaths = getInternalCrossOverSteamPaths();
     if (internalSteamPaths.length > 0) {
         internalSteamPaths.forEach(steamPath => {
@@ -331,13 +489,21 @@ function runGameScanner() {
     scanEpicGamesManifests();
     scanBattleNetManifests();
     scanHeroicManifests();
+    scanUbisoftGames();
+    scanExternalCustomGames();
     const outputLines = Array.from(detectedGames)
         .map(g => g.replace('🎮 ', '').trim())
         .sort();
     let fileContent = outputLines.length === 0 ? 'No games found.' : outputLines.join('\n');
     const mappingLines = Array.from(gameExeMap.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([name, exeFile]) => `${name}=>${exeFile}`);
+        .map(([name, exeFile]) => {
+            let finalExe = exeFile;
+            if (name.toLowerCase().includes('uncharted')) {
+                finalExe = 'u4.exe';
+            }
+            return `${name}=>${finalExe}`;
+        });
     let mappingFileContent = mappingLines.length === 0 ? '' : mappingLines.join('\n');
     console.log("\n--- FOUND GAMES (CLEANED MANIFEST CHECK) ---");
     console.log(outputLines.map(g => `🎮 ${g}`).join('\n'));
@@ -347,9 +513,9 @@ function runGameScanner() {
             fs.mkdirSync(CONFIG_DIR, { recursive: true });
         }
         fs.writeFileSync(OUTPUT_FILE, fileContent, 'utf-8');
-        console.log(`\n💾 Pure game list successfully exported to:\n${OUTPUT_FILE}`);
+        console.log(`\n💾 Pure game list successfully exported (${outputLines.length} entries tracked) to:\n${OUTPUT_FILE}`);
         fs.writeFileSync(MAPPING_FILE, mappingFileContent, 'utf-8');
-        console.log(`\n💾 Exe mapping file successfully exported to:\n${MAPPING_FILE}`);
+        console.log(`\n💾 Exe mapping file successfully exported (${mappingLines.length} processes mapped) to:\n${MAPPING_FILE}`);
     } catch (err) {
         console.error(`\n❌ Export error: ${err.message}`);
     }

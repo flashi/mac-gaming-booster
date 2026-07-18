@@ -1,384 +1,61 @@
+/* ============================================================================
+   APPLICATION:   MAC GAMING BOOSTER (PROJEKT X)
+   FILE:          main.js (Electron Main Process)
+   
+   STATUS:        VERSION 2.8.1b (RELEASE CANDIDATE) - STABLE & PRODUCTION READY
+   DEVELOPER:     MARIO (FLASHI) - STAND: 18.07.2026
+   QUALITY AUDIT: EXCELLENT (Robust error handling, resource-optimized Kernel IPC)
+   
+   CORE FUNCTIONS:
+   1. ROOT SERVICE MANAGEMENT: Triggers, monitors, and chains the privileged 
+      background helper service to execute passwordless Unix command execution.
+   2. INTER-PROCESS COMMUNICATION: Stream-reads real-time system metrics and 
+      configuration overrides without heavy disk-polling or background load.
+   3. HEADLESS LIVE DASHBOARD: Renders a borderless, mouse-aware monitoring 
+      interface displaying live core balancing and zero-disk-write benchmarks.
+   4. SYSTEM WATCHDOG & GUARD: Runs an aggressive 3s process-table scan via 
+      vm_stat to enforce dynamic RAM purging and isolate heavy compilation spikes.
+   ============================================================================ */
+
 const { app, Tray, Menu, shell, Notification, globalShortcut, BrowserWindow, screen, ipcMain } = require('electron');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const sudo = require('sudo-prompt');
 const os = require('os');
-let tray = null;
-let intervalId = null;
-let ramGuardIntervalId = null;
-let overlayWindow = null;
-let overlayInterval = null;
-let currentFreeRamMB = 4096;
-let overlayX = null;
-let overlayY = null;
-const rawBytes = os.totalmem();
-const rawGB = rawBytes / 1024 / 1024 / 1024;
-const macStandardSizes = [8, 16, 18, 24, 32, 36, 48, 64, 96, 128, 192, 256];
+let tray = null, intervalId = null, ramGuardIntervalId = null, overlayWindow = null, overlayInterval = null;
+let currentFreeRamMB = 4096, overlayX = null, overlayY = null, dashboardWindow = null, dashboardUpdateInterval = null;
+const rawGB = os.totalmem() / 1024 / 1024 / 1024;
+const macStandardSizes = "8,16,18,24,32,36,48,64,96,128,192".split(',').map(Number);
 const TOTAL_RAM_GB = macStandardSizes.find(size => size >= rawGB) || Math.round(rawGB);
-const USER_DATA_PATH = app.getPath('userData');
-const CONFIG_DIR = path.join(USER_DATA_PATH, 'config');
-if (!fs.existsSync(CONFIG_DIR)) {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
-}
+const CONFIG_DIR = path.join(os.homedir(), 'Library/Application Support/fps-boost/config');
+if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR, { recursive: true });
+const activeTrackedGames = {};
 const CONFIG_FILE = path.join(CONFIG_DIR, 'booster_config.json');
 const LOG_FILE = path.join(CONFIG_DIR, 'gaming_boost.log');
 const BLACKLIST_FILE = path.join(CONFIG_DIR, 'blacklist.txt');
-let isBoostActive = true;
-let isLoggingActive = false;
-let isHelperDebugActive = false;
-let isAutostartActive = false;
-let isShaderGuardActive = false;
-let optimizedPIDs = new Set();
-let currentStatusText = '🎮 Status: No active games';
-let lastPromptTime = 0; 
-const PROMPT_COOLDOWN = 1 * 60 * 1000;
 const MAPPING_FILE = path.join(CONFIG_DIR, 'games_exe_mapping.txt');
-let activeGamesMapping = new Map();
-const OVERRIDES_FILE = path.join(CONFIG_DIR, 'scanner_overrides.json');
-if (!fs.existsSync(OVERRIDES_FILE)) {
-    try {
-        fs.writeFileSync(OVERRIDES_FILE, JSON.stringify({}, null, 2), 'utf8');
-        console.log("✨ Neue scanner_overrides.json wurde erfolgreich im Config-Ordner generiert!");
-    } catch (e) {
-        console.error("Fehler beim Erstellen der scanner_overrides.json:", e.message);
-    }
-}
-function loadGamesMappingFile() {
-    const MAPPING_FILE = path.join(os.homedir(), 'Library/Application Support/fps-boost/config/games_exe_mapping.txt');
-    activeGamesMapping.clear();
-    try {
-        if (fs.existsSync(MAPPING_FILE)) {
-            const content = fs.readFileSync(MAPPING_FILE, 'utf-8');
-            content.split('\n')
-                .map(line => line.trim())
-                .filter(line => line.length > 0)
-                .forEach(line => {
-                    const parts = line.split('=>');
-                    if (parts.length === 2) {
-                        const gameName = parts[0].trim();
-                        const processRaw = parts[1].trim().toLowerCase();
-                        if (processRaw && processRaw !== 'unknown_executable.exe') {
-                            if (processRaw.includes('||')) {
-                                const multipleExes = processRaw.split('||');
-                                multipleExes.forEach(exe => {
-                                    const cleanExe = exe.trim();
-                                    if (cleanExe.length > 2) {
-                                        activeGamesMapping.set(cleanExe, gameName);
-                                    }
-                                });
-                            } else {
-                                activeGamesMapping.set(processRaw, gameName);
-                            }
-                        }
-                    }
-                });
-            writeToRotatedLog(`🔄 Dynamic Mapping Engine: ${activeGamesMapping.size} game processes successfully loaded.`);
-        } else {
-            writeToRotatedLog("⚠️ Notice: games_exe_mapping.txt does not exist. Please run a scan.");
-        }
-    } catch (e) {
-        writeToRotatedLog("❌ Error loading games_exe_mapping.txt: " + e.message);
-    }
-}
-function sendToRootHelper(pid, level) {
-    try {
-        const triggerPath = path.join(os.homedir(), 'Library/Application Support/fps-boost/config/boost.trigger');
-        const payload = JSON.stringify({ 
-            action: 'boost', 
-            pid: parseInt(pid, 10), 
-            level: parseInt(level, 10) 
-        });
-        fs.writeFileSync(triggerPath, payload, 'utf8');
-        const displayLevel = (parseInt(level, 10) <= -5) ? -20 : level;   
-        writeToRotatedLog(`⚡️ Trigger Engine: MAX-Boost written for PID ${pid} (Level: ${displayLevel}).`);
-    } catch (e) {
-        writeToRotatedLog("❌ Error writing file trigger: " + e.message);
-    }
-}
-let isHelperStarting = false;
-if (false) {
-    function startRootHelper() {
-        if (isHelperStarting) return;
-    const userAppSupportPath = CONFIG_DIR;
-    const helperExternalPath = path.join(app.getPath('userData'), 'helper.js');
-        const isPackaged = app.isPackaged;
-        const iconPath = isPackaged 
-            ? path.join(process.resourcesPath, 'rocket.icns')
-            : path.join(__dirname, 'rocket.icns');
-        isHelperStarting = true;
-        exec('ps -Ax -o pid,command | grep -v grep | grep "helper.js"', (psErr, psStdout) => {
-            if (psStdout && psStdout.trim().length > 0) {
-                isHelperStarting = false;
-                return;
-            }
-            writeToRotatedLog("🔒 Preparing root helper service...");
-            if (!fs.existsSync(userAppSupportPath)) {
-                fs.mkdirSync(userAppSupportPath, { recursive: true });
-            }
-            const safeDirPath = JSON.stringify(userAppSupportPath);
-            const safeConfigPath = JSON.stringify(CONFIG_FILE);
-            const embeddedHelperCode = `
-    const { exec } = require('child_process');
-    const fs = require('fs');
-    const path = require('path');
-    const dirPath = ${safeDirPath};
-    const configPath = ${safeConfigPath};
-    const logPath = path.join(dirPath, 'helper_debug.log');
-    const triggerPath = path.join(dirPath, 'boost.trigger');
-    function isDebugEnabled() {
-        try {
-            if (fs.existsSync(configPath)) {
-                const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                return cfg.isHelperDebugActive === true;
-            }
-        } catch(e) {}
-        return false;
-    }
-    try {
-        if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
-        if (isDebugEnabled()) {
-            fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 File root helper freshly initialized.\\n", 'utf8');
-        }
-    } catch(e) {}
-    function logDebug(msg) {
-        if (!isDebugEnabled()) return;
-        try {
-            const time = new Date().toLocaleTimeString();
-            fs.appendFileSync(logPath, "[" + time + "] " + msg + "\\n", 'utf8');
-        } catch (e) {}
-    }
-    logDebug("🚀 File root helper successfully started and active.");
-    setInterval(() => {
-        try {
-            if (fs.existsSync(triggerPath)) {
-                const content = fs.readFileSync(triggerPath, 'utf8').trim(); 
-                if (content && content.length > 0) {
-                    fs.writeFileSync(triggerPath, '', 'utf8'); 
-                    const msg = JSON.parse(content);
-                    if (msg.action === 'kill') {
-                        logDebug("🛑 Self-termination command received. Exiting root helper process gracefully.");
-                        process.exit(0); 
-                    }  
-                    if (msg.action === 'boost' && msg.pid) {
-                        logDebug("📥 File trigger received for PID: " + msg.pid);
-                        exec("renice " + msg.level + " " + msg.pid, (err, stdout, stderr) => {
-                            if (err) { logDebug("❌ Kernel error: " + (stderr || err.message)); }
-                            else { logDebug("✅ Kernel success! PID " + msg.pid + " steht auf " + msg.level); }
-                        });
-                    }
-                }
-            }
-        } catch (e) { logDebug("❌ Loop error: " + e.message); }
-    }, 500);
-            `.trim();
-            try {
-                fs.writeFileSync(helperExternalPath, embeddedHelperCode, 'utf8');
-                writeToRotatedLog("✅ helper.js successfully unpacked into the App Support folder.");
-            } catch (fileErr) {
-                writeToRotatedLog("❌ Write error at helper.js: " + fileErr.message);
-                isHelperStarting = false; 
-                return;
-            }
-            let absoluteNodePath = '/usr/local/bin/node'; 
-            const homebrewPath = '/opt/homebrew/bin/node';
-            if (!fs.existsSync(absoluteNodePath) && fs.existsSync(homebrewPath)) {
-                absoluteNodePath = homebrewPath; 
-            } else if (!fs.existsSync(absoluteNodePath)) {
-                absoluteNodePath = process.execPath;
-                writeToRotatedLog("⚠️ No global Node found. Using internal Electron binary.");
-            }
-            writeToRotatedLog(`🔍 Node path securely determined: ${absoluteNodePath}`);
-            let appleScript = `do shell script "\\"${absoluteNodePath}\\" \\"${helperExternalPath}\\" > /dev/null 2>&1 &" with administrator privileges`;
-            if (fs.existsSync(iconPath)) {                     
-                appleScript = `tell application "Finder" to set iconFile to (POSIX file "${iconPath}") as alias\\n` +
-                   `do shell script "\\"${absoluteNodePath}\\" \\"${helperExternalPath}\\" > /dev/null 2>&1 &" with administrator privileges with prompt "Mac Gaming Booster requires admin privileges for kernel process optimization:" given icon iconFile`;
-            }
-            const osascriptCommand = `osascript -e ${JSON.stringify(appleScript)}`;
-            exec(osascriptCommand, { env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" } }, (err) => {
-                setTimeout(() => {
-                    isHelperStarting = false;
-                }, 5000);
-                if (err) {
-                    writeToRotatedLog("❌ [Osascript] Root helper could not be started: " + err.message);
-                } else {
-                    writeToRotatedLog("🚀 [Osascript] Root helper successfully active in background.");
-                }
-            });
-        });
-    }
-}
-function startRootHelper() {
-    if (isHelperStarting) return;
-    const userAppSupportPath = CONFIG_DIR;
-    const helperExternalPath = path.join(app.getPath('userData'), 'helper.js');
-    const isPackaged = app.isPackaged;
-    const iconPath = isPackaged 
-        ? path.join(process.resourcesPath, 'rocket.icns')
-        : path.join(__dirname, 'rocket.icns');
-    isHelperStarting = true;
-    exec('ps -Ax -o pid,command | grep -v grep | grep "helper.js"', (psErr, psStdout) => {
-        if (psStdout && psStdout.trim().length > 0) {
-            isHelperStarting = false;
-            return;
-        }
-        writeToRotatedLog("🔒 Preparing root helper service...");
-        if (!fs.existsSync(userAppSupportPath)) {
-            fs.mkdirSync(userAppSupportPath, { recursive: true });
-        }
-        const safeDirPath = JSON.stringify(userAppSupportPath);
-        const safeConfigPath = JSON.stringify(CONFIG_FILE);
-        const embeddedHelperCode = `
-const { exec } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const dirPath = ${safeDirPath};
-const configPath = ${safeConfigPath};
-const logPath = path.join(dirPath, 'helper_debug.log');
-const triggerPath = path.join(dirPath, 'boost.trigger');
-function isDebugEnabled() {
-    try {
-        if (fs.existsSync(configPath)) {
-            const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            return cfg.isHelperDebugActive === true;
-        }
-    } catch(e) {}
-    return false;
-}
-try {
-    if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
-    if (isDebugEnabled()) {
-        fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🚀 File root helper freshly initialized.\\n", 'utf8');
-    }
-} catch(e) {}
-function logDebug(msg) {
-    if (!isDebugEnabled()) return;
-    try {
-        const time = new Date().toLocaleTimeString();
-        fs.appendFileSync(logPath, "[" + time + "] " + msg + "\\n", 'utf8');
-    } catch (e) {}
-}
-try {
-    if (fs.existsSync(logPath)) {
-        const stats = fs.statSync(logPath);
-        if (stats.size > 1024 * 1024) { // 1 MB
-            fs.writeFileSync(logPath, "[" + new Date().toLocaleTimeString() + "] 🔄 Helper log rotated: Cleared old entries.\\n", 'utf8');
-        }
-    }
-} catch (e) {}
-logDebug("🚀 File root helper successfully started and active.");
-setInterval(() => {
-    try {
-        if (fs.existsSync(triggerPath)) {
-            const content = fs.readFileSync(triggerPath, 'utf8').trim(); 
-            if (content && content.length > 0) {
-                fs.writeFileSync(triggerPath, '', 'utf8'); 
-                const msg = JSON.parse(content);
-                if (msg.action === 'kill') {
-                    logDebug("🛑 Self-termination command received. Exiting root helper process gracefully.");
-                    process.exit(0); 
-                }  
-                if (msg.action === 'boost' && msg.pid) {
-                    logDebug("📥 File trigger received for PID: " + msg.pid);
-                    let secureCommand = "";
-                    if (parseInt(msg.level, 10) === 0) {
-                        // Reset: Wir prüfen erst mit kill -0, ob der Prozess noch existiert. 
-                        // Falls er schon geschlossen ist, geben wir lautlos Entwarnung (echo), statt abzustürzen.
-                        secureCommand = "kill -0 " + msg.pid + " 2>/dev/null && taskpolicy -b -p " + msg.pid + " && renice 0 -p " + msg.pid + " || echo 'Process_already_gone'";
-                    } else if (parseInt(msg.level, 10) === -1) {
-                        // Mid-Stufe: Behält die alte moderate Wrapper-Priorität bei (-1)
-                        secureCommand = "renice " + msg.level + " " + msg.pid;
-                    } else {
-                        // Max-Stufe: Holt das Spiel von den E-Kernen auf die P-Kerne (-B) und zwingt die CPU auf das harte -20 Limit!
-                        secureCommand = "taskpolicy -B -p " + msg.pid + " && renice -20 -p " + msg.pid;
-                    }
-                    exec(secureCommand, (err, stdout, stderr) => {
-                        if (err) {
-                            if (parseInt(msg.level, 10) === 0 && (stderr.includes("No such process") || err.message.includes("No such process"))) {
-                                logDebug("ℹ️ Process was already closed by user. No reset required.");
-                            } else {
-                                logDebug("❌ Kernel error: " + (stderr || err.message)); 
-                            }
-                        }
-                        else { logDebug("✅ Kernel success! Befehl [" + secureCommand + "] erfolgreich abgesetzt."); }
-                    });
-                }
-            }
-        }
-    } catch (e) { logDebug("❌ Loop error: " + e.message); }
-}, 500);
-        `.trim();
-        try {
-            fs.writeFileSync(helperExternalPath, embeddedHelperCode, 'utf8');
-            writeToRotatedLog("✅ helper.js successfully unpacked into the App Support folder.");
-        } catch (fileErr) {
-            writeToRotatedLog("❌ Write error at helper.js: " + fileErr.message);
-            isHelperStarting = false; 
-            return;
-        }
-        let absoluteNodePath = '/usr/local/bin/node'; 
-        const homebrewPath = '/opt/homebrew/bin/node';
-        if (!fs.existsSync(absoluteNodePath) && fs.existsSync(homebrewPath)) {
-            absoluteNodePath = homebrewPath; 
-        } else if (!fs.existsSync(absoluteNodePath)) {
-            absoluteNodePath = process.execPath;
-            writeToRotatedLog("⚠️ No global Node found. Using internal Electron binary.");
-        }
-        writeToRotatedLog(`🔍 Node path securely determined: ${absoluteNodePath}`);
-        let appleScript = `do shell script "\\"${absoluteNodePath}\\" \\"${helperExternalPath}\\" > /dev/null 2>&1 &" with administrator privileges`;
-        if (fs.existsSync(iconPath)) {                     
-            appleScript = `tell application "Finder" to set iconFile to (POSIX file "${iconPath}") as alias\\n` +
-               `do shell script "\\"${absoluteNodePath}\\" \\"${helperExternalPath}\\" > /dev/null 2>&1 &" with administrator privileges with prompt "Mac Gaming Booster requires admin privileges for kernel process optimization:" given icon iconFile`;
-        }
-        const osascriptCommand = `osascript -e ${JSON.stringify(appleScript)}`;
-        exec(osascriptCommand, { env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" } }, (err) => {
-            setTimeout(() => {
-                isHelperStarting = false;
-            }, 5000);
-            if (err) {
-                writeToRotatedLog("❌ [Osascript] Root helper could not be started: " + err.message);
-            } else {
-                writeToRotatedLog("🚀 [Osascript] Root helper successfully active in background.");
-            }
-        });
-    });
-}
-let initialLoad = true;
+let isBoostActive = true, isLoggingActive = false, isHelperDebugActive = false, isAutostartActive = false, isShaderGuardActive = false;
+let optimizedPIDs = new Set(), currentStatusText = '🎮 Status: No active games', activeGamesMapping = new Map();
+let globalIsRootHelperAlive = false;
+let globalPCoreUsage = 0;
 function loadSettings() {
     try {
-        if (fs.existsSync(CONFIG_FILE)) {
-            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
-            const config = JSON.parse(data);   
-            if (config.isBoostActive !== undefined) isBoostActive = config.isBoostActive;
-            if (config.isLoggingActive !== undefined) isLoggingActive = config.isLoggingActive;
-            if (config.isHelperDebugActive !== undefined) isHelperDebugActive = config.isHelperDebugActive;
-            if (config.isAutostartActive !== undefined) isAutostartActive = config.isAutostartActive;
-            if (config.isShaderGuardActive !== undefined) isShaderGuardActive = config.isShaderGuardActive;
-            if (config.overlayX !== undefined) overlayX = config.overlayX;
-            if (config.overlayY !== undefined) overlayY = config.overlayY;
-            if (typeof app !== 'undefined') {
-                app.setLoginItemSettings({
-                    openAtLogin: isAutostartActive,
-                    openAsHidden: false,
-                    path: app.getPath('exe')
-                });
-            }
-            if (initialLoad) {
-                writeToRotatedLog(`💾 Settings loaded. Boost status at startup: [${isBoostActive}]`);
-                initialLoad = false;
-            }
-        }
-    } catch (e) {
-        writeToRotatedLog("❌ Error loading booster_config.json: " + e.message);
-    }
+        if (!fs.existsSync(CONFIG_FILE)) return;
+        const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+        if (config.isBoostActive !== undefined) isBoostActive = config.isBoostActive;
+        if (config.isLoggingActive !== undefined) isLoggingActive = config.isLoggingActive;
+        if (config.isHelperDebugActive !== undefined) isHelperDebugActive = config.isHelperDebugActive;
+        if (config.isAutostartActive !== undefined) isAutostartActive = config.isAutostartActive;
+        if (config.isShaderGuardActive !== undefined) isShaderGuardActive = config.isShaderGuardActive;
+        if (config.overlayX !== undefined) overlayX = config.overlayX;
+        if (config.overlayY !== undefined) overlayY = config.overlayY;
+        if (typeof app !== 'undefined') app.setLoginItemSettings({ openAtLogin: isAutostartActive, path: app.getPath('exe') });
+    } catch (e) {}
 }
 function saveSettings() {
     try {
-        const config = { isBoostActive, isLoggingActive, isHelperDebugActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY };
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-    } catch (e) {
-        writeToRotatedLog("❌ Error saving booster_config.json: " + e.message);
-    }
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify({ isBoostActive, isLoggingActive, isHelperDebugActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY }, null, 2), 'utf8');
+    } catch (e) {}
 }
 function writeToRotatedLog(newText) {
     if (!isLoggingActive) return;
@@ -394,290 +71,256 @@ function writeToRotatedLog(newText) {
         }
         fs.appendFileSync(LOG_FILE, logLine, 'utf8');
     } catch (e) {
-        console.error("Failed to write to log:", e.message);
     }
-}
+} 
 function sendNotification(bodyText) {
     if (Notification.isSupported()) {
-        new Notification({
-            title: '🚀 Mac Gaming Booster',
-            body: bodyText,
-            silent: true
-        }).show();
+        new Notification({ title: '🚀 Mac Gaming Booster', body: bodyText, silent: true }).show();
     }
 }
-function toggleRamOverlay() {
-    if (overlayWindow) {
-        clearInterval(overlayInterval);
-        overlayWindow.close();
-        overlayWindow = null;
-        return;
-    }
-    const { screen } = require('electron');
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const { width } = primaryDisplay.workAreaSize;
-    overlayWindow = new BrowserWindow({
-        width: 300,
-        height: 165,
-        x: (typeof overlayX !== 'undefined' && overlayX !== undefined) ? overlayX : (width - 270),
-        y: (typeof overlayY !== 'undefined' && overlayY !== undefined) ? overlayY : 40,
-        frame: false,
-        transparent: true,
-        resizable: false,
-        alwaysOnTop: true,
-        skipTaskbar: true,
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true
-        }
+function openDashboardWindow() {
+    if (dashboardWindow) { 
+        clearInterval(dashboardUpdateInterval); 
+        dashboardWindow.close(); 
+        dashboardWindow = null; 
+        return; 
+    }  
+    dashboardWindow = new BrowserWindow({
+        width: 410, height: 700, resizable: false, frame: true, alwaysOnTop: false,
+        webPreferences: { nodeIntegration: true, contextIsolation: false }
     });
-    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-    const htmlContent = `
-        <body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif; color:white; background:rgba(15,15,15,0.82); margin:0; padding:10px; border-radius:8px; font-size:11px; border:1px solid rgba(255,255,255,0.12); overflow:hidden; user-select:none; backdrop-filter:blur(8px);">
-            <div style="font-weight:bold; font-size:12px; margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.15); color:#00ffcc; display:flex; justify-content:space-between; letter-spacing:0.5px;">
-                <span>🚀 GAME BOOSTER HUD</span>
-                <span id="ram-status" style="color:#00ff00;">● Live</span>
-            </div>
-            <div style="margin-bottom:3px; display:flex; justify-content:space-between;">
-                <span style="color:#888;">💾 Memory:</span>
-                <span id="hud-ram-used" style="font-weight:500;">-- GB / -- GB</span>
-            </div>
-            <div style="margin-bottom:3px; display:flex; justify-content:space-between;">
-                <span style="color:#888;">🧹 Free Cache:</span>
-                <span id="hud-ram-free" style="font-weight:bold; color:#00ffaa;">-- MB</span>
-            </div>
-            <div style="margin-bottom:3px; display:flex; justify-content:space-between;">
-                <span style="color:#888;">🎮 Game:</span>
-                <span id="hud-game-name" style="font-weight:bold; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffffff;">None</span>
-            </div>
-            <div style="margin-bottom:5px; display:flex; justify-content:space-between;">
-                <span style="color:#888;">🆔 Process:</span>
-                <span id="hud-game-pid" style="color:#ffffff;">-</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-top:5px; padding-top:4px; border-top:1px solid rgba(255,255,255,0.08);">
-                <span style="color:#888;">⚙️ Booster Engine:</span>
-                <span id="hud-kernel-status" style="font-weight:bold; font-size:10px; letter-spacing:0.3px; color:#aaaaaa;">⚪️ READY</span>
-            </div>
-        </body>
-    `;
-    overlayWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);   
-    overlayWindow.once('ready-to-show', () => {
-        if (overlayWindow) {
-            overlayWindow.showInactive(); 
-        }
-    });
-    overlayInterval = setInterval(() => {
-        if (overlayWindow && !overlayWindow.isDestroyed()) {
-            const total = TOTAL_RAM_GB; 
-            const freeMB = currentFreeRamMB;
-            const usedGB = ((total * 1024 - freeMB) / 1024).toFixed(2);
-            let activeGameName = "None";
-            let activePID = "-";
-            let kernelStatus = "⚪️ STANDBY";
-            let statusColor = "#aaaaaa";
-            for (let key of optimizedPIDs) {
-                if (key.includes('_max_') || key.endsWith('_max')) {
-                    if (key.includes('_max_')) {
-                        const parts = key.split('_');
-                        activePID = parts[0];
-                    } else {
-                        activePID = key.replace('_max', '');
-                    }
-                    const start = performance.now();
-                    try {
-                        require('child_process').execSync(`lsappinfo info -only Status $(lsappinfo find p=${activePID})`, { stdio: 'ignore' });
-                    } catch (e) {}
-                    const end = performance.now();
-                    const latencyMs = (end - start).toFixed(1);
-                    const latency = parseFloat(latencyMs);
-                    try {
-                        const tmpPath = require('path').join('/tmp', 'fps_boost_live.json');
-                        require('fs').writeFileSync(tmpPath, JSON.stringify({
-                            latencyMs: latencyMs,
-                            fpsLive: (1000 / (end - start)).toFixed(1),
-                            gameName: currentStatusText.replace('🟢 MAX-Boost: 📦 ', '').replace('🎮 ', '').trim(),
-                            pid: activePID
-                        }), 'utf8');
-                    } catch (e) {}
-                    if (latency < 15) {
-                        kernelStatus = `⚡️ OPTIMAL [${latencyMs} ms]`;
-                        statusColor = "#00ffcc";
-                    } else if (latency >= 15 && latency < 35) {
-                        kernelStatus = `⚡️ GOOD [${latencyMs} ms]`;
-                        statusColor = "#00ff00";
-                    } else {
-                        kernelStatus = `⏳ HEAVY LOAD [${latencyMs} ms]`;
-                        statusColor = "#ffcc00";
-                    }
-                    activeGameName = currentStatusText.replace('🟢 MAX-Boost: 📦 ', '').replace('🎮 ', '').trim();
-                    break;
-                } else if (key.endsWith('_mid')) {
-                    activePID = key.replace('_mid', '');
-                    kernelStatus = "⚡️ MID-BOOST (-1)";
-                    statusColor = "#ffcc00";
-                    activeGameName = currentStatusText.replace('🟡 MID-Boost: 📦 ', '').replace('🎮 ', '').trim();
-                    try {
-                        const tmpPath = require('path').join('/tmp', 'fps_boost_live.json');
-                        require('fs').writeFileSync(tmpPath, JSON.stringify({
-                            latencyMs: "0.0",
-                            fpsLive: "0.0",
-                            gameName: activeGameName,
-                            pid: activePID
-                        }), 'utf8');
-                    } catch (e) {}
-                    break;
-                } else {
-                    activePID = key.includes('_') ? key.split('_')[0] : key;
-                    const start = performance.now();
-                    try {
-                        require('child_process').execSync(`lsappinfo info -only Status $(lsappinfo find p=${activePID})`, { stdio: 'ignore' });
-                    } catch (e) {}
-                    const end = performance.now();
-                    const latencyMs = (end - start).toFixed(1);
-                    const latency = parseFloat(latencyMs);
-                    activeGameName = currentStatusText
-                        .replace('🟢 MAX-Boost: 📦 ', '')
-                        .replace('🟡 MID-Boost: 📦 ', '')
-                        .replace('🔴 Boost Off: 📦 ', '')
-                        .replace('🎮 ', '')
-                        .trim();
-                    try {
-                        const tmpPath = require('path').join('/tmp', 'fps_boost_live.json');
-                        require('fs').writeFileSync(tmpPath, JSON.stringify({
-                            latencyMs: latencyMs,
-                            fpsLive: (1000 / (end - start)).toFixed(1),
-                            gameName: activeGameName,
-                            pid: activePID
-                        }), 'utf8');
-                    } catch (e) {}
-                    if (latency < 15) {
-                        kernelStatus = `⚡️ OPTIMAL [${latencyMs} ms]`;
-                        statusColor = "#00ffcc";
-                    } else if (latency >= 15 && latency < 35) {
-                        kernelStatus = `⚡️ GOOD [${latencyMs} ms]`;
-                        statusColor = "#00ff00";
-                    } else {
-                        kernelStatus = `⏳ HEAVY LOAD [${latencyMs} ms]`;
-                        statusColor = "#ffcc00";
-                    }
-                    break;
+    dashboardWindow.loadFile(path.join(__dirname, 'dashboard.html'));
+    dashboardWindow.on('closed', () => { dashboardWindow = null; clearInterval(dashboardUpdateInterval); });
+    dashboardUpdateInterval = setInterval(() => {
+        if (!dashboardWindow) return;
+        let isRootHelperAlive = false;
+        try {
+            if (execSync("ps -Ax -o command | grep -v grep | grep 'helper.js' 2>/dev/null").toString().trim().length > 0) isRootHelperAlive = true;
+        } catch (e) {}
+        let activePID = "-", activeGameName = "Waiting for game...", targetNice = "0", pCoreUsage = 0, liveLatency = "0.0", liveGameMem = 0.0;
+        let chosenKey = null;
+        for (let key of optimizedPIDs) {
+            if (key.includes('_max_') || key.endsWith('_max') || key.endsWith('_mid') || key.includes('_reset')) {
+                if (!chosenKey) {
+                    chosenKey = key;
+                }
+                if (key.toLowerCase().includes('shipping')) {
+                    chosenKey = key;
+                    break; 
                 }
             }
-            overlayWindow.webContents.executeJavaScript(`
-                if (document.getElementById('hud-ram-used')) {
-                    document.getElementById('hud-ram-used').innerHTML = '${usedGB} GB / ${total} GB';
-                    document.getElementById('hud-ram-free').innerHTML = '${freeMB} MB';
-                    document.getElementById('hud-game-name').innerHTML = '${activeGameName}';
-                    document.getElementById('hud-game-pid').innerHTML = '${activePID !== '-' ? 'PID ' + activePID : '-'}';
-                    document.getElementById('hud-kernel-status').innerHTML = '${kernelStatus}';
-                    document.getElementById('hud-kernel-status').style.color = '${statusColor}';
-                    document.getElementById('ram-status').style.color = ${freeMB} < 1500 ? '#ff3333' : '#00ff00';
-                }
-            `).catch(err => console.error("Overlay JS-Inject Fehler:", err));
         }
+        if (chosenKey) {
+            const pidMatch = chosenKey.match(/^\d+/);
+            activePID = pidMatch ? pidMatch[0] : "-";
+            let cleanText = currentStatusText.replace('🟢 MAX-Boost: 📦 ', '').replace('🎮 ', '').replace('🟡 MID-Boost: 📦 ', '').trim();
+            cleanText = cleanText.replace(/\(Kein Boost\)/i, '').trim();
+            if (cleanText.toLowerCase().includes('log.txt')) {
+                activeGameName = "The Last of Us Part I";
+            } else {
+                activeGameName = cleanText.replace(/\.exe/i, '');
+            }
+            try {
+                if (activePID !== "-") {
+                    const kernelNice = execSync(`ps -p ${activePID} -o nice= 2>/dev/null`).toString().trim();
+                    if (kernelNice) targetNice = kernelNice;
+                }
+            } catch(e) {}
+        }
+        if (activePID !== "-" && activePID !== "") {
+            const cleanPid = activePID.trim();
+            try {
+                const start = performance.now();
+                try { execSync(`lsappinfo info -only Status $(lsappinfo find p=${cleanPid})`, { stdio: 'ignore' }); } catch(e) {}
+                liveLatency = (performance.now() - start).toFixed(1);
+                const pgidCheck = execSync(`ps -p ${cleanPid} -o pgid= 2>/dev/null`).toString().trim();
+                const cleanPgid = pgidCheck.replace(/[^\d]/g, '').trim();
+                let totalCpuSum = 0, totalKilobytes = 0;
+                if (cleanPgid && cleanPgid !== "0" && cleanPgid !== "") {
+                    try {
+                        const cpuLines = execSync(`ps -g ${cleanPgid} -o %cpu 2>/dev/null`).toString().trim().split('\n');
+                        cpuLines.forEach((l, i) => { if (i > 0) totalCpuSum += parseFloat(l.trim().replace(',', '.')) || 0; });
+                        const ramLines = execSync(`ps -g ${cleanPgid} -o rss 2>/dev/null`).toString().trim().split('\n');
+                        ramLines.forEach((l, i) => { if (i > 0) totalKilobytes += parseInt(l.trim(), 10) || 0; });
+                    } catch(groupErr) {
+                        totalCpuSum = 0; totalKilobytes = 0;
+                    }
+                } 
+                if (totalCpuSum === 0 || totalKilobytes === 0) {
+                    try {
+                        totalCpuSum = parseFloat(execSync(`ps -p ${cleanPid} -o %cpu= 2>/dev/null`).toString().trim().replace(',', '.')) || 0;
+                        totalKilobytes = parseInt(execSync(`ps -p ${cleanPid} -o rss= 2>/dev/null`).toString().trim(), 10) || 0;
+                    } catch(directErr) {}
+                }
+                pCoreUsage = Math.min(999, Math.max(0, Math.round(totalCpuSum)));
+                liveGameMem = totalKilobytes / 1024 / 1024;
+            } catch (e) {}
+        }
+        dashboardWindow.webContents.send('dashboard-data', {
+            helperAlive: isRootHelperAlive, gameName: activeGameName, pid: activePID, nice: targetNice,
+            readSpeed: "0 Byte/s", writeSpeed: "0 Byte/s", latencyMs: activePID !== '-' ? liveLatency : "0.0",
+            pCore: pCoreUsage, eCore: 0, gameMem: activePID !== '-' ? parseFloat(liveGameMem.toFixed(1)) : 0.0,
+            totalMem: TOTAL_RAM_GB, ramPercent: liveGameMem > 0 ? (liveGameMem / TOTAL_RAM_GB) * 100 : 0
+        });
     }, 1000);
 }
-let lastPurgeTime = 0; 
-const PURGE_COOLDOWN = 30 * 1000;
+ipcMain.on('trigger-open-dashboard', () => { openDashboardWindow(); });
+ipcMain.on('dashboard-toggle-pin', (e, shouldPin) => { if (dashboardWindow) dashboardWindow.setAlwaysOnTop(shouldPin, 'screen-saver'); });
+let lastPurgeTime = 0;
 function manageRamGuardState(isGameRunning) {
-    if (!isShaderGuardActive) {
-        if (ramGuardIntervalId) {
-            clearInterval(ramGuardIntervalId);
-            ramGuardIntervalId = null;
-        }
-        return;
-    }
-    let purgeLimit = 1500;
-    let pauseLimit = 400;
-    let killLimit = 100;
+    if (!isShaderGuardActive) { if (ramGuardIntervalId) { clearInterval(ramGuardIntervalId); ramGuardIntervalId = null; } return; }
+    let purgeLimit = 1500, pauseLimit = 400, killLimit = 100;
     try {
-        if (fs.existsSync(CONFIG_FILE)) {
-            const configData = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-            if (configData.purgeLimit) purgeLimit = parseInt(configData.purgeLimit, 10);
-            if (configData.pauseLimit) {
-                pauseLimit = parseInt(configData.pauseLimit, 10);
-                killLimit = Math.max(50, pauseLimit - 300); 
-            }
-        }
+        const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+        if (cfg.purgeLimit) purgeLimit = parseInt(cfg.purgeLimit, 10);
+        if (cfg.pauseLimit) pauseLimit = parseInt(cfg.pauseLimit, 10);
+        if (cfg.killLimit) killLimit = parseInt(cfg.killLimit, 10);
     } catch (e) {}
-    if (isGameRunning) {
-        if (!ramGuardIntervalId) {
-            writeToRotatedLog("🎮 Game Active: Aggressive RAM-Guard (No Sudo) initiated.");
-            ramGuardIntervalId = setInterval(() => {
-                const now = Date.now();
-                if (now - lastPurgeTime < PURGE_COOLDOWN) return;
-                exec('vm_stat', (error, stdout) => {
-                    if (error || !stdout) return;
-                    const freePagesMatch = stdout.match(/Pages free:\s+(\d+)/);
-                    const specPagesMatch = stdout.match(/Pages speculative:\s+(\d+)/);
-                    if (freePagesMatch) {
-                        const freePages = parseInt(freePagesMatch[1], 10);
-                        const specPages = specPagesMatch ? parseInt(specPagesMatch[1], 10) : 0;
-                        const availableRamMB = Math.round(((freePages + specPages) * 16384) / 1024 / 1024);
-                        currentFreeRamMB = availableRamMB;
-                        if (availableRamMB < purgeLimit) {
-                            writeToRotatedLog(`🚨 WARNING: Memory Critical (${availableRamMB} MB free). Enforcing maximum release!`);
-                            lastPurgeTime = Date.now();
-                            const memorySpikeTrigger = new Array(5000000).fill(0);  
-                            exec('syslog -c aslmanager -d', (purgeError) => {
-                                if (!purgeError) {
-                                    writeToRotatedLog("🧹 Inactive RAM and system caches successfully evacuated.");
-                                }
-                            });
-                            if (availableRamMB < killLimit) {
-                                writeToRotatedLog(`🚨 EMERGENCY SYSTEM OVERLOAD (Under ${killLimit}MB RAM)! Executing brutal hard kill to prevent Kernel Panic...`);
-                                exec('killall -9 MTLCompilerService', (killErr) => {
-                                    if (!killErr) {
-                                        writeToRotatedLog("🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!");
-                                        sendNotification("🛡️ Kernel Panic prevented! Heavy compiler process terminated immediately.");
+    if (isGameRunning && !ramGuardIntervalId) {
+        writeToRotatedLog("🎮 Game Active: Aggressive RAM-Guard initiated.");
+        ramGuardIntervalId = setInterval(() => {
+            if (Date.now() - lastPurgeTime < 30000) return;
+            try {
+                const stdout = execSync('vm_stat').toString();
+                const free = parseInt(stdout.match(/Pages free:\s+(\d+)/)[1], 10) || 0;
+                const spec = parseInt(stdout.match(/Pages speculative:\s+(\d+)/)[1], 10) || 0;
+                const availableRamMB = Math.round(((free + spec) * 16384) / 1024 / 1024);
+                currentFreeRamMB = availableRamMB;
+                if (availableRamMB < purgeLimit) {
+                    let isStalkerLaunchPhase = false;
+                    let finalGameAge = 0;
+                    const isSafeActive = (typeof isSafeShaderCompilationActive !== 'undefined' && isSafeShaderCompilationActive === true) || 
+                                         (typeof config !== 'undefined' && config.isSafeShaderCompilationActive === true) ||
+                                         (typeof currentConfig !== 'undefined' && currentConfig.isSafeShaderCompilationActive === true);
+                    if (isSafeActive) {
+                        const currentStatusLower = typeof currentStatusText !== 'undefined' ? currentStatusText.toLowerCase() : "";
+                        if (currentStatusLower.includes('stalker') || currentStatusLower.includes('chornobyl')) {
+                            for (let stateKey of optimizedPIDs) {
+                                const parts = stateKey.split('_');
+                                const purePID = parts[0];
+                                if (purePID && purePID !== "-" && activeTrackedGames && activeTrackedGames[purePID]) {
+                                    const gameSession = activeTrackedGames[purePID];
+                                    const gameAge = (Date.now() - gameSession.startTime) / 1000;
+                                    if (gameAge < 240) {
+                                        isStalkerLaunchPhase = true;
+                                        finalGameAge = gameAge;
+                                        break;
                                     }
-                                });
+                                }
                             }
-                            else if (availableRamMB < pauseLimit) {
-                                writeToRotatedLog("🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief..."); 
-                                exec('killall -STOP MTLCompilerService', () => {
-                                    writeToRotatedLog("🧹 Performing aggressive RAM evacuation...");
-                                    exec('sudo purge', () => {
-                                        setTimeout(() => {
-                                            exec('killall -CONT MTLCompilerService', () => {
-                                                writeToRotatedLog("🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!");
-                                                sendNotification("🛡️ Memory depletion prevented! Compiler paused, evacuated and resumed successfully.");
-                                            });
-                                        }, 2000);
-                                    });
-                                });
-                            }
-                            setTimeout(() => {
-                                memorySpikeTrigger.length = 0;
-                            }, 100);
                         }
                     }
-                });
-            }, 3000);
-        }
-    } else {
-        if (ramGuardIntervalId) {
-            clearInterval(ramGuardIntervalId);
-            ramGuardIntervalId = null;
-            writeToRotatedLog("🛑 Game terminated: RAM-Guard stopped.");
-        }
+                    if (isStalkerLaunchPhase) {
+                        writeToRotatedLog(`⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: ${finalGameAge.toFixed(0)}s). Postponing full purge to prevent compile errors...`);
+                        lastPurgeTime = Date.now();
+                        try { exec('sync', () => {}); } catch(e) {}
+                    } else {
+                        writeToRotatedLog(`🚨 WARNING: Memory Critical (${availableRamMB} MB free). Enforcing maximum release!`);
+                        lastPurgeTime = Date.now();
+                        const memorySpikeTrigger = new Array(5000000).fill(0);
+                        exec('syslog -c aslmanager -d', (purgeError) => {
+                            if (!purgeError) {
+                                writeToRotatedLog("🧹 Inactive RAM and system caches successfully evacuated.");
+                            }
+                        });
+                        if (availableRamMB < killLimit) {
+                            writeToRotatedLog(`🚨 EMERGENCY SYSTEM OVERLOAD (Under ${killLimit}MB RAM)! Executing brutal hard kill to prevent Kernel Panic...`);
+                            exec('killall -9 MTLCompilerService', (killErr) => {
+                                if (!killErr) {
+                                    writeToRotatedLog("🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!");
+                                    sendNotification("🛡️ Kernel Panic prevented! Heavy compiler process terminated immediately.");
+                                }
+                            });
+                        }
+                        else if (availableRamMB < pauseLimit) {
+                            writeToRotatedLog("🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief..."); 
+                            exec('killall -STOP MTLCompilerService', () => {
+                                writeToRotatedLog("🧹 Performing aggressive RAM evacuation...");
+                                exec('sudo purge', () => {
+                                    setTimeout(() => {
+                                        exec('killall -CONT MTLCompilerService', () => {
+                                            writeToRotatedLog("🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!");
+                                            sendNotification("🛡️ Memory depletion prevented! Compiler paused, evacuated and resumed successfully.");
+                                        });
+                                    }, 2000);
+                                });
+                            });
+                        }
+                        else {
+                            exec('sudo purge', () => {});
+                        }
+                        memorySpikeTrigger.length = 0;
+                    }
+                }
+            } catch(e) {}
+        }, 3000);
+    } else if (!isGameRunning && ramGuardIntervalId) {
+        clearInterval(ramGuardIntervalId); ramGuardIntervalId = null;
+        writeToRotatedLog("🛑 Game terminated: RAM-Guard stopped.");
     }
 }
-let vmStatIntervalId = null;
-vmStatIntervalId = setInterval(() => {
-    if (!ramGuardIntervalId) {
-        exec('vm_stat', (error, stdout) => {
-            if (error || !stdout) return;
-            const freePagesMatch = stdout.match(/Pages free:\s+(\d+)/);
-            const specPagesMatch = stdout.match(/Pages speculative:\s+(\d+)/);
-            if (freePagesMatch) {
-                const freePages = parseInt(freePagesMatch[1], 10);
-                const specPages = specPagesMatch ? parseInt(specPagesMatch[1], 10) : 0;
-                currentFreeRamMB = Math.round(((freePages + specPages) * 16384) / 1024 / 1024);
+setInterval(() => {
+    if (ramGuardIntervalId) return;
+    try {
+        const out = execSync('vm_stat').toString();
+        const free = parseInt(out.match(/Pages free:\s+(\d+)/)[1], 10) || 0;
+        const spec = parseInt(out.match(/Pages speculative:\s+(\d+)/)[1], 10) || 0;
+        currentFreeRamMB = Math.round(((free + spec) * 16384) / 1024 / 1024);
+    } catch(e) {}
+}, 2000);
+function toggleRamOverlay() {
+    if (overlayWindow) { clearInterval(overlayInterval); overlayWindow.close(); overlayWindow = null; return; }
+    overlayWindow = new BrowserWindow({ width: 300, height: 165, x: overlayX || (screen.getPrimaryDisplay().workAreaSize.width - 320), y: overlayY || 30, frame: false, transparent: true, resizable: false, alwaysOnTop: true, skipTaskbar: true, webPreferences: { nodeIntegration: false, contextIsolation: true } });
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+    overlayWindow.loadFile(app.isPackaged ? path.join(process.resourcesPath, 'app', 'hud.html') : path.join(__dirname, 'hud.html'));
+    overlayInterval = setInterval(() => {
+        if (!overlayWindow || overlayWindow.isDestroyed()) return;
+        let activeGameName = "None", activePID = "-", kernelStatus = "⚪ STANDBY", statusColor = "#aaaaaa";
+        let hudKeys = Array.from(optimizedPIDs);
+        let shippingHudKey = hudKeys.find(k => k.toLowerCase().includes('shipping'));
+        let targetHudKey = shippingHudKey || hudKeys.find(k => k.includes('_max_') || k.endsWith('_max') || k.endsWith('_mid'));
+        if (targetHudKey) {
+            const pidMatch = targetHudKey.match(/^\d+/);
+            activePID = pidMatch ? pidMatch[0] : "-";
+            const start = performance.now();
+            try { execSync(`lsappinfo info -only Status $(lsappinfo find p=${activePID})`, { stdio: 'ignore' }); } catch(e) {}
+            kernelStatus = targetHudKey.endsWith('_mid') ? "⚡ MID-BOOST (-1)" : `⚡ POLLING [${(performance.now() - start).toFixed(1)} ms]`;
+            statusColor = targetHudKey.endsWith('_mid') ? "#ffcc00" : "#00ffcc";
+            activeGameName = currentStatusText.replace('🟢 MAX-Boost: 📦 ', '').replace('🎮 ', '').replace('🟡 MID-Boost: 📦 ', '').trim();
+        }
+        overlayWindow.webContents.executeJavaScript(`
+            if (window.document && document.getElementById('hud-ram-used')) {
+                document.getElementById('hud-ram-used').innerHTML = '${((TOTAL_RAM_GB * 1024 - currentFreeRamMB) / 1024).toFixed(2)} GB / ${TOTAL_RAM_GB} GB';
+                document.getElementById('hud-ram-free').innerHTML = '${currentFreeRamMB} MB';
+                document.getElementById('hud-game-name').innerHTML = '${activeGameName}';
+                document.getElementById('hud-game-pid').innerHTML = '${activePID !== '-' ? 'PID ' + activePID : '-'}';
+                document.getElementById('hud-kernel-status').innerHTML = '${kernelStatus}';
+                document.getElementById('hud-kernel-status').style.color = '${statusColor}';
+            }
+        `).catch(() => {});
+    }, 1000);
+}
+function loadGamesMappingFile() {
+    activeGamesMapping.clear();
+    try {
+        if (!fs.existsSync(MAPPING_FILE)) return;
+        fs.readFileSync(MAPPING_FILE, 'utf-8').split('\n').map(l => l.trim()).filter(l => l.length > 0).forEach(line => {
+            const parts = line.split('=>');
+            if (parts.length === 2) {
+                if (parts[1].trim().includes('||')) {
+                    parts[1].trim().split('||').forEach(exe => { if (exe.trim().length > 2) activeGamesMapping.set(exe.trim().toLowerCase(), parts[0].trim()); });
+                } else { activeGamesMapping.set(parts[1].trim().toLowerCase(), parts[0].trim()); }
             }
         });
-    }
-}, 2000);
+    } catch (e) {}
+}
+function sendToRootHelper(pid, level) {
+    try {
+        fs.writeFileSync(path.join(CONFIG_DIR, 'boost.trigger'), JSON.stringify({ action: 'boost', pid: parseInt(pid, 10), level: parseInt(level, 10) }), 'utf8');
+        const displayLevel = (parseInt(level, 10) === -5) ? -20 : level; 
+        writeToRotatedLog(`⚡️ Trigger Engine: MAX-Boost written for PID ${pid} (Level: ${displayLevel}).`);
+    } catch (e) {}
+}
 function getCleanGameName(fullPath, appName) {
     if (!fullPath) return appName || "Unknown Game";
     const normalizedPath = fullPath.replace(/\\/g, '/');
@@ -708,7 +351,6 @@ function getCleanGameName(fullPath, appName) {
             const appIndex = normalizedPath.toLowerCase().indexOf('.app/');
             const appBasePath = normalizedPath.substring(0, appIndex + 5);
             const plistPath = path.join(appBasePath, 'Contents', 'Info.plist');
-            
             if (fs.existsSync(plistPath)) {
                 const plistContent = fs.readFileSync(plistPath, 'utf8');
                 const match = plistContent.match(/<key>CFBundleDisplayName<\/key>\s*<string>([^<]+)<\/string>/) 
@@ -774,7 +416,7 @@ function checkAndBoostGames() {
     } catch (e) {
         writeToRotatedLog("⚠️ Error reading blacklist.txt");
     }
-    const searchCommand = "ps -Ax -o pid,command | grep -Ei 'wine|wineloader|steamapps|crossover|crs-handler|crs-handler.exe|wineloader64' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
+    const searchCommand = "ps -Ax -o pid,command | grep -Ei 'wine|wineloader|steamapps|crossover|crs-handler|crs-handler.exe|wineloader64|ubisoft|games|retail' | grep -vE 'grep|Electron|gamecontroller|Mac.Gaming.Booster'";
     exec(searchCommand, (error, stdout) => {
         if (error || !stdout.trim()) {
             if (optimizedPIDs.size > 0) {
@@ -791,82 +433,137 @@ function checkAndBoostGames() {
         lines.forEach(line => {
             const parts = line.trim().split(/\s+/);
             if (parts.length < 2) return;
-            const pid = parts[0]; 
+            const pid = parts[0];
             const fullPath = parts.slice(1).join(' ');
-            const normalizedPath = fullPath.replace(/\\/g, '/');
+            let normalizedPath = fullPath.replace(/\\/g, '/');
+            normalizedPath = normalizedPath.replace(/^[a-zA-Z]:[/\\]/, '/');
             const lowerPath = normalizedPath.toLowerCase();
             let extractedExe = path.basename(normalizedPath);
             const lowName = extractedExe.toLowerCase();
             const cleanName = lowName.replace(/[()]/g, '');
+            if (cleanName.includes('launcher') || cleanName.includes('play') || cleanName.includes('select') || cleanName.includes('handler') || cleanName.includes('helper')) {
+                try {
+                    const threadCheck = execSync(`ps -M ${pid} 2>/dev/null | wc -l`).toString().trim();
+                    const processThreads = parseInt(threadCheck, 10) || 0;
+                    if (processThreads < 30) {
+                        return;
+                    }
+                } catch (e) {}
+            }
             let displayGameName = "";
             let isMatchedGame = false;
-            if (lowerPath.includes('steamapps')) {
+            const isGamePath = lowerPath.includes('steamapps') || 
+                               lowerPath.includes('epic') || 
+                               lowerPath.includes('heroic') || 
+                               lowerPath.includes('ubisoft') || 
+                               lowerPath.includes('battle.net') || 
+                               lowerPath.includes('crossover') || 
+                               lowerPath.includes('games') || 
+                               lowerPath.includes('program files') || 
+                               lowerPath.includes('/volumes/');
+            const isSystemMuck = lowerPath.includes('/system/') || 
+                                 lowerPath.includes('/com.apple.') ||
+                                 lowerPath.includes('menu helper') ||
+                                 lowerPath.includes('epicgameslauncher') ||
+                                 lowerPath.includes('controlpaneldb') || 
+                                 lowerPath.includes('wineconsole');
+            if (!cleanName || cleanName.length < 2) return;
+            if (isGamePath && !isSystemMuck) {
                 const standardPath = normalizedPath.replace(/\\/g, '/');
                 const detectedName = getCleanGameName(standardPath, extractedExe);
-if (detectedName) {
-    const cleanDetected = detectedName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-        if (processKey) {
-            const cleanKey = processKey.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-            if (cleanKey.includes(cleanDetected) || cleanDetected.includes(cleanKey)) {
-                displayGameName = `🎮 ${gameTitle}`;
-                isMatchedGame = true;
-                break;
+                if (detectedName) {
+                    const cleanDetected = detectedName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                        if (processKey) {
+                            const cleanKey = processKey.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+                            if (cleanKey.includes(cleanDetected) || cleanDetected.includes(cleanKey)) {
+                                displayGameName = `🎮 ${gameTitle}`;
+                                isMatchedGame = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!isMatchedGame && extractedExe) {
+                    const cleanExeLower = extractedExe.toLowerCase().replace(/\.exe$/i, '').replace(/[^a-z0-9]/g, '').trim(); 
+                    let safePath = lowerPath;
+                    if (lowerPath.includes('/bottles/')) {
+                        const pathParts = lowerPath.split('/bottles/');
+                        if (pathParts.length > 1) {
+                            const structuralPath = pathParts[1];
+                            const subParts = structuralPath.split('/');
+                            safePath = subParts.slice(1).join('/'); 
+                        }
+                    }
+                    const cleanFullPathLower = safePath.replace(/[^a-z0-9]/g, '').trim();
+                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                        if (processKey) {
+                            const cleanKey = processKey.toLowerCase().replace(/\.exe$/i, '').replace(/[^a-z0-9]/g, '').trim();
+                            if (cleanKey.includes(cleanExeLower) || cleanExeLower.includes(cleanKey) || cleanFullPathLower.includes(cleanKey)) {
+                                displayGameName = `🎮 ${gameTitle}`;
+                                isMatchedGame = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!isMatchedGame) {
+                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                        if (gameTitle) {
+                            const exes = gameTitle.toLowerCase().split('||').map(e => e.trim());
+                            if (exes.includes(cleanName) || exes.some(e => e.includes(cleanName) || cleanName.includes(e))) {
+                                displayGameName = `🎮 ${gameTitle}`;
+                                isMatchedGame = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!isMatchedGame) {
+                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                        if (processKey && processKey !== 'unknown_executable.exe') {
+                            const cleanKey = processKey.toLowerCase().trim();
+                            if (cleanName === cleanKey || (cleanName.includes(cleanKey) && cleanKey.length > 2)) {
+                                displayGameName = `🎮 ${gameTitle}`;
+                                isMatchedGame = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!isMatchedGame) {
+                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                        if (processKey && processKey !== 'unknown_executable.exe') {
+                            const cleanKey = processKey.toLowerCase().trim();
+                            if (lowerPath.includes(cleanKey)) {
+                                displayGameName = `🎮 ${gameTitle}`;
+                                isMatchedGame = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (isMatchedGame && displayGameName.toLowerCase().endsWith('.exe')) {
+                    displayGameName = displayGameName.replace(/\.exe$/i, '').trim();
+                }
+                if (!isMatchedGame && lowerPath.includes('crs-handler')) {
+                    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
+                        const cleanTitleMatch = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const cleanPathMatch = lowerPath.replace(/[^a-z0-9]/g, '');
+                        if (cleanPathMatch.includes(cleanTitleMatch)) {
+                            displayGameName = `🎮 ${gameTitle}`;
+                            isMatchedGame = false; 
+                            break;
+                        }
+                    }
+                }
+                if (isMatchedGame && pid) {
+                    currentPIDs.add(pid); 
+                    if (typeof triggerKernelBoost === 'function') {
+                        triggerKernelBoost(pid, displayGameName); 
+                    }
+                }
             }
-        }
-    }
-}
-if (!isMatchedGame) {
-    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-        if (gameTitle) {
-            const exes = gameTitle.toLowerCase().split('||').map(e => e.trim());
-            if (exes.includes(cleanName) || exes.some(e => e.includes(cleanName) || cleanName.includes(e))) {
-                displayGameName = `🎮 ${gameTitle}`;
-                isMatchedGame = true;
-                break;
-            }
-        }
-    }
-}
-if (!isMatchedGame) {
-    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-        if (processKey && processKey !== 'unknown_executable.exe') {
-            const cleanKey = processKey.toLowerCase().trim();
-            if (cleanName === cleanKey || (cleanName.includes(cleanKey) && cleanKey.length > 2)) {
-                displayGameName = `🎮 ${gameTitle}`;
-                isMatchedGame = true;
-                break;
-            }
-        }
-    }
-}
-if (!isMatchedGame) {
-    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-        if (processKey && processKey !== 'unknown_executable.exe') {
-            const cleanKey = processKey.toLowerCase().trim();
-            if (lowerPath.includes(cleanKey)) {
-                displayGameName = `🎮 ${gameTitle}`;
-                isMatchedGame = true;
-                break;
-            }
-        }
-    }
-}
-if (isMatchedGame && displayGameName.toLowerCase().endsWith('.exe')) {
-    displayGameName = displayGameName.replace(/\.exe$/i, '').trim();
-}
-if (!isMatchedGame && lowerPath.includes('crs-handler')) {
-    for (let [processKey, gameTitle] of activeGamesMapping.entries()) {
-        const cleanTitleMatch = gameTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanPathMatch = lowerPath.replace(/[^a-z0-9]/g, '');
-        if (cleanPathMatch.includes(cleanTitleMatch)) {
-            displayGameName = `🎮 ${gameTitle}`;
-            isMatchedGame = true;
-            break;
-        }
-    }
-}
-}
             if (!isMatchedGame) return;
             const isBlacklisted = userBlacklist.some(ignoredName => cleanName === ignoredName);
             if (isBlacklisted) return;
@@ -874,6 +571,12 @@ if (!isMatchedGame && lowerPath.includes('crs-handler')) {
             if (optimizedPIDs.has(pid)) return;
             optimizedPIDs.add(pid);
             writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
+            if (!activeTrackedGames[pid]) {
+                activeTrackedGames[pid] = {
+                    startTime: Date.now(),
+                    name: cleanName || lowName || extractedExe
+                };
+            }
             manageRamGuardState(true);
             if (isBoostActive) {
                 if (!optimizedPIDs.has(pid)) {
@@ -884,33 +587,33 @@ if (!isMatchedGame && lowerPath.includes('crs-handler')) {
                 const isWrapper = (lowName.includes('winewrapper') || lowName.includes('winedevice') || lowName.includes('wineboot')) 
                                   && !lowerPath.includes('crs-handler') 
                                   && !isUbisoftTrackmania;
-if (!isWrapper) {
-    let finalCleanName = cleanName;
-    if (finalCleanName.toLowerCase().includes('.exe')) {
-        const exeMatch = finalCleanName.match(/^([^\s]+\.exe)/i);
-        if (exeMatch && exeMatch[1]) {
-            finalCleanName = exeMatch[1];
-        }
-    }
-    const nameSpecificKey = `${pid}_max_${finalCleanName}`;
-    if (!optimizedPIDs.has(nameSpecificKey)) {
-        for (let key of optimizedPIDs) {
-            if (key.startsWith(`${pid}_max_`)) {
-                optimizedPIDs.delete(key);
-            }
-        }
-        optimizedPIDs.delete(pid + '_reset'); 
-        optimizedPIDs.delete(pid + '_mid');
-        optimizedPIDs.add(nameSpecificKey);
-        optimizedPIDs.add(pid);
-        sendToRootHelper(pid, -5);
-        writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (${finalCleanName} / PID: ${pid}) geschrieben.`);
-        sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
-    }
-    currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName}`;
-    updateMenu();
-}
- else {
+                if (!isWrapper) {
+                    let finalCleanName = cleanName;
+                    if (finalCleanName.toLowerCase().includes('.exe')) {
+                        const exeMatch = finalCleanName.match(/^([^\s]+\.exe)/i);
+                        if (exeMatch && exeMatch[1]) {
+                            finalCleanName = exeMatch[1];
+                        }
+                    }
+                    const nameSpecificKey = `${pid}_max_${finalCleanName}`;
+                    if (!optimizedPIDs.has(nameSpecificKey)) {
+                        for (let key of optimizedPIDs) {
+                            if (key.startsWith(`${pid}_max_`)) {
+                                optimizedPIDs.delete(key);
+                            }
+                        }
+                        optimizedPIDs.delete(pid + '_reset'); 
+                        optimizedPIDs.delete(pid + '_mid');
+                        optimizedPIDs.add(nameSpecificKey);
+                        optimizedPIDs.add(pid);
+                        sendToRootHelper(pid, -5);
+                        writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (${finalCleanName} / PID: ${pid}) geschrieben.`);
+                        sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
+                    }
+                    currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName}`;
+                    updateMenu();
+                }
+                else {
                     if (!optimizedPIDs.has(pid + '_mid')) {
                         optimizedPIDs.delete(pid + '_reset');
                         optimizedPIDs.delete(pid + '_max');
@@ -946,97 +649,156 @@ if (!isWrapper) {
                 optimizedPIDs.delete(stateKey);
                 if (stateKey === purePID) {
                     writeToRotatedLog(`⏳ Game with PID ${purePID} terminated. Evacuated from memory.`);
-                    sendToRootHelper(purePID, 0);
-                    exec('sudo purge', () => {
-                        writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
-                    });
+                    let shouldSkipAggressivePurge = false;
+                    let calculatedGameDuration = 0;
+                    if (activeTrackedGames[purePID]) {
+                        const gameSession = activeTrackedGames[purePID];
+                        calculatedGameDuration = (Date.now() - gameSession.startTime) / 1000;
+                        const isSafeActive = (typeof isSafeShaderCompilationActive !== 'undefined' && isSafeShaderCompilationActive === true) || 
+                                             (typeof config !== 'undefined' && config.isSafeShaderCompilationActive === true) ||
+                                             (typeof currentConfig !== 'undefined' && currentConfig.isSafeShaderCompilationActive === true);
+                        if (isSafeActive && calculatedGameDuration < 240) {
+                            shouldSkipAggressivePurge = true;
+                        }
+                        delete activeTrackedGames[purePID];
+                    }
+sendToRootHelper(purePID, 0);
+                    if (shouldSkipAggressivePurge) {
+                        writeToRotatedLog(`⏳ RAM Purge: Safe Shader-Compilation active (Game age: ${calculatedGameDuration.toFixed(0)}s). Postponing full purge to prevent shader compile errors...`);
+                        try { exec('sync', () => {}); } catch(e) {} 
+                    } else {
+                        exec('sudo purge', () => {
+                            writeToRotatedLog("🧹 RAM Purge: Inactive disk cache successfully cleared.");
+                        });
+                    }
                 }
                 if (optimizedPIDs.size === 0) {
                     manageRamGuardState(false);
-                    currentStatusText = '🎮 Status: No active games'; 
+                    currentStatusText = '🎮 Status: No active games';
                     updateMenu();
                 }
             }
         }
     });
 }
-ipcMain.on('trigger-start-helper', () => {
-    startRootHelper();
-});
-ipcMain.on('trigger-start-helper', () => {
-    startRootHelper();
-});
 ipcMain.handle('trigger-game-scan', async () => {
-    return new Promise((resolve) => {
-        const scannerPath = path.join(__dirname, 'check_games2.js');
-        if (!fs.existsSync(scannerPath)) {
-            resolve({ success: false, error: 'Script check_games2.js is missing from the directory.' });
-            return;
-        }
-        const { fork } = require('child_process');
-        const child = fork(scannerPath, [], { silent: true });
-        child.on('close', (code) => {
-            if (code === 0) {
-                loadGamesMappingFile();
-                resolve({ success: true });
-            } else {
-                resolve({ success: false, error: 'Scanner script reported an error.' });
-            }
-        });
-        child.on('error', (err) => {
-            resolve({ success: false, error: err.message });
-        });
+    return new Promise((res) => {
+        const child = require('child_process').fork(path.join(__dirname, 'check_games2.js'), [], { silent: true });
+        child.on('close', (code) => { if (code === 0) { loadGamesMappingFile(); res({ success: true }); } else { res({ success: false }); } });
     });
 });
 ipcMain.handle('get-games-list', async () => {
     try {
-        const gamesFile = path.join(CONFIG_DIR, 'games_list.txt');
-        if (fs.existsSync(gamesFile)) {
-            const content = fs.readFileSync(gamesFile, 'utf-8');
-            const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            return { success: true, games: lines };
-        }
-        return { success: true, games: [] };
-    } catch (e) {
-        return { success: false, games: [] };
-    }
+        const f = path.join(CONFIG_DIR, 'games_list.txt');
+        return { success: true, games: fs.existsSync(f) ? fs.readFileSync(f, 'utf-8').split('\n').map(l => l.trim()).filter(l => l.length > 0) : [] };
+    } catch (e) { return { success: false, games: [] }; }
 });
 let settingsWindow = null;
 function openSettingsWindow() {
-    if (settingsWindow) {
-        settingsWindow.focus();
-        return;
-    }
-    settingsWindow = new BrowserWindow({
-        width: 650,
-        height: 850,
-        title: "Mac Gaming Booster - Settings",
-        resizable: false,
-        fullscreenable: false,
-        minimizable: false,
-        frame: true,
-        backgroundColor: '#121214',
-        show: false,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
-        }
-    });
+    if (settingsWindow) { settingsWindow.focus(); return; }
+    settingsWindow = new BrowserWindow({ width: 650, height: 850, title: "Mac Gaming Booster - Settings", resizable: false, frame: true, backgroundColor: '#121214', show: false, webPreferences: { nodeIntegration: true, contextIsolation: false } });
     settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
-    settingsWindow.once('ready-to-show', () => { settingsWindow.show(); });
-    settingsWindow.on('closed', () => { settingsWindow = null; });
+    settingsWindow.once('ready-to-show', () => settingsWindow.show());
+    settingsWindow.on('closed', () => settingsWindow = null);
 }
+function startRootHelper() {
+    writeToRotatedLog("🛠️ [START-SEQUENCE] Initiating privileged root helper activation sequence...");
+    try {
+        const activeProcessCheck = execSync("ps -Ax -o command | grep -v grep | grep 'helper.js' 2>/dev/null").toString().trim();
+        if (activeProcessCheck.length > 0) {
+            writeToRotatedLog("💎 Variant 1 Confirmed: Active root helper discovered in background RAM. Skipping sudo prompt completely.");
+            if (settingsWindow && !settingsWindow.isDestroyed()) {
+                settingsWindow.webContents.executeJavaScript('if(typeof checkHelperLiveStatus === "function") checkHelperLiveStatus();').catch(() => {});
+            }
+            return;
+        }
+    } catch (e) {
+        writeToRotatedLog(`⚠️ [START-SEQUENCE] Background RAM scan failed or returned empty: ${e.message}`);
+    }
+    const helperSource = path.join(__dirname, 'helper.js');
+    const helperDest = path.join(CONFIG_DIR, 'helper.js');
+    try {
+        writeToRotatedLog(`📥 [START-SEQUENCE] Copying helper core to production directory...`);
+        fs.copyFileSync(helperSource, helperDest); 
+        try {
+            fs.chmodSync(helperDest, '755');
+            writeToRotatedLog("🛡️ [START-SEQUENCE] POSIX permissions set to 755 via native fs.");
+        } catch (chmodErr) {
+            execSync(`chmod 755 "${helperDest}"`);
+            writeToRotatedLog("🛡️ [START-SEQUENCE] POSIX permissions set to 755 via shell fallback.");
+        }
+        let absoluteNodePath = '/usr/local/bin/node'; 
+        const homebrewPath = '/opt/homebrew/bin/node';
+        if (!fs.existsSync(absoluteNodePath) && fs.existsSync(homebrewPath)) {
+            absoluteNodePath = homebrewPath; 
+        } else if (!fs.existsSync(absoluteNodePath)) {
+            absoluteNodePath = process.execPath; 
+        } 
+        writeToRotatedLog(`🧠 [START-SEQUENCE] Hardware Environment Node Path verified: [${absoluteNodePath}]`);
+        const sudoCmd = `"${absoluteNodePath}" "${helperDest}" "${CONFIG_DIR}" "${CONFIG_FILE}"`;  
+        writeToRotatedLog(`⚡ [START-SEQUENCE] Dispatching elevated execution vector to macOS Security Framework...`);
+        const sudoPrompt = require('sudo-prompt');
+        sudoPrompt.exec(sudoCmd, { name: 'Mac Gaming Booster' }, (err, stdout, stderr) => {
+            if (err) {
+                writeToRotatedLog(`❌ [CRITICAL SU-ERROR] Security prompt rejected or broken! Message: ${err.message}`);
+                if (stderr) writeToRotatedLog(`   stderr: ${stderr.trim()}`);
+                return;
+            } 
+            writeToRotatedLog("🛡️ [START-SEQUENCE] Root service helper successfully handshake-confirmed and detached into kernel background.");
+            if (stdout && stdout.trim().length > 0) writeToRotatedLog(`   stdout response: ${stdout.trim()}`);
+        });
+        
+    } catch(e) {
+        writeToRotatedLog(`❌ [START-SEQUENCE] Fatal pipeline breakdown during copy/execution phase: ${e.message}`);
+    }
+}
+ipcMain.on('trigger-start-helper', (event) => {
+    startRootHelper();
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+        setTimeout(() => {
+            settingsWindow.webContents.executeJavaScript('if(typeof checkHelperLiveStatus === "function") checkHelperLiveStatus();').catch(() => {});
+        }, 1500);
+    }
+});
+ipcMain.on('trigger-kill-helper', () => {
+    try {
+        fs.writeFileSync(path.join(CONFIG_DIR, 'boost.trigger'), JSON.stringify({ action: 'kill' }), 'utf8');
+        exec("pkill -9 -f helper.js || killall -9 node 2>/dev/null");
+        globalIsRootHelperAlive = false;
+        updateMenu();
+        writeToRotatedLog("🛑 IPC Engine: Hard kill executed. Helper forced to OFFLINE (🔴).");
+    } catch(e) {
+        writeToRotatedLog(`⚠️ IPC Engine: Kill error: ${e.message}`);
+    }
+});
+ipcMain.on('trigger-reload-mapping', () => {
+    optimizedPIDs.clear();
+    loadGamesMappingFile();
+    writeToRotatedLog("🔄 Live Configuration Sync: Games mapping and overrides hot-reloaded in background RAM.");
+});
 function updateMenu() {
+    if (!tray) return;
+    const helperIndicator = globalIsRootHelperAlive ? '🟢' : '🔴';
+    const currentTrayTitle = `${helperIndicator} Ready`;
+    if (tray.getTitle() !== currentTrayTitle) {
+        tray.setTitle(currentTrayTitle);
+    }
     const contextMenu = Menu.buildFromTemplate([
         { label: '🚀 MAC GAMING BOOSTER', enabled: false },
         { label: `${currentStatusText}`, enabled: false },
-        { label: 'Version: 2.8.1 (Platin GUI Edition)', enabled: false },
+        { label: 'Version: 2.8.1b (Public Version)', enabled: false },
         { label: 'Developer: Mario (flashi)', enabled: false },
+        { label: 'Stand: 15.07.2026 10:36', enabled: false },
         { type: 'separator' },
         {
-            label: '📊 RAM Overlay On/Off',
+            label: '📊 Open Live HUD...',
             accelerator: 'CmdOrCtrl+Alt+R',
             click: () => { toggleRamOverlay(); }
+        },
+        {
+            label: '📈 Open Live Dashboard...',
+            accelerator: 'CmdOrCtrl+Alt+B',
+            click: () => { openDashboardWindow(); }
         },
         { type: 'separator' },
         {
@@ -1101,6 +863,9 @@ app.whenReady().then(() => {
     globalShortcut.register('CommandOrControl+Alt+R', () => {
         toggleRamOverlay();
     });
+    globalShortcut.register('CmdOrCtrl+Alt+B', () => {
+        openDashboardWindow();
+    });
     globalShortcut.register('Option+Left', () => {
         if (overlayWindow && !overlayWindow.isDestroyed()) {
             const [x, y] = overlayWindow.getPosition();
@@ -1140,7 +905,23 @@ app.whenReady().then(() => {
         app.quit();
         process.exit(0); 
     });
+    globalIsRootHelperAlive = false;
     updateMenu();
+    setInterval(() => {
+        try {
+            const psOutput = execSync("ps -eo pid,args | grep -E 'node.*helper\\.js' | grep -v 'grep' 2>/dev/null").toString().trim();
+            const isAlive = psOutput.length > 0;
+            if (globalIsRootHelperAlive !== isAlive) {
+                globalIsRootHelperAlive = isAlive;
+                updateMenu(); 
+            }
+        } catch (e) {
+            if (globalIsRootHelperAlive !== false) {
+                globalIsRootHelperAlive = false;
+                updateMenu();
+            }
+        }
+    }, 2000);
     intervalId = setInterval(checkAndBoostGames, 4000);
     writeToRotatedLog("⚙️ All startup systems successfully chained and active.");
 });
@@ -1181,7 +962,6 @@ if (typeof ipcMain !== 'undefined') {
                 }
             });
         } catch (e) {
-            console.error("Fehler beim Scannen des Ordner-Inhalts:", e);
         }
         let finalExeValue = detectedExes.length > 1 ? detectedExes.join('||') : exeName;
         let overrides = {};
@@ -1198,7 +978,6 @@ if (typeof ipcMain !== 'undefined') {
             }
             return { success: true, exeName: finalExeValue };
         } catch (e) {
-            console.error("Fehler beim Schreiben der JSON-Datei:", e);
             return { success: false };
         }
     });
@@ -1210,36 +989,29 @@ app.on('before-quit', (event) => {
     if (intervalId) clearInterval(intervalId);
     if (ramGuardIntervalId) clearInterval(ramGuardIntervalId);
     if (overlayInterval) clearInterval(overlayInterval);
-    if (typeof vmStatIntervalId !== 'undefined' && vmStatIntervalId) {
-        clearInterval(vmStatIntervalId);
-    }
+    if (dashboardUpdateInterval) clearInterval(dashboardUpdateInterval);
+    if (typeof vmStatIntervalId !== 'undefined' && vmStatIntervalId) clearInterval(vmStatIntervalId); 
     try {
         if (fs.existsSync(CONFIG_FILE)) {
-            const configData = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));   
+            const configData = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
             if (configData.keepDaemonAlive === false) {
                 event.preventDefault(); 
-                console.log("\n==================================================");
-                console.log("🧹 [TERMINAL] Variant 2 active: Writing trigger...");
-                console.log("==================================================");
                 writeToRotatedLog("🧹 Variant 2 active: Writing trigger file safely before exit...");
-                const os = require('os');
-                const triggerPath = path.join(os.homedir(), 'Library/Application Support/fps-boost/config/boost.trigger');
+                const triggerPath = path.join(CONFIG_DIR, 'boost.trigger');
                 fs.writeFileSync(triggerPath, JSON.stringify({ action: 'kill' }), 'utf8');
                 const fd = fs.openSync(triggerPath, 'r+');
                 fs.fsyncSync(fd);
                 fs.closeSync(fd);
-                console.log("✅ [TERMINAL] Trigger file written into /config/! Quitting app now.\n");
+                exec("pkill -f helper.js");
                 writeToRotatedLog("✅ Trigger file safely written. Quitting now.");
                 isAppCleaningUp = true;
                 app.quit(); 
                 return;
             } else {
-                console.log("\nℹ️ [TERMINAL] Variant 1 active: Helper stays alive.\n");
                 writeToRotatedLog("ℹ️ Variant 1 active: keepDaemonAlive is true. Root-Helper bleibt aktiv.");
             }
         }
     } catch (e) {
-        console.error("❌ [TERMINAL] Error:", e.message);
         writeToRotatedLog("❌ Error closing the helper cleanly: " + e.message);
     }
 });

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mac Gaming Booster - Live Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+            user-select: none;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #21262d;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .header-container h1 {
+            color: #58a6ff;
+            font-size: 18px;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+        .pin-btn {
+            background-color: #21262d;
+            color: #8b949e;
+            border: 1px solid #30363d;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .pin-btn.active {
+            background-color: #1f6feb;
+            color: #ffffff;
+            border-color: #58a6ff;
+        }
+        .section {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-weight: bold;
+            color: #8b949e;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+        .label { color: #8b949e; }
+        .value { font-weight: bold; color: #ffffff; }
+        .bar-container {
+            width: 120px;
+            background-color: #21262d;
+            border-radius: 3px;
+            height: 8px;
+            overflow: hidden;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .bar {
+            height: 100%;
+            background-color: #238636;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .bar.blue { background-color: #1f6feb; }
+        .bar.orange { background-color: #d29922; }
+        .badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .badge-green { background-color: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid #238636; }
+        .badge-red { background-color: rgba(248, 81, 73, 0.2); color: #f85149; border: 1px solid #f85149; }
+        .info-text {
+            font-size: 11px;
+            color: #8b949e;
+            line-height: 1.4;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        /* 🔥 PLATIN CSS-TOOLTIP FOR PIN ON MODE */
+        .custom-tooltip {
+            position: relative;
+            display: block;      /* Geändert auf block für saubere Zeilentrennung */
+            font-size: 10px;
+             color: #888888;
+            margin-top: 6px;     /* Etwas mehr Abstand nach oben */
+            cursor: help;
+            text-align: left;    /* Auf linksbündig angepasst, passend zu deinem Layout */
+            width: 100%;
+        }
+        .custom-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 280px;        /* Perfekt angepasst für deine Dashboard-Breite */
+            background-color: #1e1e24;
+            color: #ffffff;
+            text-align: left;
+            border: 1px solid #00ffcc;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 99999;
+            bottom: 130%;        /* Ploppt elegant nach oben auf */
+            left: 0;             /* Öffnet sich perfekt nach rechts */
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.6);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .custom-tooltip:hover .tooltip-text {
+            visibility: visible;
+        }
+</style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>🚀 LIVE DASHBOARD</h1>
+        <button id="pin-button" class="pin-btn" onclick="togglePin()">📌 PIN OFF</button>
+    </div>
+
+    <!-- SYSTEM SERVICES -->
+    <div class="section">
+        <div class="section-title">🛡️ System Services</div>
+        <div class="row">
+            <span class="label">● Root Service Helper:</span>
+            <span id="status-helper" class="badge badge-green">ACTIVE (Kernel)</span>
+        </div>
+        <!-- 🔥 NEU: COMPILER-GEFECHTS-TOOLTIP FOR SYSTEM SERVICES -->
+        <div class="custom-tooltip" style="margin-top: 8px;">
+            ℹ️ System Privileges
+            <span class="tooltip-text">
+                The Root Service Helper runs with maximum system authority. This allows the engine to modify kernel priority (NICE levels) and control the MTLCompilerService without a terminal password query.
+            </span>
+        </div>
+    </div>
+
+    <!-- GAME DETECTOR -->
+    <div class="section">
+        <div class="section-title">🎮 Active Game (Kernel Detector)</div>
+        <div class="row">
+            <span class="label">Detected Game:</span>
+            <span id="game-name" class="value">Waiting for game...</span>
+        </div>
+        <div class="row">
+            <span class="label">Process ID:</span>
+            <span id="game-pid" class="value">-</span>
+        </div>
+        <div class="row">
+            <span class="label">Kernel Priority:</span>
+            <span id="game-priority" class="value">-</span>
+        </div>
+        <!-- 🔥 NEU: COMPILER-GEFECHTS-TOOLTIP FOR KERNEL DETECTOR -->
+        <div class="custom-tooltip" style="margin-top: 8px;">
+            ℹ️ Kernel Detection & Priority Rules
+            <span class="tooltip-text">
+                Real-time tracking intercepts game executables via active threads. E-Core offloading applies to background launchers (NICE -1), while active games receive full P-Core Max Overdrive (NICE -20).
+            </span>
+        </div>
+    </div>
+
+    <!-- PERFORMANCE -->
+    <div class="section">
+        <div class="section-title">💾 Zero-Disk-Write Status</div>
+        <div class="row">
+            <span class="label">Disk Read Speed:</span>
+            <div>
+                <span id="io-read-text" class="value">0 Byte/s</span>
+                <div class="bar-container"><div id="bar-read" class="bar blue"></div></div>
+            </div>
+        </div>
+        <div class="row">
+            <span class="label">Disk Write Speed:</span>
+            <div>
+                <span id="io-write-text" class="value">0 Byte/s</span>
+                <div class="bar-container"><div id="bar-write" class="bar blue"></div></div>
+            </div>
+        </div>
+        <div class="row">
+            <span class="label">macOS Core Latency:</span>
+            <span id="perf-latency" class="value">⚪ STANDBY</span>
+        </div>
+        <!-- 💎 BEREINIGT: MACOS LATENCY INFO CSS-TOOLTIP (KEINE DOPPELTEN TEXTE MEHR!) -->
+        <div class="custom-tooltip">
+            ℹ️ What does Core Latency mean?
+            <span class="tooltip-text">
+                Measures the bridge responsiveness between macOS and your game. Lower latency means faster kernel priority. For real in-game FPS, look at your HUD overlay!
+            </span>
+        </div>
+    </div>
+    <!-- HARDWARE -->
+    <div class="section">
+        <div class="section-title">🧠 Hardware Allocation</div>
+        <div class="row">
+            <span class="label">Performance Cores:</span>
+            <div>
+                <span id="core-p-text" class="value">0%</span>
+                <div class="bar-container"><div id="bar-p" class="bar"></div></div>
+            </div>
+        </div>
+        <div class="row">
+            <span class="label">Efficiency Cores:</span>
+            <div>
+                <span id="core-e-text" class="value">0%</span>
+                <div class="bar-container"><div id="bar-e" class="bar orange"></div></div>
+            </div>
+        </div>
+        <div class="row">
+            <span class="label">Game Memory (Unified):</span>
+            <div>
+                <span id="ram-text" class="value">0.0 GB</span>
+                <div class="bar-container"><div id="bar-ram" class="bar"></div></div>
+            </div>
+        </div>
+        <!-- 🔥 NEU & BEREINIGT: SPECIFIC HARDWARE ALLOCATION CSS-TOOLTIP (KEIN CORE LATENCY SPAM MEHR!) -->
+        <div class="custom-tooltip">
+            ℹ️ Hardware Matrix Info
+            <span class="tooltip-text">
+                Displays real-time multi-core balancing and Unified Memory pressure. Active games are forcefully shifted to high-frequency Performance Cores, while non-gaming system tasks are offloaded to Efficiency Cores.
+            </span>
+        </div>
+    </div>
+    <script>
+        const { ipcRenderer } = require('electron');
+        let isPinned = false;
+
+        function togglePin() {
+            isPinned = !isPinned;
+            const btn = document.getElementById('pin-button');
+            if (isPinned) {
+                btn.className = 'pin-btn active';
+                btn.innerText = '📌 PIN ON';
+            } else {
+                btn.className = 'pin-btn';
+                btn.innerText = '📌 PIN OFF';
+            }
+            ipcRenderer.send('dashboard-toggle-pin', isPinned);
+        }
+
+        ipcRenderer.on('dashboard-data', (event, data) => {
+            document.getElementById('status-helper').className = data.helperAlive ? 'badge badge-green' : 'badge badge-red';
+            document.getElementById('status-helper').innerText = data.helperAlive ? 'ACTIVE (Kernel)' : 'INACTIVE';
+
+            document.getElementById('game-name').innerText = data.gameName;
+            document.getElementById('game-pid').innerText = data.pid !== '-' ? 'PID ' + data.pid : '-';
+            document.getElementById('game-priority').innerText = data.pid !== '-' ? '⚡ NICE ' + data.nice : '-';
+
+            document.getElementById('io-read-text').innerText = data.readSpeed;
+            document.getElementById('bar-read').style.width = data.pid !== '-' ? '10%' : '0%';
+            
+            document.getElementById('io-write-text').innerText = data.writeSpeed;
+            document.getElementById('bar-write').style.width = data.pid !== '-' ? '10%' : '0%';
+
+            document.getElementById('perf-latency').innerText = data.pid !== '-' ? `${data.latencyMs} ms` : '⚪ STANDBY';
+
+            document.getElementById('core-p-text').innerText = data.pCore + '%';
+            document.getElementById('bar-p').style.width = data.pCore + '%';
+
+            document.getElementById('core-e-text').innerText = data.eCore + '%';
+            document.getElementById('bar-e').style.width = data.eCore + '%';
+
+            document.getElementById('ram-text').innerText = `${data.gameMem} GB / ${data.totalMem} GB`;
+            document.getElementById('bar-ram').style.width = data.ramPercent + '%';
+        });
+    </script>
+</body>
+</html>
