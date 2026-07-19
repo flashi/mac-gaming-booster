@@ -382,7 +382,7 @@ function getCleanGameName(fullPath, appName) {
                            .trim();
     return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 }
-let lastKnownBoostState = null; 
+let lastKnownBoostState = null;
 function checkAndBoostGames() {
     loadSettings();
     if (lastKnownBoostState !== null && lastKnownBoostState !== isBoostActive) {
@@ -570,7 +570,6 @@ function checkAndBoostGames() {
             currentPIDs.add(pid);
             if (optimizedPIDs.has(pid)) return;
             optimizedPIDs.add(pid);
-            writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
             if (!activeTrackedGames[pid]) {
                 activeTrackedGames[pid] = {
                     startTime: Date.now(),
@@ -596,6 +595,24 @@ function checkAndBoostGames() {
                         }
                     }
                     const nameSpecificKey = `${pid}_max_${finalCleanName}`;
+                    const isLowPriorityProcess = finalCleanName.toLowerCase().includes('crs-handler') || finalCleanName.toLowerCase().includes('launcher');
+
+                    let containsActiveMainGame = false;
+                    for (let key of optimizedPIDs) {
+                        if (key.includes('_max_') && !key.toLowerCase().includes('crs-handler') && !key.toLowerCase().includes('launcher')) {
+                            containsActiveMainGame = true;
+                        }
+                    }
+                    if (!isLowPriorityProcess && !containsActiveMainGame) {
+                        for (let key of optimizedPIDs) {
+                            if (key.toLowerCase().includes('crs-handler')) {
+                                const oldPid = key.split('_')[0];
+                                sendToRootHelper(oldPid, 0); 
+                                optimizedPIDs.delete(key);
+                                if (oldPid) optimizedPIDs.delete(oldPid);
+                            }
+                        }
+                    }
                     if (!optimizedPIDs.has(nameSpecificKey)) {
                         for (let key of optimizedPIDs) {
                             if (key.startsWith(`${pid}_max_`)) {
@@ -662,7 +679,7 @@ function checkAndBoostGames() {
                         }
                         delete activeTrackedGames[purePID];
                     }
-sendToRootHelper(purePID, 0);
+                    sendToRootHelper(purePID, 0);
                     if (shouldSkipAggressivePurge) {
                         writeToRotatedLog(`⏳ RAM Purge: Safe Shader-Compilation active (Game age: ${calculatedGameDuration.toFixed(0)}s). Postponing full purge to prevent shader compile errors...`);
                         try { exec('sync', () => {}); } catch(e) {} 
