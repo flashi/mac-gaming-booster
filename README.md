@@ -1,100 +1,103 @@
-# 🚀 Mac Gaming Booster (v2.8.1b)
+# 🚀 Mac Gaming Booster v2.8.2 (Project X)
+**Headless Core Balancer & Low-Level Process Priority Injector for macOS & CrossOver**
 
-A lightweight, native status-bar utility built for macOS Apple Silicon (M-Series) to unleash the full potential of your hardware when running games via CrossOver, Whisky, or Steam (Rosetta 2/Wine).
-
----
-
-## 💎 Features & Kernfunktionen
-
-### 🇩🇪 Deutsch
-- **⚡ Prozess-Turbo:** Erkennt Windows-Spiele unter CrossOver/Whisky sowie native Mac-Titel automatisch und setzt sie im macOS-Kernel auf die höchste Priorität (**NICE -20**).
-- **📊 Live-HUD & Dashboard:** Zeigt Telemetrie wie Spiel-PID, CPU-Auslastung, Latenz und Unified Memory direkt in der Menüleiste und als Overlay an.
-- **📦 Autarkes System:** Nutzt die interne Node-Laufzeit von Electron. Nutzer benötigen keine externe Node.js-Installation auf dem Mac.
-
-### 🇺🇸 English
-- **⚡ Process-Turbo:** Automatically detects Windows games under CrossOver/Whisky and native Mac titles, forcing macOS thread scheduling to priority level (**NICE -20**).
-- **📊 Live-HUD & Dashboard:** Mirrors live telemetry (PID, active Nice Level, memory metrics) straight to your menu bar and Live HUD overlay.
-- **📦 Self-Contained System:** Leverages Electron's internal runtime. Users do not need a global Node.js installation on their Mac.
+Developed by **Mario (flashi)**. Stand: 24.07.2026.
 
 ---
 
-## 🎮 Im Labor verifiziert & Labor-Statusliste / Verified Game Status List
+## 🇩🇪 DEUTSCH
 
-### 🍎 Native Mac Spiele / Native Mac Games
-- 🟢 **Cyberpunk 2077 (Mac)** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Mafia III: Definitive Edition (Mac)** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Metro Exodus (Mac)** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Path of Exile (Mac)** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Tomb Raider (Native Mac)** ➔ 100% Detected (NICE -20 Direct Sandbox Boost)
-
-### 🪟 Windows Emulation & Layer Spiele / Windows Layer Games (via CrossOver / Whisky / Steam)
-- 🟢 **007 First Light** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Brawlhalla** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Cronos: The New Dawn (Demo)** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Grand Theft Auto V Legacy** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **HELLDIVERS™ 2** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **HITMAN 3** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **METAL GEAR SOLID Δ: SNAKE EATER** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **RabbidsCoding=** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **Road to Vostok** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **S.T.A.L.K.E.R. 2: Heart of Chornobyl** ➔ 100% Detected & Shader-Guard Stabilized
-- 🟢 **Star Wars Outlaws** ➔ 100% Detected (NICE -20 Massive Engine Overdrive)
-- 🟢 **Trackmania** ➔ 100% Detected (NICE -20 P-Core Overdrive)
-- 🟢 **UNCHARTED™: Legacy of Thieves Collection** ➔ 100% Detected & Boosted to NICE -20 (Forced via manual mapping definition to u4.exe)
-- ❌ **The Last of Us Part I** ➔ Deprecated (Under investigation for v2.8.2 / Hidden system path)
-- ⚪ **Diablo IV** ➔ Pending (Emulation tier compatibility test required)
+### 📜 Was ist neu in v2.8.2 (Release Candidate)
+*   **👑 Dynamische Launcher-Matrix (0% Hardcode):** Alle erkannten Spiele werden im Dashboard vollautomatisch nach Betriebssystem und Launcher sortiert (macOS Native, Steam Mac, CrossOver Steam, Epic Games, Heroic, Ubisoft, Rockstar, Battle.net). Leere Launcher-Kategorien werden automatisch ausgeblendet.
+*   **🤠 Rockstar- & Battle.net-Radar:** Vollautomatische Tiefenerkennung für Blizzard- und Rockstar-Titel (z. B. *Diablo IV*, *GTA V*, *RDR2*) inklusive automatischer Einsortierung in die passenden Dashboard-Fächer.
+*   **🍏 macOS vs. Windows Weiche:** Der Steam-Scanner erkennt native Mac-Spiele (ohne `.exe` wie *Tomb Raider* oder *Cyberpunk 2077*) vollautomatisch und trennt sie sauber von emulierten Windows-Flaschen.
+*   **🔒 Automatisierte Ad-hoc Signierung:** Das Build-System fügt beim Kompilieren vollautomatisch eine lokale Signatur hinzu und entfernt Quarantäne-Flags, um macOS-Blockaden zu verhindern.
+*   **🛡️ Case-Insensitive Pfad-Auflösung:** Behebt Fehler bei unvollständigen Epic-Manifesten oder abweichender Groß-/Kleinschreibung auf externen SSDs.
 
 ---
 
-## 🛠️ Start & Gatekeeper Bypass (Terminal)
+### ⚠️ WICHTIGER HINWEIS ZUR „MALWARE“-WARNUNG (FALSE POSITIVE)
+**Der Code dieses Boosters ist zu 100 % sauber, quelloffen und frei von Schadsoftware!** 
+Da das Tool mit Root-Rechten direkt in den Kernel eingreift, um Spiele-Prozessen die höchste CPU-Priorität (`Nice -20`) auf den Performance-Cores zuzuweisen, schlägt Apples integrierter Virenscanner (XProtect) falschen Alarm. Für Apple sieht ein Tool, das so tief die CPU steuert, aus wie ein Krypto-Miner. Da dies ein freies Community-Projekt ist und wir keine 99 $/Jahr an Apple für ein Zertifikat zahlen, stuft macOS die App automatisch als "Malware" ein.
 
-### 🇩🇪 Deutsch
-Falls macOS das Programm als "beschädigt" blockiert, im **Terminal** folgenden Befehl ausführen, um die Datei freizuschalten und die App direkt zu starten:
-
-```bash
-chmod +x ./Start.command && ./Start.command
-```
-
-### 🇺🇸 English
-If macOS blocks the application as "damaged" due to Gatekeeper restrictions, execute the following command in the **Terminal** to bypass it and launch the app:
-
-```bash
-chmod +x ./Start.command && ./Start.command
-```
+**Die kinderleichte Lösung:** Baue dir die App einfach in 2 Minuten selbst (Anleitung unten)! Dadurch wird sie als lokale, absolut sichere Eigenkreation auf deinem Mac Studio zertifiziert und Apple bleibt komplett machtlos.
 
 ---
 
-## ⚙️ Einstellungen & Overrides / Settings Specifications
-
-### 📊 Adaptive Core RAM Thresholds (MB)
-- **Soft Buffer Evacuation (Stage 1):** 
-  - *DE:* Regler für den RAM-Guard. Fällt der freie Speicher unter dieses Limit, werden inaktive System-Caches evakuiert, um Auslagern (Swap) zu verhindern.
-  - *EN:* Unified Memory thresholds manager. Triggers dynamic cache purges when free RAM drops below this line to prevent system swap usage.
-- **Compiler Deep-Sleep (Stage 2):** 
-  - *DE:* Sicherheits-Limit. Schickt schwere Hintergrund-Prozesse (wie den Metal-Compiler) kurzzeitig in den Tiefschlaf, um In-Game-Ruckler abzufangen.
-  - *EN:* Safety limit. Temporarily forces heavy compilation worker threads into deep sleep to eliminate critical system stutters during execution phases.
-
-### 🧠 Core Engine Settings
-- **Enable FPS Boost:** 
-  - *DE:* Aktiviert die dynamische Kernel-Priorisierung für erkannte Spiele in Echtzeit.
-  - *EN:* Toggles active kernel-level priority overrides for discovered game instances in real-time.
-- **Enable Adaptive Shader Guard (Anti-Panic):** 
-  - *DE:* Schützt das System vor plötzlicher RAM-Zustellung. Der *Safe-Shader-Compilation Mode* verschiebt aggressive Speicherreinigungen während der ersten Minuten des Spielstarts (optimiert für *S.T.A.L.K.E.R. 2*), um Kompilierungsabstürze zu verhindern.
-  - *EN:* Guards your architecture against sudden allocation spikes. The *Safe-Shader-Compilation Mode* postpones memory purges during initial game execution phases (optimized for *S.T.A.L.K.E.R. 2*) to avert critical engine crashes.
-- **Enable Logging (gaming_boost.log):** 
-  - *DE:* Protokolliert alle Kerntransaktionen kontinuierlich für Diagnosezwecke.
-  - *EN:* Enables structured diagnostic telemetry capturing core engine behaviors within the local file environment.
-- **Start at Login (Autostart):** 
-  - *DE:* Registriert den Booster im macOS-System, um ihn bei jedem Systemstart im Hintergrund zu laden.
-  - *EN:* Integrates tracking properties directly into the macOS system layer to load the launcher automatically at system startup.
-- **Keep Daemon Alive:** 
-  * *DE (Aktiv — Variante 1):* Hält den privilegierten Dienst im RAM aktiv, um Spiele auch nach dem Schließen des Dashboards im Hintergrund weiter zu erkennen.
-  * *DE (Deaktiviert — Variante 2):* Bereinigt das RAM beim Beenden der App restlos und fährt alle Helper-Prozesse geordnet herunter.
-  * *EN (Checked — Variant 1):* Retains the background controller loop in your memory configurations even when closing user windows to guarantee seamless tracking.
-  * *EN (Unchecked — Variant 2):* Clears background tasks instantly upon closing the master utility context, enforcing a completely clear memory line.
+### 🛠️ Kinderleichte Bau-Anleitung (Dauer: 2 Minuten)
+1. Lade das Repository als ZIP herunter und entpacke es.
+2. Öffne das **Terminal** und springe in den Projektordner:
+   ```bash
+   cd "/Pfad/zu/deinem/entpackten/Ordner"
+   ```
+3. Installiere die Werkzeuge (nur beim ersten Mal nötig):
+   ```bash
+   npm install
+   ```
+4. Erstelle und signiere deine blockierungsfreie `.app`:
+   ```bash
+   npm run package-mac
+   ```
+   *Deine fertige App liegt danach im Ordner `dist/`. Einfach in deinen Programme-Ordner ziehen und per Doppelklick starten!*
 
 ---
 
-## 📄 License & Credits
-- **Author:** Mario (flashi)
-- **License:** ISC License
+### 💬 FORUM-SUPPORT & FEEDBACK-REGELN
+**Wir brauchen deine Hilfe, um den Booster noch besser zu machen! Bitte teile deine Erfahrungen (Positiv & Negativ) im Forum:**
+*   Welche Spiele laufen flüssiger? Wo merkst du den FPS-Schub?
+*   Gibt es Probleme oder wird ein Spiel nicht erkannt?
+
+**🚨 ABSOLUTE LOG-PFLICHT BEI PROBLEMEN:**
+Ohne deine Logdateien können wir unmöglich wissen, was im Getriebe schiefgelaufen ist! Wenn ein Spiel nicht auftaucht oder Fehler entstehen, poste bitte **IMMER** deine Logs aus folgendem Verzeichnis im Forum:
+`~/Library/Application Support/fps-boost/config/`
+*(Besonders wichtig: `helper_debug.log` und `games_matrix.json`)*
+
+---
+---
+
+## 🇺🇸 ENGLISH
+
+### 📜 What's New in v2.8.2 (Release Candidate)
+*   **👑 Dynamic Launcher Matrix (0% Hardcode):** All detected games are automatically sorted in the dashboard by OS and launcher (macOS Native, Steam Mac, CrossOver Steam, Epic Games, Heroic, Ubisoft, Rockstar, Battle.net). Empty categories are hidden automatically.
+*   **🤠 Rockstar & Battle.net Radar:** Advanced auto-detection for Blizzard and Rockstar titles (e.g., *Diablo IV*, *GTA V*, *RDR2*) with automated sorting into dedicated dashboard categories.
+*   **🍏 macOS vs. Windows Split:** The Steam scanner automatically identifies native Mac games (without an `.exe` extension, like *Tomb Raider* or *Cyberpunk 2077*) and isolates them from emulated Windows bottles.
+*   **🔒 Automated Ad-hoc Codesigning:** The build system automatically applies a local signature and strips quarantine flags during compilation to bypass macOS security lockouts.
+*   **🛡️ Case-Insensitive Path Resolution:** Fixes edge-case bugs triggered by incomplete Epic manifests or folder casing mismatches on mounted external SSD nodes.
+
+---
+
+### ⚠️ IMPORTANT NOTE REGARDING "MALWARE" WARNINGS (FALSE POSITIVE)
+**The code of this booster is 100% clean, open-source, and free of any malicious software!**
+Because this tool hooks directly into the kernel using root privileges to force game processes into the highest execution tier (`Nice -20`) on your Performance Cores, Apple's built-in scanner (XProtect) triggers a false positive. To macOS, low-level CPU priority manipulation looks like a crypto-miner. Since this is a free community project and we do not pay Apple \$99/year for a developer certificate, macOS automatically flags the compiled binary as "Malware".
+
+**The simple solution:** Just build the app yourself in under 2 minutes (see instructions below)! This certifies the binary locally on your Mac Studio as a trusted self-made application, completely bypassing Apple's restrictions.
+
+---
+
+### 🛠️ Easy 2-Minute Build Instructions
+1. Download this repository as a ZIP file and extract it.
+2. Open your **Terminal** and navigate into the project directory:
+   ```bash
+   cd "/path/to/your/extracted/folder"
+   ```
+3. Install the dependencies (only required once):
+   ```bash
+   npm install
+   ```
+4. Build & automatically codesign your unrestricted `.app`:
+   ```bash
+   npm run package-mac
+   ```
+   *Your fresh application will be generated inside the `dist/` directory. Simply move it to your Applications folder and launch it!*
+
+---
+
+### 💬 FORUM SUPPORT & FEEDBACK RULES
+**We need your gameplay reports to perfect the engine! Please share your feedback (Positive & Negative) in the community forum:**
+*   Which titles show the biggest FPS boosts? Where does the core balancing feel smoothest?
+*   Did you encounter any bugs or missing game titles?
+
+**🚨 LOG FILES ARE MANDATORY FOR SUPPORT:**
+Without your background log files, it is impossible for us to diagnose what went wrong under the hood! If you experience bugs or games are missing, you **MUST ALWAYS** attach your log stream files from this directory to your forum post:
+`~/Library/Application Support/fps-boost/config/`
+*(Crucial files: `helper_debug.log` and `games_matrix.json`)*

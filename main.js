@@ -2,8 +2,8 @@
    APPLICATION:   MAC GAMING BOOSTER (PROJEKT X)
    FILE:          main.js (Electron Main Process)
    
-   STATUS:        VERSION 2.8.1b (RELEASE CANDIDATE) - STABLE & PRODUCTION READY
-   DEVELOPER:     MARIO (FLASHI) - STAND: 18.07.2026
+   STATUS:        VERSION 2.8.2 (RELEASE CANDIDATE) - STABLE & PRODUCTION READY
+   DEVELOPER:     MARIO (FLASHI) - STAND: 24.07.2026
    QUALITY AUDIT: EXCELLENT (Robust error handling, resource-optimized Kernel IPC)
    
    CORE FUNCTIONS:
@@ -38,6 +38,23 @@ let isBoostActive = true, isLoggingActive = false, isHelperDebugActive = false, 
 let optimizedPIDs = new Set(), currentStatusText = '🎮 Status: No active games', activeGamesMapping = new Map();
 let globalIsRootHelperAlive = false;
 let globalPCoreUsage = 0;
+function writeHardwareLog() {
+    try {
+        const macModel = execSync('sysctl -n hw.model').toString().trim();
+        const totalCores = os.cpus().length;
+        const totalMemoryGB = TOTAL_RAM_GB;
+        const timestamp = new Date().toLocaleTimeString();
+        const hardwareHeader = `\n[${timestamp}] 🖥️ HARDWARE TELEMETRY SPECIFICATION:\n` +
+                               `[${timestamp}]    🔹 Apple Hardware Model: ${macModel}\n` +
+                               `[${timestamp}]    🔹 Total CPU Cores: ${totalCores} Cores (High-Performance Architecture)\n` +
+                               `[${timestamp}]    🔹 Total Unified Memory: ${totalMemoryGB}.00 GB RAM\n\n`;
+        fs.appendFileSync(LOG_FILE, hardwareHeader, 'utf8');
+    } catch (e) {
+        try { 
+            fs.appendFileSync(LOG_FILE, `[${new Date().toLocaleTimeString()}] ⚠️ Hardware Telemetry Failed: ${e.message}\n`, 'utf8'); 
+        } catch(err) {}
+    }
+}
 function loadSettings() {
     try {
         if (!fs.existsSync(CONFIG_FILE)) return;
@@ -57,22 +74,28 @@ function saveSettings() {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify({ isBoostActive, isLoggingActive, isHelperDebugActive, isAutostartActive, isShaderGuardActive, overlayX, overlayY }, null, 2), 'utf8');
     } catch (e) {}
 }
+let isHardwareLogged = false;
 function writeToRotatedLog(newText) {
     if (!isLoggingActive) return;
     const timestamp = new Date().toLocaleTimeString();
-    const logLine = `[${timestamp}] ${newText}\n`;
     try {
         if (fs.existsSync(LOG_FILE)) {
             const stats = fs.statSync(LOG_FILE);
             const fileSizeInMB = stats.size / (1024 * 1024);
             if (fileSizeInMB > 1) {
                 fs.writeFileSync(LOG_FILE, `[${timestamp}] 🔄 Log rotated: Cleared old entries due to 1MB size limit.\n`, 'utf8');
+                isHardwareLogged = false;
             }
         }
+        if (!isHardwareLogged) {
+            writeHardwareLog();
+            isHardwareLogged = true;
+        }
+        const logLine = `[${timestamp}] ${newText}\n`;
         fs.appendFileSync(LOG_FILE, logLine, 'utf8');
     } catch (e) {
     }
-} 
+}
 function sendNotification(bodyText) {
     if (Notification.isSupported()) {
         new Notification({ title: '🚀 Mac Gaming Booster', body: bodyText, silent: true }).show();
@@ -430,6 +453,17 @@ function checkAndBoostGames() {
         }
         const lines = stdout.trim().split('\n');
         const currentPIDs = new Set();
+        lines.sort((a, b) => {
+            const aLow = a.toLowerCase();
+            const bLow = b.toLowerCase();
+            const aIsRealGame = aLow.includes('service steam') || aLow.includes('u4.exe') || aLow.includes('tll.exe') || aLow.includes('shipping.exe');
+            const bIsRealGame = bLow.includes('service steam') || bLow.includes('u4.exe') || bLow.includes('tll.exe') || bLow.includes('shipping.exe');
+            const aIsHelper = !aIsRealGame && (aLow.includes('crs-handler') || aLow.includes('launcher') || aLow.includes('helper') || aLow.includes('steam'));
+            const bIsHelper = !bIsRealGame && (bLow.includes('crs-handler') || bLow.includes('launcher') || bLow.includes('helper') || bLow.includes('steam'));
+            if (aIsHelper && !bIsHelper) return 1;
+            if (!aIsHelper && bIsHelper) return -1;
+            return 0;
+        });
         lines.forEach(line => {
             const parts = line.trim().split(/\s+/);
             if (parts.length < 2) return;
@@ -441,7 +475,9 @@ function checkAndBoostGames() {
             let extractedExe = path.basename(normalizedPath);
             const lowName = extractedExe.toLowerCase();
             const cleanName = lowName.replace(/[()]/g, '');
-            if (cleanName.includes('launcher') || cleanName.includes('play') || cleanName.includes('select') || cleanName.includes('handler') || cleanName.includes('helper')) {
+            const isSteamMuckInArgs = lowerPath.toLowerCase().includes('steam') || lowerPath.toLowerCase().includes('cef') || lowerPath.toLowerCase().includes('steamwebhelper') || lowerPath.toLowerCase().includes('bin/cef');
+            const isTlouService = cleanName === 'service' && lowerPath.toLowerCase().includes('tlou-i') && !isSteamMuckInArgs;
+            if ((cleanName.includes('launcher') || cleanName.includes('play') || cleanName.includes('select') || cleanName.includes('handler') || cleanName.includes('helper') || cleanName === 'service') && !isTlouService) {
                 try {
                     const threadCheck = execSync(`ps -M ${pid} 2>/dev/null | wc -l`).toString().trim();
                     const processThreads = parseInt(threadCheck, 10) || 0;
@@ -578,10 +614,7 @@ function checkAndBoostGames() {
             }
             manageRamGuardState(true);
             if (isBoostActive) {
-                if (!optimizedPIDs.has(pid)) {
-                    writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
-                    manageRamGuardState(true);
-                }
+                writeToRotatedLog(`🎯 Game detected: 📦 ${displayGameName} (PID: ${pid})`);
                 const isUbisoftTrackmania = lowName.includes('ubisoftconnectinstaller'); 
                 const isWrapper = (lowName.includes('winewrapper') || lowName.includes('winedevice') || lowName.includes('wineboot')) 
                                   && !lowerPath.includes('crs-handler') 
@@ -590,25 +623,21 @@ function checkAndBoostGames() {
                     let finalCleanName = cleanName;
                     if (finalCleanName.toLowerCase().includes('.exe')) {
                         const exeMatch = finalCleanName.match(/^([^\s]+\.exe)/i);
-                        if (exeMatch && exeMatch[1]) {
-                            finalCleanName = exeMatch[1];
+                        if (exeMatch && exeMatch[0]) {
+                            finalCleanName = exeMatch[0];
                         }
                     }
                     const nameSpecificKey = `${pid}_max_${finalCleanName}`;
-                    const isLowPriorityProcess = finalCleanName.toLowerCase().includes('crs-handler') || finalCleanName.toLowerCase().includes('launcher');
-
-                    let containsActiveMainGame = false;
-                    for (let key of optimizedPIDs) {
-                        if (key.includes('_max_') && !key.toLowerCase().includes('crs-handler') && !key.toLowerCase().includes('launcher')) {
-                            containsActiveMainGame = true;
-                        }
-                    }
-                    if (!isLowPriorityProcess && !containsActiveMainGame) {
+                    const isFalscherSteamBrowser = lowerPath.includes('bin/cef') || lowerPath.includes('cef.win64') || lowerPath.includes('steamwebhelper'); 
+                    const isMainGameExe = finalCleanName.toLowerCase().includes('u4.exe') || 
+                                          finalCleanName.toLowerCase().includes('tll.exe') || 
+                                          finalCleanName.toLowerCase().includes('shipping.exe') ||
+                                          (finalCleanName.toLowerCase() === 'steam' && lowerPath.includes('service steam') && !isFalscherSteamBrowser);
+                    if (isMainGameExe) {
                         for (let key of optimizedPIDs) {
-                            if (key.toLowerCase().includes('crs-handler')) {
-                                const oldPid = key.split('_')[0];
-                                sendToRootHelper(oldPid, 0); 
+                            if (key.includes('_max_') && !key.startsWith(`${pid}_`)) {
                                 optimizedPIDs.delete(key);
+                                const oldPid = key.split('_')[0];
                                 if (oldPid) optimizedPIDs.delete(oldPid);
                             }
                         }
@@ -624,7 +653,7 @@ function checkAndBoostGames() {
                         optimizedPIDs.add(nameSpecificKey);
                         optimizedPIDs.add(pid);
                         sendToRootHelper(pid, -5);
-                        writeToRotatedLog(`⚡️ Trigger-Engine: MAX-Boost für ${displayGameName} (${finalCleanName} / PID: ${pid}) geschrieben.`);
+                        writeToRotatedLog(`⚡️ Trigger-Engine: FORCE-BOOST! Haupt-Engine garantiert auf MAX gepeitscht: ${displayGameName} (${finalCleanName} / PID: ${pid})`);
                         sendNotification(`Performance boost (MAX) activated for "${displayGameName}"!`);
                     }
                     currentStatusText = `🟢 MAX-Boost: 📦 ${displayGameName}`;
@@ -664,8 +693,8 @@ function checkAndBoostGames() {
             const purePID = stateKey.split('_')[0];
             if (!currentPIDs.has(purePID)) {
                 optimizedPIDs.delete(stateKey);
-                if (stateKey === purePID) {
-                    writeToRotatedLog(`⏳ Game with PID ${purePID} terminated. Evacuated from memory.`);
+                if (stateKey === purePID || stateKey.includes('_max_')) {
+                    writeToRotatedLog(`⏳ Game process ${stateKey} terminated. Evacuated from app state.`);
                     let shouldSkipAggressivePurge = false;
                     let calculatedGameDuration = 0;
                     if (activeTrackedGames[purePID]) {
@@ -680,6 +709,10 @@ function checkAndBoostGames() {
                         delete activeTrackedGames[purePID];
                     }
                     sendToRootHelper(purePID, 0);
+                    if (stateKey.toLowerCase().includes('u4.exe') || stateKey.toLowerCase().includes('tll.exe') || stateKey.toLowerCase().includes('shipping')) {
+                        writeToRotatedLog("🧹 Main engine death registered! Forcing full state wipe to guarantee clean secondary starts.");
+                        optimizedPIDs.clear(); 
+                    }
                     if (shouldSkipAggressivePurge) {
                         writeToRotatedLog(`⏳ RAM Purge: Safe Shader-Compilation active (Game age: ${calculatedGameDuration.toFixed(0)}s). Postponing full purge to prevent shader compile errors...`);
                         try { exec('sync', () => {}); } catch(e) {} 
@@ -803,9 +836,9 @@ function updateMenu() {
     const contextMenu = Menu.buildFromTemplate([
         { label: '🚀 MAC GAMING BOOSTER', enabled: false },
         { label: `${currentStatusText}`, enabled: false },
-        { label: 'Version: 2.8.1b (Public Version)', enabled: false },
+        { label: 'Version: 2.8.2 (Public Version)', enabled: false },
         { label: 'Developer: Mario (flashi)', enabled: false },
-        { label: 'Stand: 15.07.2026 10:36', enabled: false },
+        { label: 'Stand: 23.07.2026 19:00', enabled: false },
         { type: 'separator' },
         {
             label: '📊 Open Live HUD...',

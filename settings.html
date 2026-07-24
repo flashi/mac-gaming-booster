@@ -79,11 +79,87 @@
         .custom-tooltip:hover .tooltip-text {
             visibility: visible;
         }
+/* ================================================================= */
+/* 👑 NOUVEAU AKKORDEON-DESIGN FÜR SPIELE-MATRICES (0% HARDCODE)    */
+/* ================================================================= */
+.matrix-accordion {
+    width: 100%;
+    max-height: 250px; /* Begrenzt die Höhe exakt wie deine alte Box */
+    overflow-y: auto;  /* Aktiviert das unzerstörbare Scrollen bei vielen Spielen */
+    padding-right: 4px;
+}
+
+.matrix-section {
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    background: rgba(22, 22, 26, 0.6);
+    overflow: hidden;
+}
+
+.matrix-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(32, 32, 36, 0.9);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #E1E1E6;
+    user-select: none;
+    transition: background 0.15s ease-in-out;
+}
+
+.matrix-header:hover {
+    background: rgba(48, 48, 54, 1);
+}
+
+.matrix-badge {
+    background: #007aff;
+    color: white;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.matrix-content {
+    display: none; /* Versteckt die Spiele standardmäßig, bis geklickt wird */
+    padding: 4px 14px 10px 14px;
+    background: rgba(14, 14, 16, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.matrix-game-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 12px;
+    color: #C4C4CC;
+}
+
+.matrix-game-item:last-child {
+    border-bottom: none;
+}
+
+.matrix-exe-badge {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-size: 10.5px;
+    color: #04D361; /* Matrix-Grün für deine geladene Spieldatei */
+    background: rgba(4, 211, 97, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(4, 211, 97, 0.15);
+}
+
     </style>
 </head>
 <body>
     <h2>🚀 Mac Gaming Booster</h2>
-    <div class="subtitle">Core Engine Settings & Management (v2.8.1b Platin)</div>
+    <div class="subtitle">Core Engine Settings & Management</div>
     
     <!-- SECTION 1: RAM LIMITS -->
     <div class="section">
@@ -144,6 +220,14 @@
                 <div class="option-desc">Keeps a persistent transaction log of all optimizations.</div>
             </div>
         </label>
+        <!-- 🟢 NEU: Schalter für das eigenständige Suchprotokoll (Christophe-Schnittstelle) -->
+        <label class="option-container" style="margin-bottom: 12px;">
+            <input type="checkbox" id="gameScannerLogging">
+            <div>
+                <div class="option-text">🔍 Enable Scanner Logging (game_scanner.log)</div>
+                <div class="option-desc">Logs deep internal and external SSD storage array scan transactions.</div>
+            </div>
+        </label>
         <label class="option-container" style="margin-bottom: 8px;">
             <input type="checkbox" id="loginAutostart">
             <div>
@@ -178,15 +262,21 @@
         </div>
     </div>  
 
-    <!-- SECTION 4: DYNAMISCHES EXECUTABLE STATUS RADAR -->
+    <!-- 👑 SEKTOR 4: HIGH-INTENSITY GAMING MATRICES (0% Hardcode) -->
     <div class="section">
-        <label>📊 Executable Status Radar</label>
-       <div class="desc">Green titles are armed in the kernel. Red titles require a manual game EXE assignment via Finder.</div>
-        <div class="blacklist-box" id="gamesContainer" style="height: 180px; padding: 10px; background: #121214;"></div>
-        <div class="blacklist-input-row" style="justify-content: flex-end; margin-top: 10px; margin-bottom: 8px;">
+        <label>📊 Erkannte Spiele-Triebwerke</label>
+        <div class="desc">Hier siehst du alle installierten Spiele perfekt sortiert nach Betriebssystem und Launcher.</div>
+        
+        <!-- Das neue unzerstörbare Akkordeon-Gehäuse -->
+        <div id="matrix-container" class="matrix-accordion" style="margin-top: 10px;">
+            <div style="color: rgba(255,255,255,0.4); text-align: center; padding: 20px; font-size: 13px;">Lese Speicher-Matrix ein...</div>
+        </div>
+        
+        <!-- Dein unzerstörbarer Scan-Button bleibt voll funktionsfähig unter dem Akkordeon! -->
+        <div class="blacklist-input-row" style="justify-content: flex-end; margin-top: 12px; margin-bottom: 8px;">
             <button class="btn-add" id="btnScanGames" onclick="performManualGameScan()" style="width: 100%; padding: 8px 0; font-size: 13px;">🔍 Scan for installed games</button>
         </div>
-        <!-- 🔥 NEU: CSS-TOOLTIP FÜR STATUS RADAR -->
+
         <div class="custom-tooltip">
             ℹ️ Status Radar Mapping
             <span class="tooltip-text">
@@ -227,15 +317,14 @@
             </span>
         </div>
     </div>
-
-    
+ 
     <div class="footer-buttons">
         <button class="btn-reset" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
         <button class="btn-save" onclick="saveSettings()">💾 Save Settings</button>
         <button class="btn-close" onclick="closeSettingsWindow()">❌ Close Window</button>
     </div>
-    
-    <script>
+
+<script>
         const fs = require('fs');
         const path = require('path');  
         const { ipcRenderer } = require('electron');
@@ -245,6 +334,9 @@
         const configPath = path.join(dirPath, 'booster_config.json');
         const blacklistPath = path.join(dirPath, 'blacklist.txt');
         const mappingPath = path.join(dirPath, 'games_exe_mapping.txt');
+        
+        // 👑 DER PFAD ZU DEINER NEUEN REIN DYNAMISCHEN MATRIX-JSON
+        const matrixPath = path.join(dirPath, 'games_matrix.json');
         
         let currentConfig = { purgeLimit: 1500, pauseLimit: 400, keepDaemonAlive: true };
         let blacklistArray = [];
@@ -298,81 +390,85 @@
                 }
             }
         }
-        async function loadSavedGamesList() {
-            const container = document.getElementById('gamesContainer');
+
+        // 👑 DAS DYNAMISCHE AKKORDEON-GETRIEBE (0% Hardcode):
+        function loadGamesMatrix() {
+            const container = document.getElementById('matrix-container');
             if (!container) return;
             container.innerHTML = '';
             
-            if (!fs.existsSync(mappingPath)) {
-                container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">No registered games found. Please start a scan.</div>';
+            if (!fs.existsSync(matrixPath)) {
+                container.innerHTML = '<div style="color: #8f8f9d; text-align: center; padding: 20px; font-size: 13px;">Keine Spiele-Matrix gefunden. Starte einen Suchlauf!</div>';
                 return;
             }
             
             try {
-                const content = fs.readFileSync(mappingPath, 'utf8');
+                const data = JSON.parse(fs.readFileSync(matrixPath, 'utf-8'));
                 
-                // Wir trennen die Zeilen der echten HTML-Datei ganz sauber am Umbruch auf
-                const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                
-                if (lines.length === 0 || content.includes('No games found.')) {
-                    container.innerHTML = '<div style="color:#8F8F9D; font-size:12px; padding:10px; text-align:center;">No registered games found. Please start a scan.</div>';
-                    return;
+                const launcherNames = {
+                    Native: '🍏 macOS Native Spiele',
+                    SteamMac: '🍏 macOS Steam Games',
+                    Steam: '🚂 CrossOver Steam Windows',
+                    EpicGames: '📦 Epic Games Store',
+                    BattleNet: '🛡️ Blizzard Battle.net',
+                    Heroic: '🦊 Heroic Games Launcher',
+                    Ubisoft: '🦅 Ubisoft Connect',
+                    CustomDrive: '💾 Benutzerdefinierte Laufwerke'
+                };
+
+                for (const platform in data) {
+                    for (const launcher in data[platform]) {
+                        const games = data[platform][launcher];
+                        if (!games || games.length === 0) continue; 
+                        
+                        const section = document.createElement('div');
+                        section.className = 'matrix-section';
+                        
+                        const header = document.createElement('div');
+                        header.className = 'matrix-header';
+                        const displayName = launcherNames[launcher] || launcher;
+                        header.innerHTML = `<span>${displayName}</span> <span class="matrix-badge">${games.length}</span>`;
+                        
+                        const content = document.createElement('div');
+                        content.className = 'matrix-content';
+                        
+                        games.forEach(game => {
+                            const gameItem = document.createElement('div');
+                            gameItem.className = 'matrix-game-item';
+                            gameItem.innerHTML = `<span>${game.name}</span><span class="matrix-exe-badge">➔ ${game.exe}</span>`;
+                            content.appendChild(gameItem);
+                        });
+                        
+                        header.addEventListener('click', () => {
+                            const isVisible = content.style.display === 'block';
+                            content.style.display = isVisible ? 'none' : 'block';
+                        });
+                        
+                        section.appendChild(header);
+                        section.appendChild(content);
+                        container.appendChild(section);
+                    }
                 }
-                
-                lines.forEach((line, i) => {
-                    if (!line.includes('=>')) return;
-                    const parts = line.split('=>');
-                    const gameTitle = parts[0].trim();
-                    const exeName = parts[1].trim();
-                    const isUnknown = exeName === 'unknown_executable.exe';
-                    
-                    const card = document.createElement('div');
-                    card.className = isUnknown ? 'radar-card radar-card-red' : 'radar-card radar-card-green';
-                    
-                    const safeId = "btn-radar-" + i;
-                    
-                    if (isUnknown) {
-                        card.innerHTML = `<div><div style="font-weight: bold; color: #E1E1E6;">🎮 ${gameTitle}</div><div style="color: #FF5555; font-size: 10px; margin-top: 3px;">⚠️ STATUS: No executable file (.exe) found on SSD!</div></div><button class="radar-btn-assign" id="${safeId}">📂 ASSIGN EXE</button>`;
-                    } else {
-                        // 🟢 UPGRADE: Auch gesunde Spiele bekommen jetzt den Button zum Ändern oder Erweitern!
-                        card.innerHTML = `<div><div style="font-weight: bold; color: #E1E1E6;">🎮 ${gameTitle}</div><div style="color: #04D361; font-size: 10px; margin-top: 3px;">🟢 OK: Actively bound to <span style="font-family: monospace;">${exeName}</span></div></div><button class="radar-btn-assign" id="${safeId}" style="background: #04D361; color: black;">🔄 CHANGE</button>`;
-                    }
-                    
-                    container.appendChild(card);
-                    
-                    // Event-Listener wird jetzt für JEDE Karte (Rot und Grün) sicher gebunden!
-                    const selectBtn = document.getElementById(safeId);
-                    if (selectBtn) {
-                        selectBtn.onclick = function() {
-                            assignExeViaFinder(gameTitle);
-                        };
-                    }
-                });
-            } catch(e) {
-                container.innerHTML = '<div style="color:#FF5555; font-size:12px; padding:10px; text-align:center;">Error loading status radar.</div>';
+            } catch (e) {
+                container.innerHTML = '<div style="color: #ff5555; text-align: center; padding: 15px; font-size: 13px;">Fehler beim Laden der Matrix.</div>';
             }
         }
-        
-        async function assignExeViaFinder(gameName) {
-            const response = await ipcRenderer.invoke('open-exe-picker', gameName);
-            if (response && response.success) {
-                loadSavedGamesList();
-            }
-        }
-        
+        // 👑 DIE NEUE SCAN-FUNKTION: Triggert den Prozess und zeichnet das Akkordeon live neu!
         async function performManualGameScan() {
             const btn = document.getElementById('btnScanGames');
-            const container = document.getElementById('gamesContainer');
+            const container = document.getElementById('matrix-container');
             if (!btn || !container) return;
             
             btn.disabled = true;
             btn.innerText = "⏳ Searching for launcher entries... (Please wait)";
-            container.innerHTML = '<div style="color:#04D361; font-size:12px; padding:10px; text-align:center;">Festplatten und Launcher-Manifeste werden analysiert...</div>';
+            container.innerHTML = '<div style="color:#04D361; font-size:13px; padding:20px; text-align:center;">Festplatten und Launcher-Manifeste werden analysiert...</div>';
             
             await ipcRenderer.invoke('trigger-game-scan');
             btn.disabled = false;
             btn.innerText = "🔍 Scan for installed games";
-            loadSavedGamesList();
+            
+            // Holt sich die frischen Daten sofort nach dem Scan auf den Monitor
+            loadGamesMatrix();
         }
         
         function renderBlacklist() {
@@ -411,7 +507,6 @@
             const label = document.getElementById(id);
             if (label) label.innerText = val + " MB";
         }
-        
         function resetToDefaults() {
             document.getElementById('lvl1').value = 1500;
             document.getElementById('lvl1Val').innerText = "1500 MB";
@@ -426,7 +521,7 @@
             blacklistArray = ['steam', 'steam.exe', 'steamservice.exe', 'steamwebhelper.exe', 'crossover', 'electron', 'epicgameslauncher', 'winewrapper.exe', 'wineloader', 'wineloader64'];
             renderBlacklist();
         }
-        
+
         function saveSettings() {
             try {
                 currentConfig.purgeLimit = parseInt(document.getElementById('lvl1').value, 10);
@@ -439,6 +534,8 @@
                 currentConfig.isSafeShaderCompilationActive = document.getElementById('safeShaderCompilation').checked;
                 
                 currentConfig.isLoggingActive = document.getElementById('engineLogging').checked;
+                // 🟢 NEU: Speichert den Zustand der Scanner-Checkbox in die booster_config.json
+                currentConfig.isGameScannerLoggingActive = document.getElementById('gameScannerLogging').checked;
                 currentConfig.isAutostartActive = document.getElementById('loginAutostart').checked;
                 currentConfig.isHelperDebugActive = document.getElementById('helperDebug').checked; 
                 
@@ -460,12 +557,9 @@
             }
         }
 
-        // Neue Funktion für den separaten Schließen-Button
         function closeSettingsWindow() {
             window.close();
         }
- 
-        window.assignExeViaFinder = assignExeViaFinder;
         
         function loadAllData() {
             try {
@@ -485,20 +579,26 @@
             document.getElementById('fpsBoost').checked = currentConfig.isBoostActive !== false;
             document.getElementById('shaderGuard').checked = currentConfig.isShaderGuardActive === true;
             
-            // 🔥 SONY/UE5 SCHUTZGURT LADEN: Liest den Zustand fliegend aus deiner JSON-Datei ein!
+            // 🔥 SONY/UE5 SCHUTZGURT LADEN
             document.getElementById('safeShaderCompilation').checked = currentConfig.isSafeShaderCompilationActive === true;
             
             document.getElementById('engineLogging').checked = currentConfig.isLoggingActive === true;
+            // 🟢 NEU: Liest den Zustand des Suchprotokolls fliegend aus deiner JSON-Datei ein!
+            document.getElementById('gameScannerLogging').checked = currentConfig.isGameScannerLoggingActive === true;
             document.getElementById('loginAutostart').checked = currentConfig.isAutostartActive === true;
             document.getElementById('helperDebug').checked = currentConfig.isHelperDebugActive === true;
             renderBlacklist();
             checkHelperLiveStatus();
+            loadGamesMatrix(); // 👑 ZÜNDET DIE REIN DYNAMISCHE MATRIX BEIM START
         }
 
+        // Automatische Statusüberprüfung im Hintergrund (Alle 2 Sekunden)
         setInterval(checkHelperLiveStatus, 2000);
+
+        // Startet die Initialisierung aller geladenen Daten sofort bei Skript-Aufruf
         loadAllData();
-        loadSavedGamesList();
-    </script>
+</script>
+
 </body>
 </html>
 
