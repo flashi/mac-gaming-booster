@@ -1,1 +1,158 @@
 
+[11:18:34 PM] 🖥️ HARDWARE TELEMETRY SPECIFICATION:
+[11:18:34 PM]    🔹 Apple Hardware Model: Mac16,9
+[11:18:34 PM]    🔹 Total CPU Cores: 14 Cores (High-Performance Architecture)
+[11:18:34 PM]    🔹 Total Unified Memory: 36.00 GB RAM
+
+[11:18:34 PM] 🚀 App initiated - Persistent logging ACTIVE.
+[11:18:34 PM] 💾 Game lists already exist. Skipping scan and loading data directly...
+[11:18:34 PM] 🛠️ [START-SEQUENCE] Initiating privileged root helper activation sequence...
+[11:18:34 PM] ⚠️ [START-SEQUENCE] Background RAM scan failed or returned empty: Command failed: ps -Ax -o command | grep -v grep | grep 'helper.js' 2>/dev/null
+[11:18:34 PM] 📥 [START-SEQUENCE] Copying helper core to production directory...
+[11:18:34 PM] 🛡️ [START-SEQUENCE] POSIX permissions set to 755 via native fs.
+[11:18:34 PM] 🧠 [START-SEQUENCE] Hardware Environment Node Path verified: [/usr/local/bin/node]
+[11:18:34 PM] ⚡ [START-SEQUENCE] Dispatching elevated execution vector to macOS Security Framework...
+[11:18:34 PM] ⚙️ All startup systems successfully chained and active.
+[11:25:23 PM] 🎮 Game Active: Aggressive RAM-Guard initiated.
+[11:25:23 PM] 🎯 Game detected: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER (PID: 4165)
+[11:25:23 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 4165 (Level: -20).
+[11:25:23 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 METAL GEAR SOLID Δ: SNAKE EATER (mgsdelta-win64-shipping.exe / PID: 4165)
+[11:25:23 PM] 🎯 Game detected: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER (PID: 4158)
+[11:25:23 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 4158 (Level: -20).
+[11:25:23 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 METAL GEAR SOLID Δ: SNAKE EATER (mgsdelta.exe / PID: 4158)
+[11:25:27 PM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
+[11:25:27 PM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 17 Apps stehen auf Drosselung [kill].
+[11:25:27 PM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
+[11:25:27 PM]    🔹 CPU Cores Freed: +14.7% Power reclaimed from background apps.
+[11:25:27 PM]    🔹 Unified Memory (VRAM) Freed: +10.69 GB immediately evacuated for Game-Engine.
+[11:25:27 PM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
+[11:25:27 PM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
+[11:25:41 PM] 🚨 WARNING: Memory Critical (712 MB free). Enforcing maximum release!
+[11:25:41 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:25:41 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:25:41 PM] 🧹 Performing aggressive RAM evacuation...
+[11:25:43 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:26:23 PM] 🚨 WARNING: Memory Critical (1493 MB free). Enforcing maximum release!
+[11:26:23 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:26:47 PM] 🔄 Live Configuration Sync: Games mapping and overrides hot-reloaded in background RAM.
+[11:26:51 PM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
+[11:26:51 PM] 🎯 Game detected: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER (PID: 4165)
+[11:26:51 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 4165 (Level: -20).
+[11:26:51 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 METAL GEAR SOLID Δ: SNAKE EATER (mgsdelta-win64-shipping.exe / PID: 4165)
+[11:26:51 PM] 🎯 Game detected: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER (PID: 4158)
+[11:26:51 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 4158 (Level: -20).
+[11:26:51 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 METAL GEAR SOLID Δ: SNAKE EATER (mgsdelta.exe / PID: 4158)
+[11:26:53 PM] 🚨 WARNING: Memory Critical (1330 MB free). Enforcing maximum release!
+[11:26:53 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:26:55 PM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
+[11:26:55 PM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 17 Apps stehen auf Drosselung [kill].
+[11:26:55 PM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
+[11:26:55 PM]    🔹 CPU Cores Freed: +0.5% Power reclaimed from background apps.
+[11:26:55 PM]    🔹 Unified Memory (VRAM) Freed: +4.68 GB immediately evacuated for Game-Engine.
+[11:26:55 PM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
+[11:26:55 PM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
+[11:27:23 PM] 🚨 WARNING: Memory Critical (782 MB free). Enforcing maximum release!
+[11:27:23 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:27:23 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:27:23 PM] 🧹 Performing aggressive RAM evacuation...
+[11:27:25 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:27:53 PM] 🚨 WARNING: Memory Critical (646 MB free). Enforcing maximum release!
+[11:27:53 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:27:53 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:27:53 PM] 🧹 Performing aggressive RAM evacuation...
+[11:27:55 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:28:19 PM] 🔄 Live Configuration Sync: Games mapping and overrides hot-reloaded in background RAM.
+[11:28:23 PM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
+[11:28:23 PM] 🎯 Game detected: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER (PID: 4165)
+[11:28:23 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 4165 (Level: -20).
+[11:28:23 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 METAL GEAR SOLID Δ: SNAKE EATER (mgsdelta-win64-shipping.exe / PID: 4165)
+[11:28:23 PM] 🚨 WARNING: Memory Critical (233 MB free). Enforcing maximum release!
+[11:28:23 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:28:23 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:28:23 PM] 🧹 Performing aggressive RAM evacuation...
+[11:28:25 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:28:27 PM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
+[11:28:27 PM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 17 Apps stehen auf Drosselung [kill].
+[11:28:27 PM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
+[11:28:27 PM]    🔹 CPU Cores Freed: +1.4% Power reclaimed from background apps.
+[11:28:27 PM]    🔹 Unified Memory (VRAM) Freed: +4.91 GB immediately evacuated for Game-Engine.
+[11:28:27 PM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
+[11:28:27 PM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 METAL GEAR SOLID Δ: SNAKE EATER aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
+[11:28:53 PM] 🚨 WARNING: Memory Critical (554 MB free). Enforcing maximum release!
+[11:28:53 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:28:53 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:28:53 PM] 🧹 Performing aggressive RAM evacuation...
+[11:28:55 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:29:59 PM] ⏳ Game process 4165 terminated. Evacuated from app state.
+[11:29:59 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 4165 (Level: 0).
+[11:29:59 PM] ⏳ Game process 4165_max_mgsdelta-win64-shipping.exe terminated. Evacuated from app state.
+[11:29:59 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 4165 (Level: 0).
+[11:29:59 PM] 🧹 Main engine death registered! Forcing full state wipe to guarantee clean secondary starts.
+[11:29:59 PM] 🛑 Game terminated: RAM-Guard stopped.
+[11:29:59 PM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
+[11:29:59 PM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
+[11:30:03 PM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
+[11:31:47 PM] 🎮 Game Active: Aggressive RAM-Guard initiated.
+[11:31:47 PM] 🎯 Game detected: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (PID: 11075)
+[11:31:47 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 11075 (Level: -20).
+[11:31:47 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (stalker2-win64-shipping.exe / PID: 11075)
+[11:31:47 PM] 🎯 Game detected: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (PID: 11067)
+[11:31:47 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 11067 (Level: -20).
+[11:31:47 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (stalker2.exe / PID: 11067)
+[11:31:51 PM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
+[11:31:51 PM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 17 Apps stehen auf Drosselung [kill].
+[11:31:52 PM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
+[11:31:52 PM]    🔹 CPU Cores Freed: +6.9% Power reclaimed from background apps.
+[11:31:52 PM]    🔹 Unified Memory (VRAM) Freed: +10.33 GB immediately evacuated for Game-Engine.
+[11:31:52 PM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
+[11:31:52 PM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
+[11:32:21 PM] 🔄 Live Configuration Sync: Games mapping and overrides hot-reloaded in background RAM.
+[11:32:23 PM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
+[11:32:23 PM] 🎯 Game detected: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (PID: 11075)
+[11:32:23 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 11075 (Level: -20).
+[11:32:23 PM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (stalker2-win64-shipping.exe / PID: 11075)
+[11:32:27 PM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
+[11:32:27 PM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 17 Apps stehen auf Drosselung [kill].
+[11:32:28 PM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
+[11:32:28 PM]    🔹 CPU Cores Freed: +7.1% Power reclaimed from background apps.
+[11:32:28 PM]    🔹 Unified Memory (VRAM) Freed: +9.61 GB immediately evacuated for Game-Engine.
+[11:32:28 PM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
+[11:32:28 PM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
+[11:33:18 PM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 91s). Postponing full purge to prevent compile errors...
+[11:33:48 PM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 121s). Postponing full purge to prevent compile errors...
+[11:34:18 PM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 151s). Postponing full purge to prevent compile errors...
+[11:34:48 PM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 181s). Postponing full purge to prevent compile errors...
+[11:35:18 PM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 211s). Postponing full purge to prevent compile errors...
+[11:35:48 PM] 🚨 WARNING: Memory Critical (559 MB free). Enforcing maximum release!
+[11:35:48 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:35:48 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:35:48 PM] 🧹 Performing aggressive RAM evacuation...
+[11:35:50 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:36:18 PM] 🚨 WARNING: Memory Critical (1343 MB free). Enforcing maximum release!
+[11:36:18 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:36:48 PM] 🚨 WARNING: Memory Critical (1497 MB free). Enforcing maximum release!
+[11:36:48 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:37:18 PM] 🚨 WARNING: Memory Critical (862 MB free). Enforcing maximum release!
+[11:37:18 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:37:48 PM] 🚨 WARNING: Memory Critical (290 MB free). Enforcing maximum release!
+[11:37:48 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:37:48 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:37:48 PM] 🧹 Performing aggressive RAM evacuation...
+[11:37:50 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:38:18 PM] 🚨 WARNING: Memory Critical (276 MB free). Enforcing maximum release!
+[11:38:18 PM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[11:38:18 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:38:18 PM] 🧹 Performing aggressive RAM evacuation...
+[11:38:20 PM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[11:38:49 PM] 🚨 WARNING: Memory Critical (1152 MB free). Enforcing maximum release!
+[11:38:49 PM] 🧹 Inactive RAM and system caches successfully evacuated.
+[11:39:01 PM] ⏳ Game process 11075 terminated. Evacuated from app state.
+[11:39:01 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 11075 (Level: 0).
+[11:39:01 PM] ⏳ Game process 11075_max_stalker2-win64-shipping.exe terminated. Evacuated from app state.
+[11:39:01 PM] ⚡️ Trigger Engine: MAX-Boost written for PID 11075 (Level: 0).
+[11:39:01 PM] 🧹 Main engine death registered! Forcing full state wipe to guarantee clean secondary starts.
+[11:39:01 PM] 🛑 Game terminated: RAM-Guard stopped.
+[11:39:01 PM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
+[11:39:01 PM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
+[11:39:05 PM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
+
