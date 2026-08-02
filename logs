@@ -1,307 +1,73 @@
 
-[12:51:51 AM] 🖥️ HARDWARE TELEMETRY SPECIFICATION:
-[12:51:51 AM]    🔹 Apple Hardware Model: Mac16,9
-[12:51:51 AM]    🔹 Total CPU Cores: 14 Cores (High-Performance Architecture)
-[12:51:51 AM]    🔹 Total Unified Memory: 36.00 GB RAM
+[2:55:10 AM] 🖥️ HARDWARE TELEMETRY SPECIFICATION:
+[2:55:10 AM]    🔹 Apple Hardware Model: Mac16,9
+[2:55:10 AM]    🔹 Total CPU Cores: 14 Cores (High-Performance Architecture)
+[2:55:10 AM]    🔹 Total Unified Memory: 36.00 GB RAM
 
-[12:51:51 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[12:51:57 AM] 🛡️ [START-SEQUENCE] Root service helper successfully handshake-confirmed and detached into kernel background.
-[12:52:00 AM] 🛠️ [START-SEQUENCE] Initiating privileged root helper activation sequence...
-[12:52:00 AM] ⚠️ [START-SEQUENCE] Background RAM scan failed or returned empty: Command failed: ps -Ax -o command | grep -v grep | grep 'helper.js' 2>/dev/null
-[12:52:00 AM] 📥 [START-SEQUENCE] Copying helper core to production directory...
-[12:52:00 AM] 🛡️ [START-SEQUENCE] POSIX permissions set to 755 via native fs.
-[12:52:00 AM] 🧠 [START-SEQUENCE] Hardware Environment Node Path verified: [/usr/local/bin/node]
-[12:52:00 AM] ⚡ [START-SEQUENCE] Dispatching elevated execution vector to macOS Security Framework...
-[12:54:19 AM] 🎮 Game Active: Aggressive RAM-Guard initiated.
-[12:54:19 AM] 🎯 Game detected: 📦 🎮 Uncharted Legacy of Thieves Collection (U4) (PID: 49412)
-[12:54:19 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 49412 (Level: -20).
-[12:54:19 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: Uncharted 4: A Thief's End (u4.exe / PID: 49412)
-[12:54:23 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[12:54:23 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[12:54:23 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[12:54:23 AM]    🔹 CPU Cores Freed: +4.6% Power reclaimed from background apps.
-[12:54:23 AM]    🔹 Unified Memory (VRAM) Freed: +7.34 GB immediately evacuated for Game-Engine.
-[12:54:23 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[12:54:23 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 Uncharted 4: A Thief's End aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[12:54:25 AM] 🚨 WARNING: Memory Critical (521 MB free). Enforcing maximum release!
-[12:54:25 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:54:55 AM] 🚨 WARNING: Memory Critical (515 MB free). Enforcing maximum release!
-[12:54:55 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:55:03 AM] 🎯 Game detected: 📦 🎮 Uncharted Legacy of Thieves Collection (TLL) (PID: 50481)
-[12:55:03 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 50481 (Level: -20).
-[12:55:03 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: Uncharted: The Lost Legacy (tll.exe / PID: 50481)
-[12:55:03 AM] ⏳ Game process 49412 terminated. Evacuated from app state.
-[12:55:03 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 49412 (Level: 0).
-[12:55:03 AM] ⏳ RAM Purge: Safe Shader-Compilation active. Postponing full purge...
-[12:55:25 AM] 🚨 WARNING: Memory Critical (511 MB free). Enforcing maximum release!
-[12:55:25 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:55:55 AM] 🚨 WARNING: Memory Critical (736 MB free). Enforcing maximum release!
-[12:55:55 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:56:25 AM] 🚨 WARNING: Memory Critical (1471 MB free). Enforcing maximum release!
-[12:56:25 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:56:56 AM] 🚨 WARNING: Memory Critical (1087 MB free). Enforcing maximum release!
-[12:56:56 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:57:26 AM] 🚨 WARNING: Memory Critical (786 MB free). Enforcing maximum release!
-[12:57:26 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:57:56 AM] 🚨 WARNING: Memory Critical (522 MB free). Enforcing maximum release!
-[12:57:56 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:58:26 AM] 🚨 WARNING: Memory Critical (1130 MB free). Enforcing maximum release!
-[12:58:26 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:59:05 AM] 🚨 WARNING: Memory Critical (1477 MB free). Enforcing maximum release!
-[12:59:05 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[12:59:38 AM] 🚨 WARNING: Memory Critical (1304 MB free). Enforcing maximum release!
-[12:59:38 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:01:02 AM] 🚨 WARNING: Memory Critical (1326 MB free). Enforcing maximum release!
-[1:01:02 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:01:24 AM] ⏳ Game process 50481 terminated. Evacuated from app state.
-[1:01:24 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 50481 (Level: 0).
-[1:01:24 AM] ⏳ Game process 50481_max_tll.exe terminated. Evacuated from app state.
-[1:01:24 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 50481 (Level: 0).
-[1:01:24 AM] ⏳ Uncharted-Engine im Wechsel-Vakuum. Halte Überwachungsschleife aktiv...
-[1:01:24 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:01:24 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:01:26 AM] 🔍 Scan-Erzwinger: Suche aktiv im RAM nach der auferstandenen Schwester-EXE...
-[1:01:28 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:01:56 AM] 🎯 Game detected: 📦 🎮 Uncharted Legacy of Thieves Collection (U4) (PID: 59524)
-[1:01:56 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 59524 (Level: -20).
-[1:01:56 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: Uncharted 4: A Thief's End (u4.exe / PID: 59524)
-[1:02:00 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[1:02:00 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[1:02:00 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[1:02:00 AM]    🔹 CPU Cores Freed: +1.3% Power reclaimed from background apps.
-[1:02:00 AM]    🔹 Unified Memory (VRAM) Freed: +1.73 GB immediately evacuated for Game-Engine.
-[1:02:00 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[1:02:00 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 Uncharted 4: A Thief's End aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[1:02:05 AM] 🚨 WARNING: Memory Critical (1367 MB free). Enforcing maximum release!
-[1:02:05 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:02:35 AM] 🚨 WARNING: Memory Critical (585 MB free). Enforcing maximum release!
-[1:02:35 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:03:06 AM] 🚨 WARNING: Memory Critical (154 MB free). Enforcing maximum release!
-[1:03:06 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:03:06 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:03:06 AM] 🧹 Performing aggressive RAM evacuation...
-[1:03:08 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:04:00 AM] 🚨 WARNING: Memory Critical (1075 MB free). Enforcing maximum release!
-[1:04:00 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:04:36 AM] 🚨 WARNING: Memory Critical (1447 MB free). Enforcing maximum release!
-[1:04:36 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:05:06 AM] 🚨 WARNING: Memory Critical (761 MB free). Enforcing maximum release!
-[1:05:06 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:05:45 AM] 🚨 WARNING: Memory Critical (1191 MB free). Enforcing maximum release!
-[1:05:45 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:06:01 AM] ⏳ Game process 59524 terminated. Evacuated from app state.
-[1:06:01 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 59524 (Level: 0).
-[1:06:01 AM] ⏳ Game process 59524_max_u4.exe terminated. Evacuated from app state.
-[1:06:01 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 59524 (Level: 0).
-[1:06:01 AM] ⏳ Uncharted-Engine im Wechsel-Vakuum. Halte Überwachungsschleife aktiv...
-[1:06:01 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:06:01 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:06:03 AM] 🔍 Scan-Erzwinger: Suche aktiv im RAM nach der auferstandenen Schwester-EXE...
-[1:06:05 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:07:05 AM] 🎯 Game detected: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (PID: 65915)
-[1:07:05 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 65915 (Level: -20).
-[1:07:05 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (stalker2-win64-shipping.exe / PID: 65915)
-[1:07:05 AM] 🎯 Game detected: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (PID: 65913)
-[1:07:05 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 65913 (Level: -20).
-[1:07:05 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (stalker2.exe / PID: 65913)
-[1:07:09 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[1:07:09 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[1:07:09 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[1:07:09 AM]    🔹 CPU Cores Freed: +7.0% Power reclaimed from background apps.
-[1:07:09 AM]    🔹 Unified Memory (VRAM) Freed: +6.32 GB immediately evacuated for Game-Engine.
-[1:07:09 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[1:07:09 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[1:08:15 AM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 71s). Postponing full purge to prevent compile errors...
-[1:08:46 AM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 101s). Postponing full purge to prevent compile errors...
-[1:08:47 AM] 🔄 Live Configuration Sync: Games mapping and overrides hot-reloaded in background RAM.
-[1:08:49 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:08:49 AM] 🎯 Game detected: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (PID: 65915)
-[1:08:49 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 65915 (Level: -20).
-[1:08:49 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl (stalker2-win64-shipping.exe / PID: 65915)
-[1:08:53 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[1:08:53 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[1:08:54 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[1:08:54 AM]    🔹 CPU Cores Freed: +0.1% Power reclaimed from background apps.
-[1:08:54 AM]    🔹 Unified Memory (VRAM) Freed: +6.01 GB immediately evacuated for Game-Engine.
-[1:08:54 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[1:08:54 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 S.T.A.L.K.E.R. 2: Heart of Chornobyl aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[1:09:16 AM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 131s). Postponing full purge to prevent compile errors...
-[1:09:46 AM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 161s). Postponing full purge to prevent compile errors...
-[1:10:16 AM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 191s). Postponing full purge to prevent compile errors...
-[1:10:46 AM] ⏳ RAM-Guard: Safe Shader-Compilation active for S.T.A.L.K.E.R. 2 (Game age: 221s). Postponing full purge to prevent compile errors...
-[1:11:16 AM] 🚨 WARNING: Memory Critical (445 MB free). Enforcing maximum release!
-[1:11:16 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:11:46 AM] 🚨 WARNING: Memory Critical (706 MB free). Enforcing maximum release!
-[1:11:46 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:12:16 AM] 🚨 WARNING: Memory Critical (136 MB free). Enforcing maximum release!
-[1:12:16 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:12:16 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:12:16 AM] 🧹 Performing aggressive RAM evacuation...
-[1:12:18 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:12:46 AM] 🚨 WARNING: Memory Critical (1280 MB free). Enforcing maximum release!
-[1:12:46 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:13:30 AM] ⏳ Game process 65915 terminated. Evacuated from app state.
-[1:13:30 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 65915 (Level: 0).
-[1:13:30 AM] ⏳ Game process 65915_max_stalker2-win64-shipping.exe terminated. Evacuated from app state.
-[1:13:30 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 65915 (Level: 0).
-[1:13:30 AM] ⏳ Uncharted-Engine im Wechsel-Vakuum. Halte Überwachungsschleife aktiv...
-[1:13:30 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:13:30 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:13:32 AM] 🔍 Scan-Erzwinger: Suche aktiv im RAM nach der auferstandenen Schwester-EXE...
-[1:13:34 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:15:40 AM] 🚨 WARNING: Memory Critical (46 MB free). Enforcing maximum release!
-[1:15:40 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:15:40 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:15:40 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:16:10 AM] 🚨 WARNING: Memory Critical (274 MB free). Enforcing maximum release!
-[1:16:11 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:16:11 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:16:11 AM] 🧹 Performing aggressive RAM evacuation...
-[1:16:13 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:16:41 AM] 🚨 WARNING: Memory Critical (260 MB free). Enforcing maximum release!
-[1:16:41 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:16:41 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:16:41 AM] 🧹 Performing aggressive RAM evacuation...
-[1:16:43 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:17:11 AM] 🚨 WARNING: Memory Critical (170 MB free). Enforcing maximum release!
-[1:17:11 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:17:11 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:17:11 AM] 🧹 Performing aggressive RAM evacuation...
-[1:17:13 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:17:15 AM] 🎯 Game detected: 📦 🎮 The Last of Us™ Part I (PID: 76369)
-[1:17:15 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 76369 (Level: -20).
-[1:17:15 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 The Last of Us™ Part I (log.txt --initial-client-data=0x130,0x134,0x138,0x13c,0x12c,0x140,0x6fffe43e8768,0x6fffe43e8728,0x6fffe43e8738 / PID: 76369)
-[1:17:19 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[1:17:19 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[1:17:19 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[1:17:19 AM]    🔹 CPU Cores Freed: +0.0% Power reclaimed from background apps.
-[1:17:19 AM]    🔹 Unified Memory (VRAM) Freed: +2.73 GB immediately evacuated for Game-Engine.
-[1:17:19 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[1:17:19 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 The Last of Us™ Part I aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[1:17:41 AM] 🚨 WARNING: Memory Critical (91 MB free). Enforcing maximum release!
-[1:17:41 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:17:41 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:17:41 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:18:11 AM] 🚨 WARNING: Memory Critical (109 MB free). Enforcing maximum release!
-[1:18:11 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:18:11 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:18:11 AM] 🧹 Performing aggressive RAM evacuation...
-[1:18:13 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:18:41 AM] 🚨 WARNING: Memory Critical (152 MB free). Enforcing maximum release!
-[1:18:41 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:18:41 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:18:41 AM] 🧹 Performing aggressive RAM evacuation...
-[1:18:43 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:19:11 AM] 🚨 WARNING: Memory Critical (337 MB free). Enforcing maximum release!
-[1:19:11 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:19:11 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:19:11 AM] 🧹 Performing aggressive RAM evacuation...
-[1:19:13 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:19:15 AM] ⏳ Game process 76369 terminated. Evacuated from app state.
-[1:19:15 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 76369 (Level: 0).
-[1:19:15 AM] ⏳ RAM Purge: Safe Shader-Compilation active. Postponing full purge...
-[1:19:15 AM] ⏳ Game process 76369_max_log.txt --initial-client-data=0x130,0x134,0x138,0x13c,0x12c,0x140,0x6fffe43e8768,0x6fffe43e8728,0x6fffe43e8738 terminated. Evacuated from app state.
-[1:19:15 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 76369 (Level: 0).
-[1:19:15 AM] 🛑 Game terminated: RAM-Guard stopped.
-[1:19:15 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:19:15 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:20:35 AM] 🎮 Game Active: Aggressive RAM-Guard initiated.
-[1:20:35 AM] 🎯 Game detected: 📦 🎮 The Last of Us™ Part I (PID: 76369)
-[1:20:35 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 76369 (Level: -20).
-[1:20:35 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 The Last of Us™ Part I (log.txt --initial-client-data=0x130,0x134,0x138,0x13c,0x12c,0x140,0x6fffe43e8768,0x6fffe43e8728,0x6fffe43e8738 / PID: 76369)
-[1:20:38 AM] 🚨 WARNING: Memory Critical (87 MB free). Enforcing maximum release!
-[1:20:38 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:20:38 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:20:38 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:20:39 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[1:20:39 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[1:20:40 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[1:20:40 AM]    🔹 CPU Cores Freed: +0.0% Power reclaimed from background apps.
-[1:20:40 AM]    🔹 Unified Memory (VRAM) Freed: +1.17 GB immediately evacuated for Game-Engine.
-[1:20:40 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[1:20:40 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 The Last of Us™ Part I aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[1:20:47 AM] ⏳ Game process 76369 terminated. Evacuated from app state.
-[1:20:47 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 76369 (Level: 0).
-[1:20:47 AM] ⏳ RAM Purge: Safe Shader-Compilation active. Postponing full purge...
-[1:20:47 AM] ⏳ Game process 76369_max_log.txt --initial-client-data=0x130,0x134,0x138,0x13c,0x12c,0x140,0x6fffe43e8768,0x6fffe43e8728,0x6fffe43e8738 terminated. Evacuated from app state.
-[1:20:47 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 76369 (Level: 0).
-[1:20:47 AM] 🛑 Game terminated: RAM-Guard stopped.
-[1:20:47 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:20:47 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:22:07 AM] 🎮 Game Active: Aggressive RAM-Guard initiated.
-[1:22:07 AM] 🎯 Game detected: 📦 🎮 007 First Light (PID: 83200)
-[1:22:07 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 83200 (Level: -20).
-[1:22:07 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 007 First Light (007firstlight.exe / PID: 83200)
-[1:22:11 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[1:22:11 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[1:22:12 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[1:22:12 AM]    🔹 CPU Cores Freed: +5.6% Power reclaimed from background apps.
-[1:22:12 AM]    🔹 Unified Memory (VRAM) Freed: +5.11 GB immediately evacuated for Game-Engine.
-[1:22:12 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[1:22:12 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 007 First Light aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[1:22:20 AM] 🚨 WARNING: Memory Critical (255 MB free). Enforcing maximum release!
-[1:22:20 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
-[1:22:20 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:22:20 AM] 🧹 Performing aggressive RAM evacuation...
-[1:22:22 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
-[1:22:50 AM] 🚨 WARNING: Memory Critical (80 MB free). Enforcing maximum release!
-[1:22:50 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:22:50 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:22:50 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:23:20 AM] 🚨 WARNING: Memory Critical (84 MB free). Enforcing maximum release!
-[1:23:20 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:23:20 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:23:20 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:23:50 AM] 🚨 WARNING: Memory Critical (77 MB free). Enforcing maximum release!
-[1:23:50 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:23:50 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:23:50 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:24:20 AM] 🚨 WARNING: Memory Critical (70 MB free). Enforcing maximum release!
-[1:24:20 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:24:20 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:24:20 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:27:24 AM] ⏳ Game process 83200 terminated. Evacuated from app state.
-[1:27:24 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 83200 (Level: 0).
-[1:27:24 AM] ⏳ Game process 83200_max_007firstlight.exe terminated. Evacuated from app state.
-[1:27:24 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 83200 (Level: 0).
-[1:27:24 AM] 🛑 Game terminated: RAM-Guard stopped.
-[1:27:24 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:27:24 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:27:24 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:27:48 AM] 🔄 Live Configuration Sync: Games mapping and overrides hot-reloaded in background RAM.
-[1:27:59 AM] 🔄 Live Configuration Sync: Games mapping and overrides hot-reloaded in background RAM.
-[1:28:12 AM] 🎮 Game Active: Aggressive RAM-Guard initiated.
-[1:28:12 AM] 🎯 Game detected: 📦 🎮 007 First Light (PID: 91656)
-[1:28:12 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 91656 (Level: -20).
-[1:28:12 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 007 First Light (007firstlight.exe / PID: 91656)
-[1:28:16 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
-[1:28:16 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
-[1:28:17 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
-[1:28:17 AM]    🔹 CPU Cores Freed: +1.6% Power reclaimed from background apps.
-[1:28:17 AM]    🔹 Unified Memory (VRAM) Freed: +1.65 GB immediately evacuated for Game-Engine.
-[1:28:17 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
-[1:28:17 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 007 First Light aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
-[1:28:33 AM] 🚨 WARNING: Memory Critical (69 MB free). Enforcing maximum release!
-[1:28:33 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:28:33 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:28:33 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:29:03 AM] 🚨 WARNING: Memory Critical (60 MB free). Enforcing maximum release!
-[1:29:03 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:29:03 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:29:03 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:29:34 AM] 🚨 WARNING: Memory Critical (70 MB free). Enforcing maximum release!
-[1:29:34 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:29:34 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:29:34 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:30:04 AM] 🚨 WARNING: Memory Critical (70 MB free). Enforcing maximum release!
-[1:30:04 AM] 🚨 EMERGENCY SYSTEM OVERLOAD (Under 100MB RAM)! Executing brutal hard kill to prevent Kernel Panic...
-[1:30:04 AM] 🧹 Inactive RAM and system caches successfully evacuated.
-[1:30:04 AM] 🛡️ EMERGENCY CRASH PROTECTION: MTLCompilerService forcefully terminated!
-[1:40:46 AM] ⏳ Game process 91656 terminated. Evacuated from app state.
-[1:40:46 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 91656 (Level: 0).
-[1:40:46 AM] ⏳ Game process 91656_max_007firstlight.exe terminated. Evacuated from app state.
-[1:40:46 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 91656 (Level: 0).
-[1:40:46 AM] 🛑 Game terminated: RAM-Guard stopped.
-[1:40:46 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
-[1:40:46 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
-[1:40:46 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
+[2:55:10 AM] 🚀 App initiated - Persistent logging ACTIVE.
+[2:55:10 AM] ℹ️ Initial startup: Files are missing. Starting automatic background game scan...
+[2:55:10 AM] 🛠️ [START-SEQUENCE] Initiating privileged root helper activation sequence...
+[2:55:10 AM] ⚠️ [START-SEQUENCE] Background RAM scan failed or returned empty: Command failed: ps -Ax -o command | grep -v grep | grep 'helper.js' 2>/dev/null
+[2:55:10 AM] 📥 [START-SEQUENCE] Copying helper core to production directory...
+[2:55:10 AM] 🛡️ [START-SEQUENCE] POSIX permissions set to 755 via native fs.
+[2:55:10 AM] 🧠 [START-SEQUENCE] Hardware Environment Node Path verified: [/usr/local/bin/node]
+[2:55:10 AM] ⚡ [START-SEQUENCE] Dispatching elevated execution vector to macOS Security Framework...
+[2:55:10 AM] ⚙️ All startup systems successfully chained and active.
+[2:55:28 AM] ✅ Background scan finished successfully. Loading mapping...
+[2:55:46 AM] 🎮 Game Active: Aggressive RAM-Guard initiated.
+[2:55:46 AM] 🎯 Game detected: 📦 🎮 Uncharted Legacy of Thieves Collection (U4) (PID: 43850)
+[2:55:46 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 43850 (Level: -20).
+[2:55:46 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 Uncharted Legacy of Thieves Collection (U4) (u4.exe / PID: 43850)
+[2:55:50 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
+[2:55:50 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
+[2:55:50 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
+[2:55:50 AM]    🔹 CPU Cores Freed: +1.0% Power reclaimed from background apps.
+[2:55:50 AM]    🔹 Unified Memory (VRAM) Freed: +1.51 GB immediately evacuated for Game-Engine.
+[2:55:50 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
+[2:55:50 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 Uncharted Legacy of Thieves Collection (U4) aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
+[2:56:01 AM] 🚨 WARNING: Memory Critical (240 MB free). Enforcing maximum release!
+[2:56:01 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[2:56:01 AM] 🧹 Inactive RAM and system caches successfully evacuated.
+[2:56:01 AM] 🧹 Performing aggressive RAM evacuation...
+[2:56:03 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[2:56:31 AM] 🚨 WARNING: Memory Critical (857 MB free). Enforcing maximum release!
+[2:56:31 AM] 🧹 Inactive RAM and system caches successfully evacuated.
+[2:56:46 AM] ⏳ Game process 43850 terminated. Evacuated from app state.
+[2:56:46 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 43850 (Level: 0).
+[2:56:46 AM] ⏳ RAM Purge: Safe Shader-Compilation active (Game age: 60s). Postponing full purge to prevent shader compile errors...
+[2:56:46 AM] ⏳ Game process 43850_max_u4.exe terminated. Evacuated from app state.
+[2:56:46 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 43850 (Level: 0).
+[2:56:46 AM] 🧹 Main engine death registered! Forcing full state wipe to guarantee clean secondary starts.
+[2:56:46 AM] 🛑 Game terminated: RAM-Guard stopped.
+[2:56:46 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
+[2:56:50 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
+[2:57:14 AM] 🎮 Game Active: Aggressive RAM-Guard initiated.
+[2:57:14 AM] 🎯 Game detected: 📦 🎮 Uncharted Legacy of Thieves Collection (U4) (PID: 45645)
+[2:57:14 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 45645 (Level: -20).
+[2:57:14 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 Uncharted Legacy of Thieves Collection (U4) (u4.exe / PID: 45645)
+[2:57:18 AM] 🍏 [GPU-Guard] Desktop widgets and Stage Manager successfully hidden. GPU resources optimized.
+[2:57:18 AM] ⚡️ [CPU-Guard] IPC-Befehl gesendet: 11 Apps stehen auf Drosselung [kill].
+[2:57:19 AM] 📊 [Telemetry-Guard] INDESTRUCTIBLE LIVE RESOURCE RECOVERY:
+[2:57:19 AM]    🔹 CPU Cores Freed: +0.9% Power reclaimed from background apps.
+[2:57:19 AM]    🔹 Unified Memory (VRAM) Freed: +1.42 GB immediately evacuated for Game-Engine.
+[2:57:19 AM]    🔹 Active Status: 🚀 100% of Performance-Cores locked on Game Thread.
+[2:57:19 AM] ⚡️ [Focus-Guard] 🟢 MAX-Boost: 🟢 MAX-Boost: 📦 🎮 Uncharted Legacy of Thieves Collection (U4) aktiv erkannt. GPU-Guard & CPU-Limit auf MAX gepeitscht.
+[2:57:30 AM] 🎯 Game detected: 📦 🎮 Uncharted Legacy of Thieves Collection (TLL) (PID: 46048)
+[2:57:30 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 46048 (Level: -20).
+[2:57:30 AM] ⚡️ Trigger Engine: FORCE-BOOST! Main engine successfully pushed to MAX: 🎮 Uncharted Legacy of Thieves Collection (TLL) (tll.exe / PID: 46048)
+[2:57:38 AM] 🚨 WARNING: Memory Critical (466 MB free). Enforcing maximum release!
+[2:57:38 AM] 🚨 Critical memory shortage! Temporarily putting MTLCompilerService into deep sleep for relief...
+[2:57:38 AM] 🧹 Inactive RAM and system caches successfully evacuated.
+[2:57:38 AM] 🧹 Performing aggressive RAM evacuation...
+[2:57:40 AM] 🛡️ SUCCESS: MTLCompilerService successfully relieved and awakened!
+[2:58:08 AM] 🚨 WARNING: Memory Critical (1277 MB free). Enforcing maximum release!
+[2:58:08 AM] 🧹 Inactive RAM and system caches successfully evacuated.
+[2:58:27 AM] ⏳ Game process 46048 terminated. Evacuated from app state.
+[2:58:27 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 46048 (Level: 0).
+[2:58:27 AM] ⏳ RAM Purge: Safe Shader-Compilation active (Game age: 56s). Postponing full purge to prevent shader compile errors...
+[2:58:27 AM] ⏳ Game process 46048_max_tll.exe terminated. Evacuated from app state.
+[2:58:27 AM] ⚡️ Trigger Engine: MAX-Boost written for PID 46048 (Level: 0).
+[2:58:27 AM] 🧹 Main engine death registered! Forcing full state wipe to guarantee clean secondary starts.
+[2:58:27 AM] 🛑 Game terminated: RAM-Guard stopped.
+[2:58:27 AM] 🧹 RAM Purge: Inactive disk cache successfully cleared.
+[2:58:30 AM] 🔄 [GPU-Guard] Desktop elements and Stage Manager restored to standard mode.
